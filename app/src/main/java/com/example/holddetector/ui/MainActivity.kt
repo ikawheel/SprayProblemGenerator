@@ -202,6 +202,8 @@ class MainActivity : ComponentActivity() {
                         onChallengeHoldTapped = viewModel::onChallengeHoldTapped,
                         onManualHoldCreated = viewModel::addManualHold,
                         onStartGoalSelection = viewModel::startChallengeStartGoalSelection,
+                        onStartDrawTargetSelection = viewModel::startDrawTargetSelection,
+                        onDrawTargetSelectionCompleted = viewModel::applyDrawTargetSelection,
                         onDrawClick = viewModel::drawRandomChallengeHolds,
                         onDrawCountChange = viewModel::onDrawCountChanged,
                         onClearChallenge = viewModel::clearChallengeSelection,
@@ -409,6 +411,8 @@ private fun HoldDetectorApp(
     onChallengeHoldTapped: (Int?) -> Unit,
     onManualHoldCreated: (Hold) -> Unit,
     onStartGoalSelection: () -> Unit,
+    onStartDrawTargetSelection: () -> Unit,
+    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onClearChallenge: () -> Unit,
@@ -471,6 +475,8 @@ private fun HoldDetectorApp(
                     onBackToList = onBackToList,
                     onChallengeHoldTapped = onChallengeHoldTapped,
                     onStartGoalSelection = onStartGoalSelection,
+                    onStartDrawTargetSelection = onStartDrawTargetSelection,
+                    onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                     onDrawClick = onDrawClick,
                     onDrawCountChange = onDrawCountChange,
                     onClearChallenge = onClearChallenge,
@@ -979,6 +985,8 @@ private fun ChallengeCreatorScreen(
     onBackToList: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onStartGoalSelection: () -> Unit,
+    onStartDrawTargetSelection: () -> Unit,
+    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onClearChallenge: () -> Unit,
@@ -1017,7 +1025,9 @@ private fun ChallengeCreatorScreen(
                     startHoldIndex = state.startHoldIndex,
                     goalHoldIndex = state.goalHoldIndex,
                     routeSelectionMode = state.routeSelectionMode,
+                    isDrawTargetSelectionMode = state.isDrawTargetSelectionMode,
                     onHoldTapped = onChallengeHoldTapped,
+                    onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -1066,11 +1076,23 @@ private fun ChallengeCreatorScreen(
 
             Button(
                 onClick = onDrawClick,
+                enabled = !state.isDrawTargetSelectionMode,
                 modifier = Modifier.height(56.dp)
             ) {
                 Text(stringResource(R.string.draw))
             }
         }
+
+        Text(
+            text = when {
+                state.isDrawTargetSelectionMode -> stringResource(R.string.draw_target_status_selecting)
+                !state.hasDrawTargetSelection -> stringResource(R.string.draw_target_status_all)
+                else -> stringResource(R.string.draw_target_status_count, state.drawTargetHoldIndices.size)
+            },
+            color = AppTextColor,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 12.dp)
+        )
 
         Row(
             modifier = Modifier
@@ -1078,8 +1100,25 @@ private fun ChallengeCreatorScreen(
                 .padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            OutlinedButton(
+                onClick = onStartDrawTargetSelection,
+                enabled = !state.isDrawTargetSelectionMode,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = if (!state.hasDrawTargetSelection) {
+                        stringResource(R.string.draw_target_select)
+                    } else {
+                        stringResource(R.string.draw_target_reselect)
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
             Button(
                 onClick = onStartGoalSelection,
+                enabled = !state.isDrawTargetSelectionMode,
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
@@ -1154,7 +1193,9 @@ private fun HoldCanvasScreen(
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
+    isDrawTargetSelectionMode: Boolean = false,
     onHoldTapped: (Int?) -> Unit,
+    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit = {},
     onManualHoldCreated: (Hold) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1166,8 +1207,10 @@ private fun HoldCanvasScreen(
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
         routeSelectionMode = routeSelectionMode,
+        isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.HOLD_EDITOR,
         onHoldTapped = onHoldTapped,
+        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
         onManualHoldCreated = onManualHoldCreated,
         modifier = modifier
     )
@@ -1182,7 +1225,9 @@ private fun ChallengeCanvasScreen(
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
+    isDrawTargetSelectionMode: Boolean,
     onHoldTapped: (Int?) -> Unit,
+    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     InteractiveCapturedImage(
@@ -1193,8 +1238,10 @@ private fun ChallengeCanvasScreen(
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
         routeSelectionMode = routeSelectionMode,
+        isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.CHALLENGE,
         onHoldTapped = onHoldTapped,
+        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
         onManualHoldCreated = {},
         modifier = modifier
     )
@@ -1210,8 +1257,10 @@ private fun InteractiveCapturedImage(
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
+    isDrawTargetSelectionMode: Boolean,
     mode: CanvasMode,
     onHoldTapped: (Int?) -> Unit,
+    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onManualHoldCreated: (Hold) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1300,7 +1349,7 @@ private fun InteractiveCapturedImage(
                     activePointerCount = 0
                 }
             }
-            .pointerInput(baseLayout, zoomScale, panOffset, holds, routeSelectionMode, mode) {
+            .pointerInput(baseLayout, zoomScale, panOffset, holds, routeSelectionMode, isDrawTargetSelectionMode, mode) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
 
@@ -1323,7 +1372,7 @@ private fun InteractiveCapturedImage(
                         return@awaitEachGesture
                     }
 
-                    if (mode == CanvasMode.CHALLENGE) {
+                    if (mode == CanvasMode.CHALLENGE && !isDrawTargetSelectionMode) {
                         var movedEnough = false
                         var multiTouchDetected = false
                         while (true) {
@@ -1408,7 +1457,33 @@ private fun InteractiveCapturedImage(
                     }
 
                     if (!multiTouchDetected) {
-                        if (movedEnough) {
+                        if (mode == CanvasMode.CHALLENGE && isDrawTargetSelectionMode) {
+                            val selectionPolygon = if (movedEnough) {
+                                buildContourPolygonFromBrushPoints(
+                                    points = draftStrokePoints,
+                                    brushRadiusX = brushRadiusXLocal,
+                                    brushRadiusY = brushRadiusYLocal,
+                                    baseLayout = baseLayout
+                                )
+                            } else {
+                                buildContourPolygonFromBrushPoints(
+                                    points = listOf(startLocal),
+                                    brushRadiusX = tapRadiusXLocal,
+                                    brushRadiusY = tapRadiusYLocal,
+                                    baseLayout = baseLayout
+                                )
+                            }
+
+                            onDrawTargetSelectionCompleted(
+                                selectionPolygon?.let { polygon ->
+                                    findHoldIndicesIntersectingSelectionPolygon(
+                                        selectionPolygon = polygon,
+                                        holds = holds,
+                                        baseLayout = baseLayout
+                                    )
+                                } ?: emptySet()
+                            )
+                        } else if (movedEnough) {
                             createManualHoldFromBrushPoints(
                                 points = draftStrokePoints,
                                 brushRadiusX = brushRadiusXLocal,
@@ -1540,7 +1615,10 @@ private fun InteractiveCapturedImage(
                         }
                     }
 
-                    if (mode == CanvasMode.HOLD_EDITOR && routeSelectionMode == RouteSelectionMode.NONE) {
+                    if (
+                        (mode == CanvasMode.HOLD_EDITOR && routeSelectionMode == RouteSelectionMode.NONE) ||
+                            (mode == CanvasMode.CHALLENGE && isDrawTargetSelectionMode)
+                    ) {
                         draftStrokePoints.forEach { point ->
                             drawOval(
                                 color = AppOverlayStrokePreviewColor,
@@ -2062,6 +2140,86 @@ private fun findTappedIndexFromLocal(
             polygon = hold.toLocalPolygon(baseLayout).points
         )
     }.takeIf { it >= 0 }
+}
+
+private fun findHoldIndicesIntersectingSelectionPolygon(
+    selectionPolygon: LocalHoldPolygon,
+    holds: List<Hold>,
+    baseLayout: BaseImageLayout
+): Set<Int> {
+    return holds.mapIndexedNotNull { index, hold ->
+        val holdPolygon = hold.toLocalPolygon(baseLayout).points
+        if (polygonsIntersect(selectionPolygon.points, holdPolygon)) {
+            index
+        } else {
+            null
+        }
+    }.toSet()
+}
+
+private fun polygonsIntersect(
+    first: List<Offset>,
+    second: List<Offset>
+): Boolean {
+    if (first.size < 3 || second.size < 3) return false
+
+    if (first.any { point -> isPointInsidePolygon(point, second) }) return true
+    if (second.any { point -> isPointInsidePolygon(point, first) }) return true
+
+    val firstEdges = polygonEdges(first)
+    val secondEdges = polygonEdges(second)
+
+    return firstEdges.any { (firstStart, firstEnd) ->
+        secondEdges.any { (secondStart, secondEnd) ->
+            segmentsIntersect(firstStart, firstEnd, secondStart, secondEnd)
+        }
+    }
+}
+
+private fun polygonEdges(points: List<Offset>): List<Pair<Offset, Offset>> {
+    if (points.size < 2) return emptyList()
+
+    return points.indices.map { index ->
+        val nextIndex = (index + 1) % points.size
+        points[index] to points[nextIndex]
+    }
+}
+
+private fun segmentsIntersect(
+    firstStart: Offset,
+    firstEnd: Offset,
+    secondStart: Offset,
+    secondEnd: Offset
+): Boolean {
+    val firstOrientation = segmentOrientation(firstStart, firstEnd, secondStart)
+    val secondOrientation = segmentOrientation(firstStart, firstEnd, secondEnd)
+    val thirdOrientation = segmentOrientation(secondStart, secondEnd, firstStart)
+    val fourthOrientation = segmentOrientation(secondStart, secondEnd, firstEnd)
+
+    if (firstOrientation != secondOrientation && thirdOrientation != fourthOrientation) {
+        return true
+    }
+
+    if (firstOrientation == 0 && isPointOnSegment(secondStart, firstStart, firstEnd)) return true
+    if (secondOrientation == 0 && isPointOnSegment(secondEnd, firstStart, firstEnd)) return true
+    if (thirdOrientation == 0 && isPointOnSegment(firstStart, secondStart, secondEnd)) return true
+    if (fourthOrientation == 0 && isPointOnSegment(firstEnd, secondStart, secondEnd)) return true
+
+    return false
+}
+
+private fun segmentOrientation(
+    start: Offset,
+    end: Offset,
+    point: Offset
+): Int {
+    val value = (end.y - start.y) * (point.x - end.x) - (end.x - start.x) * (point.y - end.y)
+
+    return when {
+        abs(value) < 0.0001f -> 0
+        value > 0f -> 1
+        else -> 2
+    }
 }
 
 private fun isPointInsidePolygon(

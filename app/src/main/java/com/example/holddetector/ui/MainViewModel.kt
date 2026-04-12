@@ -66,9 +66,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holds = emptyList(),
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
+            drawTargetHoldIndices = emptySet(),
+            hasDrawTargetSelection = false,
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
             isHoldEditorDirty = true,
             showDiscardDialog = false,
             message = "蜀咏悄繧定ｪｭ縺ｿ霎ｼ縺ｿ縺ｾ縺励◆縲ゅち繝・・繧・ラ繝ｩ繝・げ縺ｧ繝帙・繝ｫ繝峨ｒ逋ｻ骭ｲ縺励※縺上□縺輔＞"
@@ -100,9 +103,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holds = detail.holds,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
+                drawTargetHoldIndices = emptySet(),
+                hasDrawTargetSelection = false,
                 startHoldIndex = null,
                 goalHoldIndex = null,
                 routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
                 isHoldEditorDirty = false,
                 showDiscardDialog = false,
                 isBusy = false,
@@ -136,9 +142,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holds = detail.holds,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
+                drawTargetHoldIndices = emptySet(),
+                hasDrawTargetSelection = false,
                 startHoldIndex = null,
                 goalHoldIndex = null,
                 routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
                 isBusy = false,
                 showDiscardDialog = false,
                 message = "隱ｲ鬘御ｽ懈・繧帝幕蟋九＠縺ｾ縺励◆"
@@ -246,9 +255,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 wallTitle = savedSummary.title,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
+                drawTargetHoldIndices = emptySet(),
+                hasDrawTargetSelection = false,
                 startHoldIndex = null,
                 goalHoldIndex = null,
                 routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
                 isHoldEditorDirty = false,
                 showDiscardDialog = false,
                 isBusy = false,
@@ -273,6 +285,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onChallengeHoldTapped(index: Int?) {
         val state = _uiState.value
+        if (state.isDrawTargetSelectionMode) return
 
         when (state.routeSelectionMode) {
             RouteSelectionMode.SELECTING_START -> {
@@ -347,8 +360,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val actualCount = requestedCount.coerceAtMost(state.holds.size)
-        val selectedIndices = state.holds.indices.shuffled().take(actualCount).sorted().toSet()
+        val drawSourceIndices = if (state.hasDrawTargetSelection) {
+            state.drawTargetHoldIndices
+        } else {
+            state.holds.indices.toSet()
+        }
+        if (drawSourceIndices.isEmpty()) {
+            _uiState.value = state.copy(message = "謚ｽ驕ｸ蟇ｾ雎｡縺ｮ繝帙・繝ｫ繝峨′縺ゅｊ縺ｾ縺帙ｓ")
+            return
+        }
+
+        val actualCount = requestedCount.coerceAtMost(drawSourceIndices.size)
+        val selectedIndices = drawSourceIndices.shuffled().take(actualCount).sorted().toSet()
 
         _uiState.value = state.copy(
             challengeHoldIndices = selectedIndices,
@@ -356,16 +379,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
-            message = if (requestedCount > state.holds.size) {
-                "蛟呵｣懈焚繧定ｶ・∴縺溘◆繧・${state.holds.size} 蛟九☆縺ｹ縺ｦ繧帝∈謚槭＠縺ｾ縺励◆"
+            isDrawTargetSelectionMode = false,
+            message = if (requestedCount > drawSourceIndices.size) {
+                "蛟呵｣懈焚繧定ｶ・∴縺溘◆繧・${drawSourceIndices.size} 蛟九☆縺ｹ縺ｦ繧帝∈謚槭＠縺ｾ縺励◆"
             } else {
                 "謚ｽ驕ｸ縺ｧ繝帙・繝ｫ繝峨ｒ驕ｸ謚槭＠縺ｾ縺励◆"
             }
         )
     }
 
+    fun startDrawTargetSelection() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            selectedHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = true,
+            message = "繝輔Μ繝ｼ繝上Φ繝峨〒謚ｽ驕ｸ蟇ｾ雎｡縺ｮ遽・峇繧偵↑縺槭▲縺ｦ縺上□縺輔＞"
+        )
+    }
+
+    fun applyDrawTargetSelection(indices: Set<Int>) {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            selectedHoldIndex = null,
+            drawTargetHoldIndices = indices,
+            hasDrawTargetSelection = true,
+            isDrawTargetSelectionMode = false,
+            message = if (indices.isEmpty()) {
+                "謚ｽ驕ｸ蟇ｾ雎｡縺ｫ蜈･繧九・繝ｼ繝ｫ繝峨′隕九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆"
+            } else {
+                "謚ｽ驕ｸ蟇ｾ雎｡繧・${indices.size} 蛟九・繝帙・繝ｫ繝峨↓險ｭ螳壹＠縺ｾ縺励◆"
+            }
+        )
+    }
+
     fun startChallengeStartGoalSelection() {
         val state = _uiState.value
+        if (state.isDrawTargetSelectionMode) {
+            _uiState.value = state.copy(message = "遽・峇驕ｸ謚槭ｒ邨ゅ∴縺ｦ縺九ｉ繧ｹ繧ｿ繝ｼ繝医→繧ｴ繝ｼ繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞")
+            return
+        }
         if (state.challengeHoldIndices.isEmpty()) {
             _uiState.value = state.copy(message = "蜈医↓隱ｲ鬘後↓蜷ｫ繧√ｋ繝帙・繝ｫ繝峨ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞")
             return
@@ -384,9 +437,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
+            drawTargetHoldIndices = emptySet(),
+            hasDrawTargetSelection = false,
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
             message = "隱ｲ鬘碁∈謚槭ｒ繧ｯ繝ｪ繧｢縺励∪縺励◆"
         )
     }

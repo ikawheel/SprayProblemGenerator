@@ -43,4 +43,9 @@
     <string name="selecting_start">スタート選択中</string>
     <string name="selecting_goal">ゴール選択中</string>
     <string name="clear_challenge">課題をクリア</string>
+    <string name="draw_target_status_selecting">抽選範囲を選択中です。画像上をなぞってください。</string>
+    <string name="draw_target_status_all">抽選対象: 全ホールド</string>
+    <string name="draw_target_status_count">抽選対象: %1$d 個のホールド</string>
+    <string name="draw_target_select">抽選範囲</string>
+    <string name="draw_target_reselect">範囲再選択</string>
 </resources>
