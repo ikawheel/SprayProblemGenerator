@@ -1,0 +1,29 @@
+package com.example.holddetector.model
+
+import android.graphics.Bitmap
+
+enum class CapturedOrientation {
+    PORTRAIT,
+    LANDSCAPE
+}
+
+data class SavedWallSummary(
+    val id: String,
+    val title: String,
+    val imageFilePath: String,
+    val holdCount: Int,
+    val createdAt: Long,
+    val updatedAt: Long
+)
+
+data class SavedWallDetail(
+    val id: String,
+    val title: String,
+    val imageFilePath: String,
+    val bitmap: Bitmap,
+    val holds: List<Hold>,
+    val capturedOrientation: CapturedOrientation,
+    val capturedRotationDegrees: Int,
+    val createdAt: Long,
+    val updatedAt: Long
+)
