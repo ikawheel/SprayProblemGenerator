@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.model.SavedWallDetail
 import com.example.holddetector.model.SavedWallSummary
 import org.json.JSONArray
@@ -72,6 +73,7 @@ class WallStorageRepository(context: Context) {
             imageFilePath = imageFile.absolutePath,
             bitmap = bitmap,
             holds = holds,
+            reachCalibrationReference = parseReachCalibrationReference(json.optJSONObject(KEY_REACH_CALIBRATION_REFERENCE)),
             capturedOrientation = parseCapturedOrientation(
                 rotationDegrees = parseCapturedRotationDegrees(
                     rawRotation = json.optInt(KEY_CAPTURED_ROTATION_DEGREES, -1),
@@ -95,6 +97,7 @@ class WallStorageRepository(context: Context) {
         title: String,
         bitmap: Bitmap,
         holds: List<Hold>,
+        reachCalibrationReference: ReachCalibrationReference?,
         capturedOrientation: CapturedOrientation,
         capturedRotationDegrees: Int
     ): SavedWallSummary {
@@ -119,6 +122,10 @@ class WallStorageRepository(context: Context) {
             put(KEY_IMAGE_PATH, imageFile.absolutePath)
             put(KEY_CAPTURED_ORIENTATION, capturedOrientation.name)
             put(KEY_CAPTURED_ROTATION_DEGREES, normalizeRotationDegrees(capturedRotationDegrees))
+            put(
+                KEY_REACH_CALIBRATION_REFERENCE,
+                reachCalibrationReference?.toJson()
+            )
             put(KEY_HOLDS, JSONArray().apply {
                 holds.forEach { hold ->
                     put(
@@ -216,6 +223,36 @@ class WallStorageRepository(context: Context) {
         }
     }
 
+    private fun parseReachCalibrationReference(json: JSONObject?): ReachCalibrationReference? {
+        val firstPoint = json?.optJSONObject(KEY_FIRST_POINT)?.toHoldPoint() ?: return null
+        val secondPoint = json.optJSONObject(KEY_SECOND_POINT)?.toHoldPoint() ?: return null
+        return ReachCalibrationReference(
+            firstPoint = firstPoint,
+            secondPoint = secondPoint
+        )
+    }
+
+    private fun ReachCalibrationReference.toJson(): JSONObject {
+        return JSONObject().apply {
+            put(KEY_FIRST_POINT, firstPoint.toJson())
+            put(KEY_SECOND_POINT, secondPoint.toJson())
+        }
+    }
+
+    private fun HoldPoint.toJson(): JSONObject {
+        return JSONObject().apply {
+            put(KEY_X, x)
+            put(KEY_Y, y)
+        }
+    }
+
+    private fun JSONObject.toHoldPoint(): HoldPoint {
+        return HoldPoint(
+            x = optInt(KEY_X),
+            y = optInt(KEY_Y)
+        )
+    }
+
     private fun normalizeRotationDegrees(rotationDegrees: Int): Int {
         val normalized = rotationDegrees % 360
         return if (normalized < 0) normalized + 360 else normalized
@@ -227,8 +264,11 @@ class WallStorageRepository(context: Context) {
         private const val KEY_IMAGE_PATH = "imageFilePath"
         private const val KEY_CAPTURED_ORIENTATION = "capturedOrientation"
         private const val KEY_CAPTURED_ROTATION_DEGREES = "capturedRotationDegrees"
+        private const val KEY_REACH_CALIBRATION_REFERENCE = "reachCalibrationReference"
         private const val KEY_HOLDS = "holds"
         private const val KEY_POINTS = "points"
+        private const val KEY_FIRST_POINT = "firstPoint"
+        private const val KEY_SECOND_POINT = "secondPoint"
         private const val KEY_CREATED_AT = "createdAt"
         private const val KEY_UPDATED_AT = "updatedAt"
         private const val KEY_X = "x"

@@ -30,6 +30,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +58,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -107,6 +110,7 @@ import com.example.holddetector.R
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.model.SavedWallSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -126,6 +130,7 @@ private val AppSubtleSurfaceColor = Color(0xFFF1F3F5)
 private val AppTextColor = Color(0xFF1F2937)
 private val AppSecondaryTextColor = Color(0xFF6B7280)
 private val AppOverlayBackgroundColor = Color(0xEFFFFFFF)
+private val AppStartGoalLabelBackgroundColor = Color(0x55FFFFFF)
 private val AppOverlayStrokePreviewColor = Color(0x44222222)
 private val AppBusyOverlayColor = Color(0x66FFFFFF)
 private val CameraScreenBackgroundColor = Color.Black
@@ -201,11 +206,21 @@ class MainActivity : ComponentActivity() {
                         onEditorHoldTapped = viewModel::onEditorHoldTapped,
                         onChallengeHoldTapped = viewModel::onChallengeHoldTapped,
                         onManualHoldCreated = viewModel::addManualHold,
+                        onStartReachCalibrationSelection = viewModel::startReachCalibrationSelection,
+                        onClearReachCalibration = viewModel::clearReachCalibration,
+                        onReachCalibrationPointSelected = viewModel::onReachCalibrationPointSelected,
                         onStartGoalSelection = viewModel::startChallengeStartGoalSelection,
                         onStartDrawTargetSelection = viewModel::startDrawTargetSelection,
                         onDrawTargetSelectionCompleted = viewModel::applyDrawTargetSelection,
                         onDrawClick = viewModel::drawRandomChallengeHolds,
                         onDrawCountChange = viewModel::onDrawCountChanged,
+                        onHoldCountVarianceChange = viewModel::onHoldCountVarianceChanged,
+                        onDetourStrengthChange = viewModel::onDetourStrengthChanged,
+                        onRouteWavinessChange = viewModel::onRouteWavinessChanged,
+                        onStepDistanceVarianceChange = viewModel::onStepDistanceVarianceChanged,
+                        onCorridorWidthChange = viewModel::onCorridorWidthChanged,
+                        onCandidateSelectionRandomnessChange = viewModel::onCandidateSelectionRandomnessChanged,
+                        onFinalSelectionRandomnessChange = viewModel::onFinalSelectionRandomnessChanged,
                         onClearChallenge = viewModel::clearChallengeSelection,
                         onDismissDiscardDialog = viewModel::dismissDiscardDialog,
                         onDiscardChanges = viewModel::discardEditorAndReturnToList
@@ -410,11 +425,21 @@ private fun HoldDetectorApp(
     onEditorHoldTapped: (Int?) -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onManualHoldCreated: (Hold) -> Unit,
+    onStartReachCalibrationSelection: () -> Unit,
+    onClearReachCalibration: () -> Unit,
+    onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     onStartGoalSelection: () -> Unit,
     onStartDrawTargetSelection: () -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
+    onHoldCountVarianceChange: (Float) -> Unit,
+    onDetourStrengthChange: (Float) -> Unit,
+    onRouteWavinessChange: (Float) -> Unit,
+    onStepDistanceVarianceChange: (Float) -> Unit,
+    onCorridorWidthChange: (Float) -> Unit,
+    onCandidateSelectionRandomnessChange: (Float) -> Unit,
+    onFinalSelectionRandomnessChange: (Float) -> Unit,
     onClearChallenge: () -> Unit,
     onDismissDiscardDialog: () -> Unit,
     onDiscardChanges: () -> Unit
@@ -465,6 +490,9 @@ private fun HoldDetectorApp(
                     onDeleteSelectedHold = onDeleteSelectedHold,
                     onEditorHoldTapped = onEditorHoldTapped,
                     onManualHoldCreated = onManualHoldCreated,
+                    onStartReachCalibrationSelection = onStartReachCalibrationSelection,
+                    onClearReachCalibration = onClearReachCalibration,
+                    onReachCalibrationPointSelected = onReachCalibrationPointSelected,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -479,6 +507,13 @@ private fun HoldDetectorApp(
                     onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                     onDrawClick = onDrawClick,
                     onDrawCountChange = onDrawCountChange,
+                    onHoldCountVarianceChange = onHoldCountVarianceChange,
+                    onDetourStrengthChange = onDetourStrengthChange,
+                    onRouteWavinessChange = onRouteWavinessChange,
+                    onStepDistanceVarianceChange = onStepDistanceVarianceChange,
+                    onCorridorWidthChange = onCorridorWidthChange,
+                    onCandidateSelectionRandomnessChange = onCandidateSelectionRandomnessChange,
+                    onFinalSelectionRandomnessChange = onFinalSelectionRandomnessChange,
                     onClearChallenge = onClearChallenge,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -872,6 +907,9 @@ private fun HoldEditorScreen(
     onDeleteSelectedHold: () -> Unit,
     onEditorHoldTapped: (Int?) -> Unit,
     onManualHoldCreated: (Hold) -> Unit,
+    onStartReachCalibrationSelection: () -> Unit,
+    onClearReachCalibration: () -> Unit,
+    onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
@@ -917,7 +955,11 @@ private fun HoldEditorScreen(
                     startHoldIndex = null,
                     goalHoldIndex = null,
                     routeSelectionMode = RouteSelectionMode.NONE,
+                    reachCalibrationReference = state.reachCalibrationReference,
+                    pendingReachCalibrationPoint = state.pendingReachCalibrationPoint,
+                    isReachCalibrationSelectionMode = state.isReachCalibrationSelectionMode,
                     onHoldTapped = onEditorHoldTapped,
+                    onReachCalibrationPointSelected = onReachCalibrationPointSelected,
                     onManualHoldCreated = onManualHoldCreated,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -937,6 +979,52 @@ private fun HoldEditorScreen(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
+
+        Text(
+            text = when {
+                state.isReachCalibrationSelectionMode && state.pendingReachCalibrationPoint == null ->
+                    "150cm基準: 1点目をタップ"
+                state.isReachCalibrationSelectionMode && state.pendingReachCalibrationPoint != null ->
+                    "150cm基準: 2点目をタップ"
+                state.reachCalibrationReference != null ->
+                    "150cm基準: 設定済み"
+                else ->
+                    "150cm基準: 未設定"
+            },
+            color = AppSecondaryTextColor,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onStartReachCalibrationSelection,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = if (state.reachCalibrationReference == null) {
+                        "150cm設定"
+                    } else {
+                        "150cm再設定"
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            OutlinedButton(
+                onClick = onClearReachCalibration,
+                enabled = state.reachCalibrationReference != null || state.pendingReachCalibrationPoint != null,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("150cmクリア")
+            }
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -989,12 +1077,32 @@ private fun ChallengeCreatorScreen(
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
+    onHoldCountVarianceChange: (Float) -> Unit,
+    onDetourStrengthChange: (Float) -> Unit,
+    onRouteWavinessChange: (Float) -> Unit,
+    onStepDistanceVarianceChange: (Float) -> Unit,
+    onCorridorWidthChange: (Float) -> Unit,
+    onCandidateSelectionRandomnessChange: (Float) -> Unit,
+    onFinalSelectionRandomnessChange: (Float) -> Unit,
     onClearChallenge: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
+    val scrollState = rememberScrollState()
+    val selectionCandidateIndices = if (state.hasDrawTargetSelection) {
+        state.drawTargetHoldIndices
+    } else {
+        state.holds.indices.toSet()
+    }
+    val isReadyToGenerate = !state.isDrawTargetSelectionMode &&
+        state.routeSelectionMode == RouteSelectionMode.NONE &&
+        state.startHoldIndex != null &&
+        state.goalHoldIndex != null &&
+        (state.drawCountInput.toIntOrNull() ?: 0) >= 2
 
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier.verticalScroll(scrollState)
+    ) {
         Text(
             text = stringResource(R.string.challenge_creator_title),
             color = AppTextColor,
@@ -1011,8 +1119,8 @@ private fun ChallengeCreatorScreen(
 
         Box(
             modifier = Modifier
-                .weight(1f)
                 .fillMaxWidth()
+                .height(560.dp)
                 .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
                 .clipToBounds()
         ) {
@@ -1022,6 +1130,7 @@ private fun ChallengeCreatorScreen(
                     holds = state.holds,
                     selectedIndex = state.selectedHoldIndex,
                     challengeHoldIndices = state.challengeHoldIndices,
+                    selectionCandidateIndices = selectionCandidateIndices,
                     startHoldIndex = state.startHoldIndex,
                     goalHoldIndex = state.goalHoldIndex,
                     routeSelectionMode = state.routeSelectionMode,
@@ -1034,10 +1143,12 @@ private fun ChallengeCreatorScreen(
         }
 
         Text(
-            text = when (state.routeSelectionMode) {
-                RouteSelectionMode.NONE -> stringResource(R.string.challenge_route_help_none)
-                RouteSelectionMode.SELECTING_START -> stringResource(R.string.challenge_route_help_select_start)
-                RouteSelectionMode.SELECTING_GOAL -> stringResource(R.string.challenge_route_help_select_goal)
+            text = when {
+                state.isDrawTargetSelectionMode -> stringResource(R.string.draw_target_status_selecting)
+                state.routeSelectionMode == RouteSelectionMode.SELECTING_START -> stringResource(R.string.challenge_route_help_select_start)
+                state.routeSelectionMode == RouteSelectionMode.SELECTING_GOAL -> stringResource(R.string.challenge_route_help_select_goal)
+                state.startHoldIndex != null && state.goalHoldIndex != null -> stringResource(R.string.challenge_route_help_ready_generate)
+                else -> stringResource(R.string.challenge_route_help_none)
             },
             color = AppTextColor,
             style = MaterialTheme.typography.bodyMedium,
@@ -1076,12 +1187,63 @@ private fun ChallengeCreatorScreen(
 
             Button(
                 onClick = onDrawClick,
-                enabled = !state.isDrawTargetSelectionMode,
+                enabled = isReadyToGenerate,
                 modifier = Modifier.height(56.dp)
             ) {
                 Text(stringResource(R.string.draw))
             }
         }
+
+        Text(
+            text = stringResource(R.string.challenge_tuning_title),
+            color = AppTextColor,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+
+        ChallengeTuningSlider(
+            label = stringResource(R.string.challenge_hold_count_variance_label),
+            value = state.routeTuning.holdCountVariance,
+            onValueChange = onHoldCountVarianceChange,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        ChallengeTuningSlider(
+            label = stringResource(R.string.challenge_detour_strength_label),
+            value = state.routeTuning.detourStrength,
+            onValueChange = onDetourStrengthChange
+        )
+
+        ChallengeTuningSlider(
+            label = stringResource(R.string.challenge_route_waviness_label),
+            value = state.routeTuning.routeWaviness,
+            onValueChange = onRouteWavinessChange
+        )
+
+        ChallengeTuningSlider(
+            label = stringResource(R.string.challenge_step_distance_variance_label),
+            value = state.routeTuning.stepDistanceVariance,
+            onValueChange = onStepDistanceVarianceChange
+        )
+
+        ChallengeTuningSlider(
+            label = stringResource(R.string.challenge_corridor_width_label),
+            value = state.routeTuning.corridorWidth,
+            onValueChange = onCorridorWidthChange
+        )
+
+        ChallengeTuningSlider(
+            label = stringResource(R.string.challenge_candidate_selection_randomness_label),
+            value = state.routeTuning.candidateSelectionRandomness,
+            onValueChange = onCandidateSelectionRandomnessChange
+        )
+
+        ChallengeTuningSlider(
+            label = stringResource(R.string.challenge_final_selection_randomness_label),
+            value = state.routeTuning.finalSelectionRandomness,
+            onValueChange = onFinalSelectionRandomnessChange
+        )
 
         Text(
             text = when {
@@ -1118,7 +1280,7 @@ private fun ChallengeCreatorScreen(
 
             Button(
                 onClick = onStartGoalSelection,
-                enabled = !state.isDrawTargetSelectionMode,
+                enabled = !state.isDrawTargetSelectionMode && selectionCandidateIndices.isNotEmpty(),
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
@@ -1148,6 +1310,43 @@ private fun ChallengeCreatorScreen(
         ) {
             Text(stringResource(R.string.back_to_list))
         }
+    }
+}
+
+@Composable
+private fun ChallengeTuningSlider(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                color = AppTextColor,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = stringResource(
+                    R.string.challenge_randomness_value,
+                    (value * 100f).roundToInt()
+                ),
+                color = AppSecondaryTextColor,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = 0f..1f,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 
@@ -1193,8 +1392,12 @@ private fun HoldCanvasScreen(
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
+    reachCalibrationReference: ReachCalibrationReference?,
+    pendingReachCalibrationPoint: HoldPoint?,
+    isReachCalibrationSelectionMode: Boolean,
     isDrawTargetSelectionMode: Boolean = false,
     onHoldTapped: (Int?) -> Unit,
+    onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit = {},
     onManualHoldCreated: (Hold) -> Unit,
     modifier: Modifier = Modifier
@@ -1207,9 +1410,13 @@ private fun HoldCanvasScreen(
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
         routeSelectionMode = routeSelectionMode,
+        reachCalibrationReference = reachCalibrationReference,
+        pendingReachCalibrationPoint = pendingReachCalibrationPoint,
+        isReachCalibrationSelectionMode = isReachCalibrationSelectionMode,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.HOLD_EDITOR,
         onHoldTapped = onHoldTapped,
+        onReachCalibrationPointSelected = onReachCalibrationPointSelected,
         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
         onManualHoldCreated = onManualHoldCreated,
         modifier = modifier
@@ -1222,6 +1429,7 @@ private fun ChallengeCanvasScreen(
     holds: List<Hold>,
     selectedIndex: Int?,
     challengeHoldIndices: Set<Int>,
+    selectionCandidateIndices: Set<Int>,
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
@@ -1235,12 +1443,17 @@ private fun ChallengeCanvasScreen(
         holds = holds,
         selectedIndex = selectedIndex,
         challengeHoldIndices = challengeHoldIndices,
+        selectionCandidateIndices = selectionCandidateIndices,
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
         routeSelectionMode = routeSelectionMode,
+        reachCalibrationReference = null,
+        pendingReachCalibrationPoint = null,
+        isReachCalibrationSelectionMode = false,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.CHALLENGE,
         onHoldTapped = onHoldTapped,
+        onReachCalibrationPointSelected = {},
         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
         onManualHoldCreated = {},
         modifier = modifier
@@ -1254,12 +1467,17 @@ private fun InteractiveCapturedImage(
     holds: List<Hold>,
     selectedIndex: Int?,
     challengeHoldIndices: Set<Int>,
+    selectionCandidateIndices: Set<Int> = emptySet(),
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
+    reachCalibrationReference: ReachCalibrationReference? = null,
+    pendingReachCalibrationPoint: HoldPoint? = null,
+    isReachCalibrationSelectionMode: Boolean = false,
     isDrawTargetSelectionMode: Boolean,
     mode: CanvasMode,
     onHoldTapped: (Int?) -> Unit,
+    onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onManualHoldCreated: (Hold) -> Unit,
     modifier: Modifier = Modifier
@@ -1292,8 +1510,20 @@ private fun InteractiveCapturedImage(
             imageHeight = bitmap.height.toFloat()
         )
     }
-    val selectedChallengePath = remember(holds, challengeHoldIndices, baseLayout, mode) {
-        if (mode != CanvasMode.CHALLENGE || !baseLayout.isValid || challengeHoldIndices.isEmpty()) {
+    val shouldShowChallengeSelectionMask =
+        mode == CanvasMode.CHALLENGE &&
+            routeSelectionMode == RouteSelectionMode.NONE &&
+            !isDrawTargetSelectionMode &&
+            challengeHoldIndices.isNotEmpty()
+    val selectedChallengePath = remember(
+        holds,
+        challengeHoldIndices,
+        baseLayout,
+        mode,
+        routeSelectionMode,
+        isDrawTargetSelectionMode
+    ) {
+        if (!shouldShowChallengeSelectionMask || !baseLayout.isValid) {
             null
         } else {
             Path().apply {
@@ -1349,7 +1579,18 @@ private fun InteractiveCapturedImage(
                     activePointerCount = 0
                 }
             }
-            .pointerInput(baseLayout, zoomScale, panOffset, holds, routeSelectionMode, isDrawTargetSelectionMode, mode) {
+            .pointerInput(
+                baseLayout,
+                zoomScale,
+                panOffset,
+                holds,
+                routeSelectionMode,
+                reachCalibrationReference,
+                pendingReachCalibrationPoint,
+                isReachCalibrationSelectionMode,
+                isDrawTargetSelectionMode,
+                mode
+            ) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
 
@@ -1367,6 +1608,44 @@ private fun InteractiveCapturedImage(
                     )
 
                     if (!isInsideLocalBounds(startLocal, baseLayout)) {
+                        draftPreviewPolygon = null
+                        draftStrokePoints = emptyList()
+                        return@awaitEachGesture
+                    }
+
+                    if (mode == CanvasMode.HOLD_EDITOR && isReachCalibrationSelectionMode) {
+                        var movedEnough = false
+                        var multiTouchDetected = false
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val pressed = event.changes.filter { it.pressed }
+                            if (pressed.isEmpty()) break
+                            if (pressed.size > 1) {
+                                multiTouchDetected = true
+                                break
+                            }
+                            val currentLocal = screenToLocalPoint(
+                                screenPoint = pressed.first().position,
+                                baseLayout = baseLayout,
+                                panOffset = panOffset,
+                                zoomScale = zoomScale
+                            )
+                            val dx = currentLocal.x - startLocal.x
+                            val dy = currentLocal.y - startLocal.y
+                            if (abs(dx) > 4f || abs(dy) > 4f) {
+                                movedEnough = true
+                            }
+                        }
+                        if (!multiTouchDetected && !movedEnough) {
+                            onReachCalibrationPointSelected(
+                                localOffsetToImagePoint(
+                                    localPoint = startLocal,
+                                    baseLayout = baseLayout,
+                                    imageWidth = bitmap.width,
+                                    imageHeight = bitmap.height
+                                )
+                            )
+                        }
                         draftPreviewPolygon = null
                         draftStrokePoints = emptyList()
                         return@awaitEachGesture
@@ -1568,9 +1847,51 @@ private fun InteractiveCapturedImage(
                 }
 
                 Canvas(modifier = Modifier.fillMaxSize()) {
+                    if (mode == CanvasMode.HOLD_EDITOR) {
+                        if (!isReachCalibrationSelectionMode) {
+                            reachCalibrationReference?.let { reference ->
+                                val first = reference.firstPoint.toLocalOffset(baseLayout)
+                                val second = reference.secondPoint.toLocalOffset(baseLayout)
+                                drawLine(
+                                    color = Color(0xFF2563EB),
+                                    start = first,
+                                    end = second,
+                                    strokeWidth = 4f
+                                )
+                                drawCircle(
+                                    color = Color(0xFF2563EB),
+                                    radius = 8f,
+                                    center = first
+                                )
+                                drawCircle(
+                                    color = Color(0xFF2563EB),
+                                    radius = 8f,
+                                    center = second
+                                )
+                            }
+                        }
+
+                        pendingReachCalibrationPoint?.let { pendingPoint ->
+                            drawCircle(
+                                color = Color(0xFF2563EB),
+                                radius = 8f,
+                                center = pendingPoint.toLocalOffset(baseLayout)
+                            )
+                        }
+                    }
+
                     holds.forEachIndexed { index, hold ->
-                        val shouldDrawOutline = mode == CanvasMode.HOLD_EDITOR ||
-                            challengeHoldIndices.contains(index)
+                        val shouldDrawOutline = when {
+                            mode == CanvasMode.HOLD_EDITOR -> true
+                            routeSelectionMode != RouteSelectionMode.NONE ->
+                                selectionCandidateIndices.contains(index) ||
+                                    index == startHoldIndex ||
+                                    index == goalHoldIndex
+                            else ->
+                                challengeHoldIndices.contains(index) ||
+                                    index == startHoldIndex ||
+                                    index == goalHoldIndex
+                        }
                         if (!shouldDrawOutline) return@forEachIndexed
 
                         val polygon = hold.toLocalPolygon(baseLayout)
@@ -1599,7 +1920,7 @@ private fun InteractiveCapturedImage(
                             val labelWidth = max(textPaint.measureText(label) + 18f, 32f)
 
                             drawRect(
-                                color = AppOverlayBackgroundColor,
+                                color = AppStartGoalLabelBackgroundColor,
                                 topLeft = Offset(labelLeft, labelTop),
                                 size = androidx.compose.ui.geometry.Size(labelWidth, 34f)
                             )
@@ -1741,6 +2062,25 @@ private fun screenToLocalPoint(
     return Offset(
         x = (screenPoint.x - baseLayout.left - panOffset.x) / zoomScale,
         y = (screenPoint.y - baseLayout.top - panOffset.y) / zoomScale
+    )
+}
+
+private fun localOffsetToImagePoint(
+    localPoint: Offset,
+    baseLayout: BaseImageLayout,
+    imageWidth: Int,
+    imageHeight: Int
+): HoldPoint {
+    return HoldPoint(
+        x = (localPoint.x / baseLayout.fitScale).roundToInt().coerceIn(0, imageWidth),
+        y = (localPoint.y / baseLayout.fitScale).roundToInt().coerceIn(0, imageHeight)
+    )
+}
+
+private fun HoldPoint.toLocalOffset(baseLayout: BaseImageLayout): Offset {
+    return Offset(
+        x = x * baseLayout.fitScale,
+        y = y * baseLayout.fitScale
     )
 }
 
