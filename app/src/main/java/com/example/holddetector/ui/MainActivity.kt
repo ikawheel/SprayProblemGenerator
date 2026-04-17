@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var orientationEventListener: OrientationEventListener
     private val cameraPermissionGranted = mutableStateOf(false)
+    private val isCaptureProcessing = mutableStateOf(false)
     private var latestCapturedRotationDegrees = 0
 
     private val viewModel: MainViewModel by viewModels()
@@ -103,6 +104,7 @@ class MainActivity : ComponentActivity() {
 
                     HoldDetectorApp(
                         state = uiState,
+                        isExternalBusy = isCaptureProcessing.value,
                         cameraPermissionGranted = cameraPermissionGranted.value,
                         onRequestCameraPermission = {
                             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
@@ -220,6 +222,7 @@ class MainActivity : ComponentActivity() {
         val currentImageCapture = imageCapture ?: run {
             return
         }
+        isCaptureProcessing.value = true
 
         val photoFile = File(cacheDir, "capture_${System.currentTimeMillis()}.jpg")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
@@ -231,6 +234,9 @@ class MainActivity : ComponentActivity() {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     val rawBitmap = loadCorrectedBitmap(photoFile)
                     if (rawBitmap == null) {
+                        runOnUiThread {
+                            isCaptureProcessing.value = false
+                        }
                         return
                     }
                     val capturedRotationDegrees = currentCapturedRotationDegrees()
@@ -245,6 +251,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     runOnUiThread {
+                        isCaptureProcessing.value = false
                         viewModel.onPhotoCaptured(
                             bitmap = bitmap,
                             capturedOrientation = capturedOrientation,
@@ -253,7 +260,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                override fun onError(unused: ImageCaptureException) = Unit
+                override fun onError(unused: ImageCaptureException) {
+                    runOnUiThread {
+                        isCaptureProcessing.value = false
+                    }
+                }
             }
         )
     }

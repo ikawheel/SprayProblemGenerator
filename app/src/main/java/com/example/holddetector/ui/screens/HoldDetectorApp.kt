@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppBusyOverlayColor
 import com.example.holddetector.ui.AppScreen
@@ -28,6 +28,7 @@ import com.example.holddetector.ui.MainUiState
 @Composable
 fun HoldDetectorApp(
     state: MainUiState,
+    isExternalBusy: Boolean,
     cameraPermissionGranted: Boolean,
     onRequestCameraPermission: () -> Unit,
     onNewWallClick: () -> Unit,
@@ -152,7 +153,7 @@ fun HoldDetectorApp(
             }
         }
 
-        if (state.isBusy) {
+        if (state.isBusy || isExternalBusy) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -170,12 +171,12 @@ fun HoldDetectorApp(
             title = { Text(stringResource(R.string.back_to_list)) },
             text = { Text(stringResource(R.string.discard_dialog_message)) },
             confirmButton = {
-                Button(onClick = onDiscardChanges) {
+                AppButton(onClick = onDiscardChanges) {
                     Text(stringResource(R.string.discard_dialog_confirm))
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = onDismissDiscardDialog) {
+                AppOutlinedButton(onClick = onDismissDiscardDialog) {
                     Text(stringResource(R.string.cancel))
                 }
             }

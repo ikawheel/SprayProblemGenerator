@@ -14,11 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +34,8 @@ import com.example.holddetector.model.SavedWallSummary
 import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppTextColor
+import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.WallThumbnail
 import com.example.holddetector.ui.selectors.findWallPendingDeletion
 import com.example.holddetector.ui.selectors.formatWallTimestamp
@@ -66,7 +66,7 @@ fun WallListScreen(
             modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
         )
 
-        Button(
+        AppButton(
             onClick = onNewWallClick,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -110,7 +110,7 @@ fun WallListScreen(
             title = { Text(stringResource(R.string.delete_wall_title)) },
             text = { Text(stringResource(R.string.delete_wall_message, wall?.title ?: "")) },
             confirmButton = {
-                Button(
+                AppButton(
                     onClick = {
                         deletingWallId = null
                         onDeleteSavedWall(wallId)
@@ -120,7 +120,7 @@ fun WallListScreen(
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { deletingWallId = null }) {
+                AppOutlinedButton(onClick = { deletingWallId = null }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -187,14 +187,14 @@ private fun SavedWallCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                AppButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.edit_holds))
                 }
-                Button(onClick = onCreateChallenge, modifier = Modifier.weight(1f)) {
+                AppButton(onClick = onCreateChallenge, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.create_challenge))
                 }
             }
-            OutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
+            AppOutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.delete))
             }
         }

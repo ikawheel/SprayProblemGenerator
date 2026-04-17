@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,6 +22,8 @@ import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.canvas.ReachCalibrationCanvasScreen
+import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.model.HoldPoint
 
 private const val ReachCalibrationTitle = "150cm\u8a2d\u5b9a"
@@ -125,14 +125,14 @@ fun ReachCalibrationScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(
+            AppOutlinedButton(
                 onClick = onBack,
                 modifier = Modifier.weight(1f)
             ) {
                 Text(backButtonText)
             }
 
-            OutlinedButton(
+            AppOutlinedButton(
                 onClick = onStartReachCalibrationSelection,
                 modifier = Modifier.weight(1f)
             ) {
@@ -150,7 +150,7 @@ fun ReachCalibrationScreen(
                 .padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(
+            AppOutlinedButton(
                 onClick = onClearReachCalibration,
                 enabled = state.reachCalibrationReference != null || state.pendingReachCalibrationPoint != null,
                 modifier = Modifier.weight(1f)
@@ -158,7 +158,7 @@ fun ReachCalibrationScreen(
                 Text(ReachCalibrationClear)
             }
 
-            Button(
+            AppButton(
                 onClick = onContinue,
                 enabled = canContinue,
                 modifier = Modifier.weight(1f)

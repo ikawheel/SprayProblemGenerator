@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +27,8 @@ import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.RouteSelectionMode
 import com.example.holddetector.ui.canvas.HoldCanvasScreen
+import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
 
 @Composable
@@ -114,7 +114,7 @@ fun HoldEditorScreen(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        OutlinedButton(
+        AppOutlinedButton(
             onClick = onOpenReachCalibrationScreen,
             modifier = Modifier
                 .fillMaxWidth()
@@ -131,14 +131,14 @@ fun HoldEditorScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(
+            AppOutlinedButton(
                 onClick = onBackToList,
                 modifier = Modifier.weight(1f)
             ) {
                 Text(stringResource(R.string.back_to_list))
             }
 
-            Button(
+            AppButton(
                 onClick = onDeleteSelectedHold,
                 modifier = Modifier.weight(1f)
             ) {
@@ -149,7 +149,7 @@ fun HoldEditorScreen(
                 )
             }
 
-            Button(
+            AppButton(
                 onClick = onSaveWall,
                 modifier = Modifier.weight(1f)
             ) {
@@ -157,7 +157,7 @@ fun HoldEditorScreen(
             }
         }
 
-        Button(
+        AppButton(
             onClick = onSaveWallAndOpenChallenge,
             modifier = Modifier
                 .fillMaxWidth()

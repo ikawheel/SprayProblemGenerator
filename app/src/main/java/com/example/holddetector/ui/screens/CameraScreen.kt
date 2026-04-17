@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.holddetector.R
+import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.AppOverlayBackgroundColor
 import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
@@ -86,7 +86,7 @@ fun CameraScreen(
                         color = AppTextColor,
                         style = MaterialTheme.typography.bodyLarge
                     )
-                    Button(onClick = onRequestCameraPermission) {
+                    AppButton(onClick = onRequestCameraPermission) {
                         Text(stringResource(R.string.allow_permission))
                     }
                 }
@@ -99,14 +99,14 @@ fun CameraScreen(
                 .padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(
+            AppOutlinedButton(
                 onClick = onBackToList,
                 modifier = Modifier.weight(1f)
             ) {
                 Text(stringResource(R.string.back_to_list))
             }
 
-            Button(
+            AppButton(
                 onClick = onCaptureClick,
                 enabled = cameraPermissionGranted,
                 modifier = Modifier.weight(1f)
@@ -154,14 +154,14 @@ fun CameraFullscreenScreen(
                         color = Color.White,
                         style = MaterialTheme.typography.bodyLarge
                     )
-                    Button(onClick = onRequestCameraPermission) {
+                    AppButton(onClick = onRequestCameraPermission) {
                         Text(stringResource(R.string.allow_permission))
                     }
                 }
             }
         }
 
-        OutlinedButton(
+        AppOutlinedButton(
             onClick = onBackToList,
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -179,7 +179,7 @@ fun CameraFullscreenScreen(
                 .padding(horizontal = 24.dp, vertical = 28.dp),
             contentAlignment = Alignment.Center
         ) {
-            Button(
+            AppButton(
                 onClick = onCaptureClick,
                 enabled = cameraPermissionGranted,
                 shape = CircleShape,

@@ -13,13 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
@@ -45,10 +48,13 @@ import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.ui.AppBackgroundColor
+import com.example.holddetector.ui.AppBusyOverlayColor
 import com.example.holddetector.ui.AppOverlayStrokePreviewColor
 import com.example.holddetector.ui.AppStartGoalLabelBackgroundColor
 import com.example.holddetector.ui.DefaultHoldStrokeWidth
 import com.example.holddetector.ui.RouteSelectionMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -58,6 +64,14 @@ private enum class CanvasMode {
     CHALLENGE,
     REACH_CALIBRATION
 }
+
+private data class PendingDrawTargetSelectionRequest(
+    val movedEnough: Boolean,
+    val startLocal: Offset,
+    val strokePoints: List<Offset>,
+    val baseLayout: BaseImageLayout,
+    val holds: List<Hold>
+)
 
 @Composable
 fun ReachCalibrationCanvasScreen(
@@ -193,6 +207,10 @@ private fun InteractiveCapturedImage(
     var zoomScale by remember { mutableFloatStateOf(1f) }
     var panOffset by remember { mutableStateOf(Offset.Zero) }
     var activePointerCount by remember { mutableIntStateOf(0) }
+    var isSelectionProcessing by remember { mutableStateOf(false) }
+    var pendingDrawTargetSelectionRequest by remember {
+        mutableStateOf<PendingDrawTargetSelectionRequest?>(null)
+    }
     var draftPreviewPolygon by remember { mutableStateOf<LocalHoldPolygon?>(null) }
     var draftStrokePoints by remember { mutableStateOf<List<Offset>>(emptyList()) }
 
@@ -244,6 +262,43 @@ private fun InteractiveCapturedImage(
     }
     val grayscaleFilter = remember {
         ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+    }
+
+    LaunchedEffect(pendingDrawTargetSelectionRequest) {
+        val request = pendingDrawTargetSelectionRequest ?: return@LaunchedEffect
+        isSelectionProcessing = true
+        try {
+            val selectedIndices = withContext(Dispatchers.Default) {
+                val selectionPolygon = if (request.movedEnough) {
+                    buildContourPolygonFromBrushPoints(
+                        points = request.strokePoints,
+                        brushRadiusX = brushRadiusXLocal,
+                        brushRadiusY = brushRadiusYLocal,
+                        baseLayout = request.baseLayout
+                    )
+                } else {
+                    buildContourPolygonFromBrushPoints(
+                        points = listOf(request.startLocal),
+                        brushRadiusX = tapRadiusXLocal,
+                        brushRadiusY = tapRadiusYLocal,
+                        baseLayout = request.baseLayout
+                    )
+                }
+
+                selectionPolygon?.let { polygon ->
+                    findHoldIndicesIntersectingSelectionPolygon(
+                        selectionPolygon = polygon,
+                        holds = request.holds,
+                        baseLayout = request.baseLayout
+                    )
+                } ?: emptySet()
+            }
+
+            onDrawTargetSelectionCompleted(selectedIndices)
+        } finally {
+            pendingDrawTargetSelectionRequest = null
+            isSelectionProcessing = false
+        }
     }
 
     Box(
@@ -299,6 +354,10 @@ private fun InteractiveCapturedImage(
                 mode
             ) {
                 awaitEachGesture {
+                    if (isSelectionProcessing) {
+                        return@awaitEachGesture
+                    }
+
                     val down = awaitFirstDown(requireUnconsumed = false)
 
                     if (!baseLayout.isValid || activePointerCount > 1) {
@@ -453,30 +512,12 @@ private fun InteractiveCapturedImage(
 
                     if (!multiTouchDetected) {
                         if (mode == CanvasMode.CHALLENGE && isDrawTargetSelectionMode) {
-                            val selectionPolygon = if (movedEnough) {
-                                buildContourPolygonFromBrushPoints(
-                                    points = draftStrokePoints,
-                                    brushRadiusX = brushRadiusXLocal,
-                                    brushRadiusY = brushRadiusYLocal,
-                                    baseLayout = baseLayout
-                                )
-                            } else {
-                                buildContourPolygonFromBrushPoints(
-                                    points = listOf(startLocal),
-                                    brushRadiusX = tapRadiusXLocal,
-                                    brushRadiusY = tapRadiusYLocal,
-                                    baseLayout = baseLayout
-                                )
-                            }
-
-                            onDrawTargetSelectionCompleted(
-                                selectionPolygon?.let { polygon ->
-                                    findHoldIndicesIntersectingSelectionPolygon(
-                                        selectionPolygon = polygon,
-                                        holds = holds,
-                                        baseLayout = baseLayout
-                                    )
-                                } ?: emptySet()
+                            pendingDrawTargetSelectionRequest = PendingDrawTargetSelectionRequest(
+                                movedEnough = movedEnough,
+                                startLocal = startLocal,
+                                strokePoints = draftStrokePoints.toList(),
+                                baseLayout = baseLayout,
+                                holds = holds.toList()
                             )
                         } else if (movedEnough) {
                             createManualHoldFromBrushPoints(
@@ -676,6 +717,17 @@ private fun InteractiveCapturedImage(
                         }
                     }
                 }
+            }
+        }
+
+        if (isSelectionProcessing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppBusyOverlayColor),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }

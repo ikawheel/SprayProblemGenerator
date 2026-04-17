@@ -13,9 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -34,6 +32,8 @@ import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.canvas.ChallengeCanvasScreen
+import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.selectors.DrawTargetStatus
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import kotlin.math.roundToInt
@@ -137,7 +137,7 @@ fun ChallengeCreatorScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
-            Button(
+            AppButton(
                 onClick = onDrawClick,
                 enabled = uiModel.isReadyToGenerate,
                 modifier = Modifier.height(56.dp)
@@ -217,7 +217,7 @@ fun ChallengeCreatorScreen(
                 .padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(
+            AppOutlinedButton(
                 onClick = onStartDrawTargetSelection,
                 enabled = !state.isDrawTargetSelectionMode,
                 modifier = Modifier.weight(1f)
@@ -229,7 +229,7 @@ fun ChallengeCreatorScreen(
                 )
             }
 
-            Button(
+            AppButton(
                 onClick = onStartGoalSelection,
                 enabled = uiModel.canStartGoalSelection,
                 modifier = Modifier.weight(1f)
@@ -241,7 +241,7 @@ fun ChallengeCreatorScreen(
                 )
             }
 
-            OutlinedButton(
+            AppOutlinedButton(
                 onClick = onClearChallenge,
                 modifier = Modifier.weight(1f)
             ) {
@@ -249,7 +249,7 @@ fun ChallengeCreatorScreen(
             }
         }
 
-        OutlinedButton(
+        AppOutlinedButton(
             onClick = onBackToList,
             modifier = Modifier
                 .fillMaxWidth()
