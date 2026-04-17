@@ -3,8 +3,11 @@ package com.example.holddetector.ui
 import android.graphics.Bitmap
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
 import com.example.holddetector.model.CapturedOrientation
+import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
+import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.model.SavedWallSummary
 
@@ -13,6 +16,7 @@ enum class AppScreen {
     CAMERA,
     REACH_CALIBRATION,
     HOLD_EDITOR,
+    HOLD_SCORING,
     CHALLENGE_CREATOR
 }
 
@@ -45,8 +49,11 @@ data class MainUiState(
     val routeSelectionMode: RouteSelectionMode = RouteSelectionMode.NONE,
     val isDrawTargetSelectionMode: Boolean = false,
     val drawCountInput: String = "",
+    val challengeDifficultyScoreMin: Int = MIN_HOLD_DIFFICULTY_SCORE,
+    val challengeDifficultyScoreMax: Int = DEFAULT_HOLD_DIFFICULTY_SCORE.coerceAtMost(MAX_HOLD_DIFFICULTY_SCORE),
     val routeTuning: RouteGenerationTuning = RouteGenerationTuning(),
     val isHoldEditorDirty: Boolean = false,
+    val holdScoringPosition: Int = 0,
     val showDiscardDialog: Boolean = false,
     val message: String? = null
 )

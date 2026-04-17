@@ -2,6 +2,7 @@ package com.example.holddetector.ui.selectors
 
 import androidx.annotation.StringRes
 import com.example.holddetector.R
+import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.RouteSelectionMode
 
@@ -24,10 +25,14 @@ internal sealed interface DrawTargetStatus {
 }
 
 internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreatorUiModel {
-    val selectionCandidateIndices = if (state.hasDrawTargetSelection) {
+    val baseSelectionCandidateIndices = if (state.hasDrawTargetSelection) {
         state.drawTargetHoldIndices
     } else {
         state.holds.indices.toSet()
+    }
+    val selectionCandidateIndices = baseSelectionCandidateIndices.filterTo(linkedSetOf()) { index ->
+        val score = state.holds.getOrNull(index)?.difficultyScore ?: DEFAULT_HOLD_DIFFICULTY_SCORE
+        score in state.challengeDifficultyScoreMin..state.challengeDifficultyScoreMax
     }
 
     val isReadyToGenerate = !state.isDrawTargetSelectionMode &&
@@ -50,7 +55,7 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
     val drawTargetStatus = when {
         state.isDrawTargetSelectionMode -> DrawTargetStatus.Selecting
         !state.hasDrawTargetSelection -> DrawTargetStatus.All
-        else -> DrawTargetStatus.Count(state.drawTargetHoldIndices.size)
+        else -> DrawTargetStatus.Count(selectionCandidateIndices.size)
     }
 
     val startGoalButtonTextResId = when (state.routeSelectionMode) {

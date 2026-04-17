@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +39,8 @@ import com.example.holddetector.ui.selectors.DrawTargetStatus
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import kotlin.math.roundToInt
 
+private const val DifficultyRangeLabel = "\u4f7f\u3046\u70b9\u6570"
+
 @Composable
 fun ChallengeCreatorScreen(
     state: MainUiState,
@@ -48,6 +51,7 @@ fun ChallengeCreatorScreen(
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
+    onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
     onHoldCountVarianceChange: (Float) -> Unit,
     onDetourStrengthChange: (Float) -> Unit,
     onRouteWavinessChange: (Float) -> Unit,
@@ -154,6 +158,14 @@ fun ChallengeCreatorScreen(
             modifier = Modifier.padding(top = 12.dp)
         )
 
+        HoldDifficultyRangeSlider(
+            label = DifficultyRangeLabel,
+            startValue = state.challengeDifficultyScoreMin.toFloat(),
+            endValue = state.challengeDifficultyScoreMax.toFloat(),
+            onValueChange = onChallengeDifficultyRangeChange,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
         ChallengeTuningSlider(
             label = stringResource(R.string.challenge_hold_count_variance_label),
             value = state.routeTuning.holdCountVariance,
@@ -257,6 +269,44 @@ fun ChallengeCreatorScreen(
         ) {
             Text(stringResource(R.string.back_to_list))
         }
+    }
+}
+
+@Composable
+private fun HoldDifficultyRangeSlider(
+    label: String,
+    startValue: Float,
+    endValue: Float,
+    onValueChange: (Float, Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                color = AppTextColor,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "${startValue.roundToInt()}〜${endValue.roundToInt()}点",
+                color = AppSecondaryTextColor,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        RangeSlider(
+            value = startValue..endValue,
+            onValueChange = { range ->
+                onValueChange(range.start, range.endInclusive)
+            },
+            valueRange = 1f..5f,
+            steps = 3,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 

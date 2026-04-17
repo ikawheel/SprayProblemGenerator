@@ -62,7 +62,8 @@ import kotlin.math.roundToInt
 private enum class CanvasMode {
     HOLD_EDITOR,
     CHALLENGE,
-    REACH_CALIBRATION
+    REACH_CALIBRATION,
+    SCORING
 }
 
 private data class PendingDrawTargetSelectionRequest(
@@ -181,6 +182,36 @@ fun ChallengeCanvasScreen(
     )
 }
 
+@Composable
+fun HoldScoringCanvasScreen(
+    bitmap: Bitmap,
+    holds: List<Hold>,
+    currentHoldIndex: Int?,
+    modifier: Modifier = Modifier
+) {
+    InteractiveCapturedImage(
+        bitmap = bitmap,
+        holds = holds,
+        selectedIndex = currentHoldIndex,
+        challengeHoldIndices = emptySet(),
+        selectionCandidateIndices = emptySet(),
+        startHoldIndex = null,
+        goalHoldIndex = null,
+        routeSelectionMode = RouteSelectionMode.NONE,
+        reachCalibrationReference = null,
+        pendingReachCalibrationPoint = null,
+        isReachCalibrationSelectionMode = false,
+        isDrawTargetSelectionMode = false,
+        focusHoldIndex = currentHoldIndex,
+        mode = CanvasMode.SCORING,
+        onHoldTapped = {},
+        onReachCalibrationPointSelected = {},
+        onDrawTargetSelectionCompleted = {},
+        onManualHoldCreated = {},
+        modifier = modifier
+    )
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InteractiveCapturedImage(
@@ -196,6 +227,7 @@ private fun InteractiveCapturedImage(
     pendingReachCalibrationPoint: HoldPoint? = null,
     isReachCalibrationSelectionMode: Boolean = false,
     isDrawTargetSelectionMode: Boolean,
+    focusHoldIndex: Int? = null,
     mode: CanvasMode,
     onHoldTapped: (Int?) -> Unit,
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
@@ -240,28 +272,75 @@ private fun InteractiveCapturedImage(
             routeSelectionMode == RouteSelectionMode.NONE &&
             !isDrawTargetSelectionMode &&
             challengeHoldIndices.isNotEmpty()
-    val selectedChallengePath = remember(
+    val highlightedHoldPath = remember(
         holds,
         challengeHoldIndices,
         baseLayout,
         mode,
         routeSelectionMode,
-        isDrawTargetSelectionMode
+        isDrawTargetSelectionMode,
+        focusHoldIndex
     ) {
-        if (!shouldShowChallengeSelectionMask || !baseLayout.isValid) {
-            null
-        } else {
-            Path().apply {
-                challengeHoldIndices.sorted().forEach { index ->
-                    holds.getOrNull(index)?.let { hold ->
-                        addPath(hold.toLocalPolygon(baseLayout).toPath())
+        if (!baseLayout.isValid) return@remember null
+
+        when {
+            mode == CanvasMode.SCORING -> {
+                focusHoldIndex
+                    ?.let { index -> holds.getOrNull(index) }
+                    ?.toLocalPolygon(baseLayout)
+                    ?.toPath()
+            }
+
+            shouldShowChallengeSelectionMask -> {
+                Path().apply {
+                    challengeHoldIndices.sorted().forEach { index ->
+                        holds.getOrNull(index)?.let { hold ->
+                            addPath(hold.toLocalPolygon(baseLayout).toPath())
+                        }
                     }
                 }
             }
+
+            else -> null
         }
     }
     val grayscaleFilter = remember {
         ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+    }
+    val shouldShowHighlightMask =
+        (mode == CanvasMode.CHALLENGE || mode == CanvasMode.SCORING) &&
+            highlightedHoldPath != null
+
+    LaunchedEffect(mode, focusHoldIndex, baseLayout, containerSize, holds) {
+        if (mode != CanvasMode.SCORING || !baseLayout.isValid) return@LaunchedEffect
+
+        val focusHold = focusHoldIndex?.let { index -> holds.getOrNull(index) }
+            ?: return@LaunchedEffect
+        val polygon = focusHold.toLocalPolygon(baseLayout)
+        val containerWidth = containerSize.width.toFloat().coerceAtLeast(1f)
+        val containerHeight = containerSize.height.toFloat().coerceAtLeast(1f)
+        val holdWidth = max(polygon.maxX - polygon.minX, 36f)
+        val holdHeight = max(polygon.maxY - polygon.minY, 36f)
+        val targetZoom = minOf(
+            containerWidth * 0.48f / holdWidth,
+            containerHeight * 0.48f / holdHeight
+        ).coerceIn(1f, 5f)
+        val holdCenter = Offset(
+            x = (polygon.minX + polygon.maxX) / 2f,
+            y = (polygon.minY + polygon.maxY) / 2f
+        )
+        val targetPan = Offset(
+            x = containerWidth / 2f - baseLayout.left - holdCenter.x * targetZoom,
+            y = containerHeight / 2f - baseLayout.top - holdCenter.y * targetZoom
+        )
+
+        zoomScale = targetZoom
+        panOffset = clampPanOffset(
+            candidate = targetPan,
+            containerSize = containerSize,
+            baseLayout = baseLayout,
+            zoomScale = targetZoom
+        )
     }
 
     LaunchedEffect(pendingDrawTargetSelectionRequest) {
@@ -374,6 +453,16 @@ private fun InteractiveCapturedImage(
                     )
 
                     if (!isInsideLocalBounds(startLocal, baseLayout)) {
+                        draftPreviewPolygon = null
+                        draftStrokePoints = emptyList()
+                        return@awaitEachGesture
+                    }
+
+                    if (mode == CanvasMode.SCORING) {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.changes.none { it.pressed }) break
+                        }
                         draftPreviewPolygon = null
                         draftStrokePoints = emptyList()
                         return@awaitEachGesture
@@ -579,21 +668,21 @@ private fun InteractiveCapturedImage(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
-                    colorFilter = if (mode == CanvasMode.CHALLENGE && selectedChallengePath != null) {
+                    colorFilter = if (shouldShowHighlightMask) {
                         grayscaleFilter
                     } else {
                         null
                     }
                 )
 
-                if (mode == CanvasMode.CHALLENGE && selectedChallengePath != null) {
+                if (shouldShowHighlightMask) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()
                             .drawWithContent {
-                                val selectedPath = selectedChallengePath
+                                val selectedPath = highlightedHoldPath
                                 if (selectedPath != null) {
                                     clipPath(selectedPath) {
                                         this@drawWithContent.drawContent()
@@ -639,6 +728,7 @@ private fun InteractiveCapturedImage(
                     holds.forEachIndexed { index, hold ->
                         val shouldDrawOutline = when {
                             mode == CanvasMode.HOLD_EDITOR -> true
+                            mode == CanvasMode.SCORING -> index == focusHoldIndex
                             mode == CanvasMode.REACH_CALIBRATION -> false
                             routeSelectionMode != RouteSelectionMode.NONE ->
                                 selectionCandidateIndices.contains(index) ||
@@ -653,6 +743,7 @@ private fun InteractiveCapturedImage(
 
                         val polygon = hold.toLocalPolygon(baseLayout)
                         val strokeColor = when {
+                            mode == CanvasMode.SCORING -> Color(0xFFDC2626)
                             index == startHoldIndex -> Color(0xFF0284C7)
                             index == goalHoldIndex -> Color(0xFFCA8A04)
                             index == selectedIndex -> Color.Red

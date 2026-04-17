@@ -4,12 +4,16 @@ import android.app.Application
 import android.graphics.Bitmap
 import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
+import com.example.holddetector.domain.hold.buildHoldScoringOrder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.holddetector.data.WallStorageRepository
 import com.example.holddetector.model.CapturedOrientation
+import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
+import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.ReachCalibrationReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +24,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -42,6 +47,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentScreen = AppScreen.LIST,
                 savedWalls = summaries,
                 drawCountInput = _uiState.value.drawCountInput,
+                challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
+                challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                 routeTuning = _uiState.value.routeTuning,
                 isBusy = false
             )
@@ -53,6 +60,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentScreen = AppScreen.CAMERA,
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
+            challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
+            challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -115,6 +124,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             currentScreen = AppScreen.HOLD_EDITOR,
             selectedHoldIndex = null,
+            holdScoringPosition = 0,
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = false,
             reachCalibrationReturnToHoldEditor = false,
@@ -128,6 +138,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = state.copy(
                 currentScreen = AppScreen.HOLD_EDITOR,
                 selectedHoldIndex = null,
+                holdScoringPosition = 0,
                 pendingReachCalibrationPoint = null,
                 isReachCalibrationSelectionMode = false,
                 reachCalibrationReturnToHoldEditor = false,
@@ -138,6 +149,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentScreen = AppScreen.CAMERA,
                 savedWalls = state.savedWalls,
                 drawCountInput = state.drawCountInput,
+                challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
+                challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
                 routeTuning = state.routeTuning
             )
         }
@@ -153,6 +166,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     currentScreen = AppScreen.LIST,
                     savedWalls = refreshed,
                     drawCountInput = _uiState.value.drawCountInput,
+                    challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
+                    challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                     routeTuning = _uiState.value.routeTuning,
                     message = "螢√ョ繝ｼ繧ｿ繧帝幕縺代∪縺帙ｓ縺ｧ縺励◆"
                 )
@@ -180,6 +195,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
                 isHoldEditorDirty = false,
+                holdScoringPosition = 0,
                 showDiscardDialog = false,
                 isBusy = false,
                 message = "螢√ョ繝ｼ繧ｿ繧定ｪｭ縺ｿ霎ｼ縺ｿ縺ｾ縺励◆"
@@ -197,6 +213,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     currentScreen = AppScreen.LIST,
                     savedWalls = refreshed,
                     drawCountInput = _uiState.value.drawCountInput,
+                    challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
+                    challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                     routeTuning = _uiState.value.routeTuning,
                     message = "螢√ョ繝ｼ繧ｿ繧帝幕縺代∪縺帙ｓ縺ｧ縺励◆"
                 )
@@ -223,6 +241,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 goalHoldIndex = null,
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
+                holdScoringPosition = 0,
                 isBusy = false,
                 showDiscardDialog = false,
                 message = "隱ｲ鬘御ｽ懈・繧帝幕蟋九＠縺ｾ縺励◆"
@@ -244,6 +263,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holds = updatedHolds,
             selectedHoldIndex = updatedHolds.lastIndex,
             isHoldEditorDirty = true,
+            holdScoringPosition = 0,
             message = "ホールドを追加しました: ${updatedHolds.size} 個"
         )
     }
@@ -270,7 +290,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holds = state.holds.toMutableList().apply { removeAt(selected) },
             selectedHoldIndex = null,
             isHoldEditorDirty = true,
+            holdScoringPosition = 0,
             message = "繝帙・繝ｫ繝峨ｒ蜑企勁縺励∪縺励◆"
+        )
+    }
+
+    fun openHoldScoring() {
+        val state = _uiState.value
+        if (state.holds.isEmpty()) {
+            _uiState.value = state.copy(message = "ホールドを登録してください")
+            return
+        }
+
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_SCORING,
+            selectedHoldIndex = null,
+            holdScoringPosition = 0,
+            showDiscardDialog = false,
+            message = null
+        )
+    }
+
+    fun returnToHoldEditorFromScoring() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_EDITOR,
+            selectedHoldIndex = null,
+            message = null
+        )
+    }
+
+    fun setCurrentHoldDifficultyScore(score: Int) {
+        val state = _uiState.value
+        val orderedIndices = buildHoldScoringOrder(state.holds)
+        val currentIndex = orderedIndices.getOrNull(state.holdScoringPosition) ?: return
+        val updatedHolds = state.holds.toMutableList().apply {
+            this[currentIndex] = this[currentIndex].copy(difficultyScore = score)
+        }
+
+        _uiState.value = state.copy(
+            holds = updatedHolds,
+            isHoldEditorDirty = true,
+            holdScoringPosition = (state.holdScoringPosition + 1).coerceAtMost(orderedIndices.size),
+            message = null
         )
     }
 
@@ -299,6 +361,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentScreen = AppScreen.LIST,
                 savedWalls = refreshed,
                 drawCountInput = state.drawCountInput,
+                challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
+                challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
                 routeTuning = state.routeTuning,
                 message = "菫晏ｭ倥＠縺ｾ縺励◆: ${savedSummary.title}"
             )
@@ -343,6 +407,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isReachCalibrationSelectionMode = false,
                 reachCalibrationReturnToHoldEditor = false,
                 isHoldEditorDirty = false,
+                holdScoringPosition = 0,
                 showDiscardDialog = false,
                 isBusy = false,
                 message = "螢√ｒ菫晏ｭ倥＠縺ｦ隱ｲ鬘御ｽ懈・繧帝幕縺阪∪縺励◆"
@@ -462,6 +527,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             RouteSelectionMode.NONE -> {
                 if (index == null) return
                 if (state.challengeHoldIndices.isEmpty()) return
+                if (index !in selectionCandidateIndices) return
                 val updated = state.challengeHoldIndices.toMutableSet()
                 val added = if (updated.contains(index)) {
                     updated.remove(index)
@@ -487,6 +553,68 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onDrawCountChanged(value: String) {
         _uiState.value = _uiState.value.copy(drawCountInput = value.filter { it.isDigit() })
+    }
+
+    fun onChallengeDifficultyRangeChanged(start: Float, endInclusive: Float) {
+        val state = _uiState.value
+        val minScore = start.roundToInt().coerceIn(
+            MIN_HOLD_DIFFICULTY_SCORE,
+            MAX_HOLD_DIFFICULTY_SCORE
+        )
+        val maxScore = endInclusive.roundToInt().coerceIn(
+            MIN_HOLD_DIFFICULTY_SCORE,
+            MAX_HOLD_DIFFICULTY_SCORE
+        )
+        val normalizedMin = minOf(minScore, maxScore)
+        val normalizedMax = maxOf(minScore, maxScore)
+        val filteredChallengeIndices = filterChallengeEligibleIndices(
+            holds = state.holds,
+            indices = state.challengeHoldIndices,
+            minScore = normalizedMin,
+            maxScore = normalizedMax
+        )
+        val filteredStartIndex = state.startHoldIndex?.takeIf { index ->
+            index in filterChallengeEligibleIndices(
+                holds = state.holds,
+                indices = setOf(index),
+                minScore = normalizedMin,
+                maxScore = normalizedMax
+            )
+        }
+        val filteredGoalIndex = state.goalHoldIndex?.takeIf { index ->
+            index in filterChallengeEligibleIndices(
+                holds = state.holds,
+                indices = setOf(index),
+                minScore = normalizedMin,
+                maxScore = normalizedMax
+            )
+        }
+        val normalizedRouteSelectionMode = when (state.routeSelectionMode) {
+            RouteSelectionMode.SELECTING_START -> RouteSelectionMode.SELECTING_START
+            RouteSelectionMode.SELECTING_GOAL -> if (filteredStartIndex != null) {
+                RouteSelectionMode.SELECTING_GOAL
+            } else {
+                RouteSelectionMode.SELECTING_START
+            }
+            RouteSelectionMode.NONE -> RouteSelectionMode.NONE
+        }
+
+        _uiState.value = state.copy(
+            challengeDifficultyScoreMin = normalizedMin,
+            challengeDifficultyScoreMax = normalizedMax,
+            challengeHoldIndices = filteredChallengeIndices,
+            startHoldIndex = filteredStartIndex,
+            goalHoldIndex = filteredGoalIndex,
+            selectedHoldIndex = state.selectedHoldIndex?.takeIf { index ->
+                index in filterChallengeEligibleIndices(
+                    holds = state.holds,
+                    indices = setOf(index),
+                    minScore = normalizedMin,
+                    maxScore = normalizedMax
+                )
+            },
+            routeSelectionMode = normalizedRouteSelectionMode
+        )
     }
 
     fun onHoldCountVarianceChanged(value: Float) {
@@ -600,6 +728,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun applyDrawTargetSelection(indices: Set<Int>) {
         val state = _uiState.value
+        val eligibleIndices = filterChallengeEligibleIndices(
+            holds = state.holds,
+            indices = indices,
+            minScore = state.challengeDifficultyScoreMin,
+            maxScore = state.challengeDifficultyScoreMax
+        )
         _uiState.value = state.copy(
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
@@ -609,10 +743,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
-            message = if (indices.isEmpty()) {
+            message = if (eligibleIndices.isEmpty()) {
                 "謚ｽ驕ｸ蟇ｾ雎｡縺ｫ蜈･繧九・繝ｼ繝ｫ繝峨′隕九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆"
             } else {
-                "謚ｽ驕ｸ蟇ｾ雎｡繧・${indices.size} 蛟九・繝帙・繝ｫ繝峨↓險ｭ螳壹＠縺ｾ縺励◆"
+                "謚ｽ驕ｸ蟇ｾ雎｡繧・${eligibleIndices.size} 蛟九・繝帙・繝ｫ繝峨↓險ｭ螳壹＠縺ｾ縺励◆"
             }
         )
     }
@@ -658,6 +792,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             AppScreen.CAMERA -> _uiState.value = _uiState.value.copy(currentScreen = AppScreen.LIST)
             AppScreen.REACH_CALIBRATION -> backFromReachCalibration()
             AppScreen.HOLD_EDITOR -> requestBackToList()
+            AppScreen.HOLD_SCORING -> returnToHoldEditorFromScoring()
             AppScreen.CHALLENGE_CREATOR -> returnToList()
         }
     }
@@ -675,6 +810,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             AppScreen.CAMERA,
             AppScreen.REACH_CALIBRATION,
+            AppScreen.HOLD_SCORING,
             AppScreen.CHALLENGE_CREATOR -> returnToList()
 
             AppScreen.LIST -> Unit
@@ -690,6 +826,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentScreen = AppScreen.LIST,
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
+            challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
+            challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -699,6 +837,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentScreen = AppScreen.LIST,
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
+            challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
+            challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -720,10 +860,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun challengeSelectionCandidateIndices(state: MainUiState): Set<Int> {
-        return if (state.hasDrawTargetSelection) {
+        val baseIndices = if (state.hasDrawTargetSelection) {
             state.drawTargetHoldIndices
         } else {
             state.holds.indices.toSet()
+        }
+        return filterChallengeEligibleIndices(
+            holds = state.holds,
+            indices = baseIndices,
+            minScore = state.challengeDifficultyScoreMin,
+            maxScore = state.challengeDifficultyScoreMax
+        )
+    }
+
+    private fun filterChallengeEligibleIndices(
+        holds: List<Hold>,
+        indices: Set<Int>,
+        minScore: Int,
+        maxScore: Int
+    ): Set<Int> {
+        return indices.filterTo(linkedSetOf()) { index ->
+            val score = holds.getOrNull(index)?.difficultyScore ?: DEFAULT_HOLD_DIFFICULTY_SCORE
+            score in minScore..maxScore
         }
     }
 }

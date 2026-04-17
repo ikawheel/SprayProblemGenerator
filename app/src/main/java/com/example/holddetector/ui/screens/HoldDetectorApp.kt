@@ -39,6 +39,9 @@ fun HoldDetectorApp(
     onBindPreview: (PreviewView) -> Unit,
     onBackToList: () -> Unit,
     onSaveWall: () -> Unit,
+    onOpenHoldScoring: () -> Unit,
+    onBackFromHoldScoring: () -> Unit,
+    onDifficultyScoreSelected: (Int) -> Unit,
     onSaveWallAndOpenChallenge: () -> Unit,
     onWallTitleChanged: (String) -> Unit,
     onDeleteSelectedHold: () -> Unit,
@@ -56,6 +59,7 @@ fun HoldDetectorApp(
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
+    onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
     onHoldCountVarianceChange: (Float) -> Unit,
     onDetourStrengthChange: (Float) -> Unit,
     onRouteWavinessChange: (Float) -> Unit,
@@ -120,12 +124,22 @@ fun HoldDetectorApp(
                     state = state,
                     onWallTitleChanged = onWallTitleChanged,
                     onSaveWall = onSaveWall,
-                    onSaveWallAndOpenChallenge = onSaveWallAndOpenChallenge,
+                    onOpenHoldScoring = onOpenHoldScoring,
                     onBackToList = onBackToList,
                     onDeleteSelectedHold = onDeleteSelectedHold,
                     onEditorHoldTapped = onEditorHoldTapped,
                     onManualHoldCreated = onManualHoldCreated,
                     onOpenReachCalibrationScreen = onOpenReachCalibrationScreen,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            AppScreen.HOLD_SCORING -> {
+                HoldScoringScreen(
+                    state = state,
+                    onBackToHoldEditor = onBackFromHoldScoring,
+                    onDifficultyScoreSelected = onDifficultyScoreSelected,
+                    onOpenChallenge = onSaveWallAndOpenChallenge,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -140,6 +154,7 @@ fun HoldDetectorApp(
                     onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                     onDrawClick = onDrawClick,
                     onDrawCountChange = onDrawCountChange,
+                    onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
                     onHoldCountVarianceChange = onHoldCountVarianceChange,
                     onDetourStrengthChange = onDetourStrengthChange,
                     onRouteWavinessChange = onRouteWavinessChange,

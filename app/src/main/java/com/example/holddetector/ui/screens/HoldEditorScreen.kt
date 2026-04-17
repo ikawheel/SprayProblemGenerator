@@ -31,12 +31,14 @@ import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
 
+private const val OpenHoldScoringButtonText = "\u70b9\u6570\u4ed8\u3051\u3078"
+
 @Composable
 fun HoldEditorScreen(
     state: MainUiState,
     onWallTitleChanged: (String) -> Unit,
     onSaveWall: () -> Unit,
-    onSaveWallAndOpenChallenge: () -> Unit,
+    onOpenHoldScoring: () -> Unit,
     onBackToList: () -> Unit,
     onDeleteSelectedHold: () -> Unit,
     onEditorHoldTapped: (Int?) -> Unit,
@@ -158,12 +160,12 @@ fun HoldEditorScreen(
         }
 
         AppButton(
-            onClick = onSaveWallAndOpenChallenge,
+            onClick = onOpenHoldScoring,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)
         ) {
-            Text(stringResource(R.string.save_and_open_challenge))
+            Text(OpenHoldScoringButtonText)
         }
     }
 }

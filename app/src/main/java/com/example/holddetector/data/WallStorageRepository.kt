@@ -4,8 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.example.holddetector.model.CapturedOrientation
+import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
+import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.model.SavedWallDetail
 import com.example.holddetector.model.SavedWallSummary
@@ -63,7 +66,20 @@ class WallStorageRepository(context: Context) {
                         )
                     }
                 }
-                if (points.size >= 3) add(Hold(points))
+                if (points.size >= 3) {
+                    add(
+                        Hold(
+                            points = points,
+                            difficultyScore = item.optInt(
+                                KEY_DIFFICULTY_SCORE,
+                                DEFAULT_HOLD_DIFFICULTY_SCORE
+                            ).coerceIn(
+                                MIN_HOLD_DIFFICULTY_SCORE,
+                                MAX_HOLD_DIFFICULTY_SCORE
+                            )
+                        )
+                    )
+                }
             }
         }
 
@@ -130,6 +146,7 @@ class WallStorageRepository(context: Context) {
                 holds.forEach { hold ->
                     put(
                         JSONObject().apply {
+                            put(KEY_DIFFICULTY_SCORE, hold.difficultyScore)
                             put(KEY_POINTS, JSONArray().apply {
                                 hold.points.forEach { point ->
                                     put(
@@ -266,6 +283,7 @@ class WallStorageRepository(context: Context) {
         private const val KEY_CAPTURED_ROTATION_DEGREES = "capturedRotationDegrees"
         private const val KEY_REACH_CALIBRATION_REFERENCE = "reachCalibrationReference"
         private const val KEY_HOLDS = "holds"
+        private const val KEY_DIFFICULTY_SCORE = "difficultyScore"
         private const val KEY_POINTS = "points"
         private const val KEY_FIRST_POINT = "firstPoint"
         private const val KEY_SECOND_POINT = "secondPoint"
