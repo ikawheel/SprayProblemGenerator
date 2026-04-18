@@ -10,7 +10,18 @@ data class ChallengeDifficultyResult(
     val totalDifficulty: Double,
     val coreMoveDifficulty: Double,
     val supportMoveRatio: Double,
-    val moveDifficulties: List<Double>
+    val moveDifficulties: List<Double>,
+    val moveDetails: List<ChallengeMoveDifficulty>
+)
+
+data class ChallengeMoveDifficulty(
+    val previousIndex: Int,
+    val nextIndex: Int,
+    val previousHoldDifficulty: Int,
+    val nextHoldDifficulty: Int,
+    val distanceLoad: Double,
+    val distanceMultiplier: Double,
+    val totalDifficulty: Double
 )
 
 object ChallengeDifficultyCalculator {
@@ -29,13 +40,23 @@ object ChallengeDifficultyCalculator {
         if (routeIndices.size < 2) return null
 
         val reachConstraint = reachCalibrationReference?.toReachConstraint()
-        val moveDifficulties = routeIndices.zipWithNext { previousIndex, nextIndex ->
+        val moveDetails = routeIndices.zipWithNext { previousIndex, nextIndex ->
             val previousHold = holds[previousIndex]
             val nextHold = holds[nextIndex]
             val distanceLoad = normalizedDistanceLoad(previousHold, nextHold, reachConstraint)
             val holdDifficulty = previousHold.difficultyScore + nextHold.difficultyScore
-            holdDifficulty * (1.0 + DistanceAlpha * distanceLoad)
+            val distanceMultiplier = 1.0 + DistanceAlpha * distanceLoad
+            ChallengeMoveDifficulty(
+                previousIndex = previousIndex,
+                nextIndex = nextIndex,
+                previousHoldDifficulty = previousHold.difficultyScore,
+                nextHoldDifficulty = nextHold.difficultyScore,
+                distanceLoad = distanceLoad,
+                distanceMultiplier = distanceMultiplier,
+                totalDifficulty = holdDifficulty * distanceMultiplier
+            )
         }
+        val moveDifficulties = moveDetails.map { it.totalDifficulty }
         if (moveDifficulties.isEmpty()) return null
 
         val coreMoveIndex = moveDifficulties.indices.maxByOrNull { moveDifficulties[it] } ?: return null
@@ -51,7 +72,8 @@ object ChallengeDifficultyCalculator {
             totalDifficulty = coreMoveDifficulty * (1.0 + GlobalBeta * supportMoveRatio),
             coreMoveDifficulty = coreMoveDifficulty,
             supportMoveRatio = supportMoveRatio,
-            moveDifficulties = moveDifficulties
+            moveDifficulties = moveDifficulties,
+            moveDetails = moveDetails
         )
     }
 

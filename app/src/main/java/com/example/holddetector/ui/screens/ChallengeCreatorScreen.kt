@@ -98,6 +98,7 @@ fun ChallengeCreatorScreen(
                     holds = state.holds,
                     selectedIndex = state.selectedHoldIndex,
                     challengeHoldIndices = state.challengeHoldIndices,
+                    challengeOrderedHoldIndices = uiModel.orderedChallengeIndices,
                     selectionCandidateIndices = uiModel.selectionCandidateIndices,
                     startHoldIndex = state.startHoldIndex,
                     goalHoldIndex = state.goalHoldIndex,
@@ -110,12 +111,20 @@ fun ChallengeCreatorScreen(
             }
         }
 
-        Text(
-            text = stringResource(uiModel.helpTextResId),
-            color = AppTextColor,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
-        )
+        if (uiModel.challengeDebugSummaryLines.isNotEmpty()) {
+            Column(
+                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                uiModel.challengeDebugSummaryLines.forEach { debugLine ->
+                    Text(
+                        text = debugLine,
+                        color = AppSecondaryTextColor,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
 
         Text(
             text = stringResource(

@@ -111,6 +111,7 @@ fun HoldCanvasScreen(
     holds: List<Hold>,
     selectedIndex: Int?,
     challengeHoldIndices: Set<Int>,
+    challengeOrderedHoldIndices: List<Int> = emptyList(),
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
@@ -129,6 +130,7 @@ fun HoldCanvasScreen(
         holds = holds,
         selectedIndex = selectedIndex,
         challengeHoldIndices = challengeHoldIndices,
+        challengeOrderedHoldIndices = challengeOrderedHoldIndices,
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
         routeSelectionMode = routeSelectionMode,
@@ -151,6 +153,7 @@ fun ChallengeCanvasScreen(
     holds: List<Hold>,
     selectedIndex: Int?,
     challengeHoldIndices: Set<Int>,
+    challengeOrderedHoldIndices: List<Int>,
     selectionCandidateIndices: Set<Int>,
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
@@ -165,6 +168,7 @@ fun ChallengeCanvasScreen(
         holds = holds,
         selectedIndex = selectedIndex,
         challengeHoldIndices = challengeHoldIndices,
+        challengeOrderedHoldIndices = challengeOrderedHoldIndices,
         selectionCandidateIndices = selectionCandidateIndices,
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
@@ -194,6 +198,7 @@ fun HoldScoringCanvasScreen(
         holds = holds,
         selectedIndex = currentHoldIndex,
         challengeHoldIndices = emptySet(),
+        challengeOrderedHoldIndices = emptyList(),
         selectionCandidateIndices = emptySet(),
         startHoldIndex = null,
         goalHoldIndex = null,
@@ -219,6 +224,7 @@ private fun InteractiveCapturedImage(
     holds: List<Hold>,
     selectedIndex: Int?,
     challengeHoldIndices: Set<Int>,
+    challengeOrderedHoldIndices: List<Int> = emptyList(),
     selectionCandidateIndices: Set<Int> = emptySet(),
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
@@ -251,12 +257,18 @@ private fun InteractiveCapturedImage(
     val brushRadiusYLocal = 8f
     val tapRadiusXLocal = 10f
     val tapRadiusYLocal = 8f
-    val textPaint = remember {
+    val labelPaint = remember {
         Paint().apply {
             color = android.graphics.Color.BLACK
-            textSize = 30f
+            textSize = 15f
             isAntiAlias = true
         }
+    }
+    val challengeOrderLabels = remember(challengeOrderedHoldIndices) {
+        challengeOrderedHoldIndices
+            .distinct()
+            .withIndex()
+            .associate { (position, holdIndex) -> holdIndex to (position + 1).toString() }
     }
 
     val baseLayout = remember(bitmap.width, bitmap.height, containerSize) {
@@ -760,25 +772,32 @@ private fun InteractiveCapturedImage(
                         val label = buildList {
                             if (index == startHoldIndex) add("S")
                             if (index == goalHoldIndex) add("G")
+                            if (mode == CanvasMode.CHALLENGE && challengeHoldIndices.contains(index)) {
+                                challengeOrderLabels[index]?.let(::add)
+                            }
                         }.joinToString("/")
-
                         if (label.isNotEmpty()) {
-                            val labelTop = (polygon.minY - 36f).coerceAtLeast(0f)
+                            val metrics = labelPaint.fontMetrics
+                            val lineHeight = metrics.descent - metrics.ascent
+                            val horizontalPadding = 6f
+                            val verticalPadding = 4f
+                            val labelHeight = verticalPadding * 2f + lineHeight
+                            val labelTop = (polygon.minY - labelHeight - 4f).coerceAtLeast(0f)
                             val labelLeft = polygon.minX.coerceAtLeast(0f)
-                            val labelWidth = max(textPaint.measureText(label) + 18f, 32f)
+                            val labelWidth = max(labelPaint.measureText(label) + horizontalPadding * 2f, 24f)
 
                             drawRect(
                                 color = AppStartGoalLabelBackgroundColor,
                                 topLeft = Offset(labelLeft, labelTop),
-                                size = Size(labelWidth, 34f)
+                                size = Size(labelWidth, labelHeight)
                             )
 
                             drawIntoCanvas { canvas ->
                                 canvas.nativeCanvas.drawText(
                                     label,
-                                    labelLeft + 8f,
-                                    (labelTop + 25f).coerceAtLeast(24f),
-                                    textPaint
+                                    labelLeft + horizontalPadding,
+                                    labelTop + verticalPadding - metrics.ascent,
+                                    labelPaint
                                 )
                             }
                         }

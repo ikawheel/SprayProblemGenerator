@@ -7,9 +7,13 @@ import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.RouteSelectionMode
+import java.util.Locale
+import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 internal data class ChallengeCreatorUiModel(
     val selectionCandidateIndices: Set<Int>,
+    val orderedChallengeIndices: List<Int>,
     val isReadyToGenerate: Boolean,
     val canStartGoalSelection: Boolean,
     @StringRes val helpTextResId: Int,
@@ -19,7 +23,8 @@ internal data class ChallengeCreatorUiModel(
     @StringRes val goalStatusResId: Int,
     val drawTargetStatus: DrawTargetStatus,
     val challengeDifficultyScore: Double?,
-    val coreMoveDifficulty: Double?
+    val coreMoveDifficulty: Double?,
+    val challengeDebugSummaryLines: List<String>
 )
 
 internal sealed interface DrawTargetStatus {
@@ -49,6 +54,10 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         holds = state.holds,
         orderedIndices = orderedChallengeIndices,
         reachCalibrationReference = state.reachCalibrationReference
+    )
+    val challengeDebugSummaryLines = buildChallengeDebugSummaryLines(
+        state = state,
+        challengeDifficultyScore = challengeDifficulty
     )
 
     val isReadyToGenerate = !state.isDrawTargetSelectionMode &&
@@ -82,6 +91,7 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
 
     return ChallengeCreatorUiModel(
         selectionCandidateIndices = selectionCandidateIndices,
+        orderedChallengeIndices = orderedChallengeIndices,
         isReadyToGenerate = isReadyToGenerate,
         canStartGoalSelection = !state.isDrawTargetSelectionMode && selectionCandidateIndices.isNotEmpty(),
         helpTextResId = helpTextResId,
@@ -103,6 +113,49 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         },
         drawTargetStatus = drawTargetStatus,
         challengeDifficultyScore = challengeDifficulty?.totalDifficulty,
-        coreMoveDifficulty = challengeDifficulty?.coreMoveDifficulty
+        coreMoveDifficulty = challengeDifficulty?.coreMoveDifficulty,
+        challengeDebugSummaryLines = challengeDebugSummaryLines
     )
+}
+
+private fun buildChallengeDebugSummaryLines(
+    state: MainUiState,
+    challengeDifficultyScore: com.example.holddetector.domain.challenge.ChallengeDifficultyResult?
+): List<String> {
+    val pixelsPerCentimeter = state.reachCalibrationReference?.pixelsPerCentimeterOrNull()
+
+    return challengeDifficultyScore?.moveDetails?.mapIndexed { index, move ->
+        val previousHold = state.holds.getOrNull(move.previousIndex)
+        val nextHold = state.holds.getOrNull(move.nextIndex)
+        val distanceText = if (
+            pixelsPerCentimeter != null &&
+            previousHold != null &&
+            nextHold != null
+        ) {
+            val distanceCentimeters = hypot(
+                (nextHold.centerX - previousHold.centerX).toDouble(),
+                (nextHold.centerY - previousHold.centerY).toDouble()
+            ) / pixelsPerCentimeter
+            "${distanceCentimeters.roundToInt()}cm"
+        } else {
+            "--cm"
+        }
+
+        "${index + 2} ${formatDebugNumber(move.totalDifficulty)} " +
+            "$distanceText (${move.previousHoldDifficulty}+${move.nextHoldDifficulty})x" +
+            formatDebugNumber(move.distanceMultiplier)
+    } ?: emptyList()
+}
+
+private fun formatDebugNumber(value: Double): String {
+    return String.format(Locale.US, "%.2f", value)
+}
+
+private fun com.example.holddetector.model.ReachCalibrationReference.pixelsPerCentimeterOrNull(): Double? {
+    val calibrationDistancePx = hypot(
+        (secondPoint.x - firstPoint.x).toDouble(),
+        (secondPoint.y - firstPoint.y).toDouble()
+    )
+    if (calibrationDistancePx <= 0.0) return null
+    return calibrationDistancePx / 150.0
 }
