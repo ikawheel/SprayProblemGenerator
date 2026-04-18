@@ -2,6 +2,8 @@ package com.example.holddetector.ui.selectors
 
 import androidx.annotation.StringRes
 import com.example.holddetector.R
+import com.example.holddetector.domain.challenge.ChallengeDifficultyCalculator
+import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.RouteSelectionMode
@@ -15,7 +17,9 @@ internal data class ChallengeCreatorUiModel(
     @StringRes val startGoalButtonTextResId: Int,
     @StringRes val startStatusResId: Int,
     @StringRes val goalStatusResId: Int,
-    val drawTargetStatus: DrawTargetStatus
+    val drawTargetStatus: DrawTargetStatus,
+    val challengeDifficultyScore: Double?,
+    val coreMoveDifficulty: Double?
 )
 
 internal sealed interface DrawTargetStatus {
@@ -34,6 +38,18 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         val score = state.holds.getOrNull(index)?.difficultyScore ?: DEFAULT_HOLD_DIFFICULTY_SCORE
         score in state.challengeDifficultyScoreMin..state.challengeDifficultyScoreMax
     }
+    val orderedChallengeIndices = normalizeChallengeRouteOrder(
+        challengeIndices = state.challengeHoldIndices,
+        preferredOrder = state.challengeOrderedHoldIndices,
+        holds = state.holds,
+        startIndex = state.startHoldIndex,
+        goalIndex = state.goalHoldIndex
+    )
+    val challengeDifficulty = ChallengeDifficultyCalculator.calculate(
+        holds = state.holds,
+        orderedIndices = orderedChallengeIndices,
+        reachCalibrationReference = state.reachCalibrationReference
+    )
 
     val isReadyToGenerate = !state.isDrawTargetSelectionMode &&
         state.routeSelectionMode == RouteSelectionMode.NONE &&
@@ -85,6 +101,8 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         } else {
             R.string.status_unset
         },
-        drawTargetStatus = drawTargetStatus
+        drawTargetStatus = drawTargetStatus,
+        challengeDifficultyScore = challengeDifficulty?.totalDifficulty,
+        coreMoveDifficulty = challengeDifficulty?.coreMoveDifficulty
     )
 }

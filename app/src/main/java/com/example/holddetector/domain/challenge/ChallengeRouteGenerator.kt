@@ -19,7 +19,7 @@ object ChallengeRouteGenerator {
         targetCount: Int,
         tuning: RouteGenerationTuning,
         reachCalibrationReference: ReachCalibrationReference?
-    ): Set<Int>? {
+    ): List<Int>? {
         if (startIndex !in holds.indices || goalIndex !in holds.indices) return null
 
         val usableIndices = sourceIndices.toMutableSet().apply {
@@ -50,7 +50,7 @@ object ChallengeRouteGenerator {
             minimumCountByReach
         )
         if (actualCount > usableIndices.size) return null
-        if (actualCount == 2) return setOf(startIndex, goalIndex)
+        if (actualCount == 2) return listOf(startIndex, goalIndex)
 
         val candidateCenters = usableIndices
             .asSequence()
@@ -135,7 +135,7 @@ private data class RoutedHoldCandidate(
 
 private data class RouteAttempt(
     val shape: AutoRouteShape,
-    val indices: Set<Int>,
+    val indices: List<Int>,
     val score: Double,
     val deterministic: Boolean
 )
@@ -145,41 +145,11 @@ private data class PolylineProjection(
     val distanceToRoute: Double
 )
 
-private data class ReachConstraint(
-    val horizontalReachPx: Double,
-    val verticalReachPx: Double
-) {
-    fun isWithinReach(from: HoldCenterPoint, to: HoldCenterPoint): Boolean {
-        return isWithinReach(
-            dx = to.x - from.x,
-            dy = to.y - from.y
-        )
-    }
-
-    fun maxReachAlong(dx: Double, dy: Double): Double {
-        val distance = hypot(dx, dy)
-        if (distance <= 0.0) return min(horizontalReachPx, verticalReachPx)
-
-        val normalizedX = dx / distance
-        val normalizedY = dy / distance
-        val denominator = sqrt(
-            (normalizedX * normalizedX) / (horizontalReachPx * horizontalReachPx) +
-                (normalizedY * normalizedY) / (verticalReachPx * verticalReachPx)
-        )
-
-        return if (denominator <= 0.0) {
-            max(horizontalReachPx, verticalReachPx)
-        } else {
-            1.0 / denominator
-        }
-    }
-
-    private fun isWithinReach(dx: Double, dy: Double): Boolean {
-        val normalizedDistance =
-            (dx * dx) / (horizontalReachPx * horizontalReachPx) +
-                (dy * dy) / (verticalReachPx * verticalReachPx)
-        return normalizedDistance <= 1.0 + 1e-9
-    }
+private fun ReachConstraint.isWithinReach(from: HoldCenterPoint, to: HoldCenterPoint): Boolean {
+    return isWithinReach(
+        dx = to.x - from.x,
+        dy = to.y - from.y
+    )
 }
 
 private fun normalizedRandomness(randomness: Double): Double {
@@ -235,7 +205,7 @@ private fun buildRouteAttempt(
         }
         return RouteAttempt(
             shape = variant.shape,
-            indices = setOf(start.index, goal.index),
+            indices = listOf(start.index, goal.index),
             score = 0.0,
             deterministic = deterministic
         )
@@ -401,7 +371,7 @@ private fun buildRouteAttempt(
 
     return RouteAttempt(
         shape = variant.shape,
-        indices = routeIndices.toSet(),
+        indices = routeIndices,
         score = score,
         deterministic = deterministic
     )
@@ -929,18 +899,4 @@ private fun Hold.toCenterPoint(index: Int): HoldCenterPoint {
 
 private fun HoldCenterPoint.toRoutePoint(): RoutePoint {
     return RoutePoint(x = x, y = y)
-}
-
-private fun ReachCalibrationReference.toReachConstraint(): ReachConstraint? {
-    val calibrationDistancePx = hypot(
-        (secondPoint.x - firstPoint.x).toDouble(),
-        (secondPoint.y - firstPoint.y).toDouble()
-    )
-    if (calibrationDistancePx <= 0.0) return null
-
-    val pixelsPerCentimeter = calibrationDistancePx / 150.0
-    return ReachConstraint(
-        horizontalReachPx = pixelsPerCentimeter * 120.0,
-        verticalReachPx = pixelsPerCentimeter * 90.0
-    )
 }

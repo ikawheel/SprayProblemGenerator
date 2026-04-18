@@ -40,6 +40,8 @@ import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import kotlin.math.roundToInt
 
 private const val DifficultyRangeLabel = "\u4f7f\u3046\u70b9\u6570"
+private const val ChallengeDifficultyLabel = "\u66ab\u5b9a\u96e3\u5ea6"
+private const val CoreMoveDifficultyLabel = "\u6838\u5fc3"
 
 @Composable
 fun ChallengeCreatorScreen(
@@ -126,6 +128,24 @@ fun ChallengeCreatorScreen(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
+
+        uiModel.challengeDifficultyScore?.let { totalDifficulty ->
+            Text(
+                text = "$ChallengeDifficultyLabel: ${"%.2f".format(totalDifficulty)}",
+                color = AppTextColor,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            uiModel.coreMoveDifficulty?.let { coreDifficulty ->
+                Text(
+                    text = "$CoreMoveDifficultyLabel: ${"%.2f".format(coreDifficulty)}",
+                    color = AppSecondaryTextColor,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),

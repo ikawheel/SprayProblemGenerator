@@ -42,6 +42,7 @@ data class MainUiState(
     val reachCalibrationReturnToHoldEditor: Boolean = false,
     val selectedHoldIndex: Int? = null,
     val challengeHoldIndices: Set<Int> = emptySet(),
+    val challengeOrderedHoldIndices: List<Int> = emptyList(),
     val drawTargetHoldIndices: Set<Int> = emptySet(),
     val hasDrawTargetSelection: Boolean = false,
     val startHoldIndex: Int? = null,

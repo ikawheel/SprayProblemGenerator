@@ -3,6 +3,7 @@
 import android.app.Application
 import android.graphics.Bitmap
 import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
+import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
 import com.example.holddetector.domain.hold.buildHoldScoringOrder
 import androidx.lifecycle.AndroidViewModel
@@ -85,6 +86,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             reachCalibrationReturnToHoldEditor = false,
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
             drawTargetHoldIndices = emptySet(),
             hasDrawTargetSelection = false,
             startHoldIndex = null,
@@ -188,6 +190,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 reachCalibrationReturnToHoldEditor = false,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
+                challengeOrderedHoldIndices = emptyList(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -235,6 +238,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 reachCalibrationReturnToHoldEditor = false,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
+                challengeOrderedHoldIndices = emptyList(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -397,6 +401,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 wallTitle = savedSummary.title,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
+                challengeOrderedHoldIndices = emptyList(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -501,6 +506,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     startHoldIndex = index,
                     goalHoldIndex = null,
                     challengeHoldIndices = emptySet(),
+                    challengeOrderedHoldIndices = emptyList(),
                     routeSelectionMode = RouteSelectionMode.SELECTING_GOAL,
                     message = "繧ｹ繧ｿ繝ｼ繝医ｒ險ｭ螳壹＠縺ｾ縺励◆縲よｬ｡縺ｫ繧ｴ繝ｼ繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞"
                 )
@@ -519,6 +525,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     selectedHoldIndex = index,
                     goalHoldIndex = index,
                     challengeHoldIndices = emptySet(),
+                    challengeOrderedHoldIndices = emptyList(),
                     routeSelectionMode = RouteSelectionMode.NONE,
                     message = "繧ｴ繝ｼ繝ｫ繧定ｨｭ螳壹＠縺ｾ縺励◆"
                 )
@@ -536,9 +543,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     updated.add(index)
                     true
                 }
+                val updatedOrder = normalizeChallengeRouteOrder(
+                    challengeIndices = updated,
+                    preferredOrder = state.challengeOrderedHoldIndices,
+                    holds = state.holds,
+                    startIndex = state.startHoldIndex,
+                    goalIndex = state.goalHoldIndex
+                )
                 _uiState.value = state.copy(
                     selectedHoldIndex = index,
                     challengeHoldIndices = updated,
+                    challengeOrderedHoldIndices = updatedOrder,
                     startHoldIndex = if (state.startHoldIndex == index && !added) null else state.startHoldIndex,
                     goalHoldIndex = if (state.goalHoldIndex == index && !added) null else state.goalHoldIndex,
                     message = if (added) {
@@ -603,6 +618,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             challengeDifficultyScoreMin = normalizedMin,
             challengeDifficultyScoreMax = normalizedMax,
             challengeHoldIndices = filteredChallengeIndices,
+            challengeOrderedHoldIndices = normalizeChallengeRouteOrder(
+                challengeIndices = filteredChallengeIndices,
+                preferredOrder = state.challengeOrderedHoldIndices,
+                holds = state.holds,
+                startIndex = filteredStartIndex,
+                goalIndex = filteredGoalIndex
+            ),
             startHoldIndex = filteredStartIndex,
             goalHoldIndex = filteredGoalIndex,
             selectedHoldIndex = state.selectedHoldIndex?.takeIf { index ->
@@ -681,7 +703,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val actualCount = requestedCount.coerceAtMost(drawSourceIndices.size)
-        val selectedIndices = ChallengeRouteGenerator.generate(
+        val selectedOrderedIndices = ChallengeRouteGenerator.generate(
             holds = state.holds,
             sourceIndices = drawSourceIndices,
             startIndex = startIndex,
@@ -699,9 +721,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
             return
         }
+        val selectedIndices = selectedOrderedIndices.toSet()
 
         _uiState.value = state.copy(
             challengeHoldIndices = selectedIndices,
+            challengeOrderedHoldIndices = selectedOrderedIndices,
             selectedHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
@@ -718,6 +742,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
@@ -737,6 +762,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
             drawTargetHoldIndices = indices,
             hasDrawTargetSelection = true,
             startHoldIndex = null,
@@ -764,6 +790,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.SELECTING_START,
@@ -776,6 +803,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
             drawTargetHoldIndices = emptySet(),
             hasDrawTargetSelection = false,
             startHoldIndex = null,
