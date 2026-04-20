@@ -8,19 +8,18 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.material3.Button as MaterialButton
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton as MaterialOutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSurfaceColor
-import com.example.holddetector.ui.AppTextColor
 
 @Composable
 fun AppButton(
@@ -32,6 +31,8 @@ fun AppButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val accentColor = MaterialTheme.colorScheme.primary
+    val accentContentColor = MaterialTheme.colorScheme.onPrimary
     val scale by animateFloatAsState(
         targetValue = if (enabled && isPressed) 0.96f else 1f,
         label = "appButtonScale"
@@ -39,8 +40,8 @@ fun AppButton(
     val containerColor by animateColorAsState(
         targetValue = when {
             !enabled -> AppSecondaryTextColor.copy(alpha = 0.28f)
-            isPressed -> Color(0xFF111827)
-            else -> AppTextColor
+            isPressed -> accentColor.copy(alpha = 0.86f)
+            else -> accentColor
         },
         label = "appButtonContainer"
     )
@@ -52,9 +53,9 @@ fun AppButton(
         interactionSource = interactionSource,
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
-            contentColor = Color.White,
+            contentColor = accentContentColor,
             disabledContainerColor = AppSecondaryTextColor.copy(alpha = 0.28f),
-            disabledContentColor = Color.White.copy(alpha = 0.72f)
+            disabledContentColor = accentContentColor.copy(alpha = 0.72f)
         ),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation = 4.dp,
@@ -82,6 +83,7 @@ fun AppOutlinedButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val accentColor = MaterialTheme.colorScheme.primary
     val scale by animateFloatAsState(
         targetValue = if (enabled && isPressed) 0.97f else 1f,
         label = "appOutlinedButtonScale"
@@ -89,7 +91,7 @@ fun AppOutlinedButton(
     val containerColor by animateColorAsState(
         targetValue = when {
             !enabled -> AppSurfaceColor
-            isPressed -> AppTextColor.copy(alpha = 0.14f)
+            isPressed -> accentColor.copy(alpha = 0.14f)
             else -> AppSurfaceColor
         },
         label = "appOutlinedButtonContainer"
@@ -97,16 +99,16 @@ fun AppOutlinedButton(
     val contentColor by animateColorAsState(
         targetValue = when {
             !enabled -> AppSecondaryTextColor.copy(alpha = 0.5f)
-            isPressed -> AppTextColor
-            else -> AppTextColor
+            isPressed -> accentColor
+            else -> accentColor
         },
         label = "appOutlinedButtonContent"
     )
     val borderColor by animateColorAsState(
         targetValue = when {
             !enabled -> AppSecondaryTextColor.copy(alpha = 0.25f)
-            isPressed -> AppTextColor
-            else -> AppSecondaryTextColor.copy(alpha = 0.55f)
+            isPressed -> accentColor
+            else -> accentColor.copy(alpha = 0.62f)
         },
         label = "appOutlinedButtonBorder"
     )

@@ -14,6 +14,7 @@ import com.example.holddetector.model.SavedWallSummary
 enum class AppScreen {
     LIST,
     CAMERA,
+    EDIT_MENU,
     REACH_CALIBRATION,
     HOLD_EDITOR,
     HOLD_SCORING,
@@ -24,6 +25,12 @@ enum class RouteSelectionMode {
     NONE,
     SELECTING_START,
     SELECTING_GOAL
+}
+
+enum class HoldTapAreaSize {
+    SMALL,
+    MEDIUM,
+    LARGE
 }
 
 data class MainUiState(
@@ -50,6 +57,7 @@ data class MainUiState(
     val routeSelectionMode: RouteSelectionMode = RouteSelectionMode.NONE,
     val isDrawTargetSelectionMode: Boolean = false,
     val drawCountInput: String = "",
+    val holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     val challengeDifficultyScoreMin: Int = MIN_HOLD_DIFFICULTY_SCORE,
     val challengeDifficultyScoreMax: Int = DEFAULT_HOLD_DIFFICULTY_SCORE.coerceAtMost(MAX_HOLD_DIFFICULTY_SCORE),
     val routeTuning: RouteGenerationTuning = RouteGenerationTuning(),

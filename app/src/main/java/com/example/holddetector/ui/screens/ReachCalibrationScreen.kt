@@ -10,13 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.holddetector.R
 import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
@@ -24,6 +28,7 @@ import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.canvas.ReachCalibrationCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.BottomActionBar
 import com.example.holddetector.model.HoldPoint
 
 private const val ReachCalibrationTitle = "150cm\u8a2d\u5b9a"
@@ -48,6 +53,8 @@ private const val ReachCalibrationContinue = "\u30db\u30fc\u30eb\u30c9\u767b\u93
 fun ReachCalibrationScreen(
     state: MainUiState,
     onBack: () -> Unit,
+    onExitWithoutSaving: () -> Unit,
+    onSaveAndExit: () -> Unit,
     onStartReachCalibrationSelection: () -> Unit,
     onClearReachCalibration: () -> Unit,
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
@@ -55,6 +62,7 @@ fun ReachCalibrationScreen(
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
+    val isEditingExistingWall = state.currentWallId != null
     val canContinue = state.reachCalibrationReference != null &&
         !state.isReachCalibrationSelectionMode &&
         state.pendingReachCalibrationPoint == null
@@ -74,96 +82,154 @@ fun ReachCalibrationScreen(
     } else {
         ReachCalibrationReset
     }
-    val backButtonText = if (isReturningToHoldEditor) {
+    val backButtonText = if (isReturningToHoldEditor || state.currentWallId == null) {
         ReachCalibrationBack
     } else {
         ReachCalibrationBackToList
     }
 
-    Column(modifier = modifier) {
-        Text(
-            text = ReachCalibrationTitle,
-            color = AppTextColor,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+    Scaffold(
+        modifier = modifier,
+        containerColor = Color.Transparent,
+        bottomBar = {
+            BottomActionBar {
+                if (isEditingExistingWall) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AppOutlinedButton(
+                            onClick = onExitWithoutSaving,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.exit_without_saving))
+                        }
 
-        Text(
-            text = ReachCalibrationDescription,
-            color = AppSecondaryTextColor,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
-        )
+                        AppButton(
+                            onClick = onSaveAndExit,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.save_and_exit))
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AppOutlinedButton(
+                            onClick = onClearReachCalibration,
+                            enabled = state.reachCalibrationReference != null || state.pendingReachCalibrationPoint != null,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(ReachCalibrationClear)
+                        }
 
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
-                .clipToBounds()
-        ) {
-            if (bitmap != null) {
-                ReachCalibrationCanvasScreen(
-                    bitmap = bitmap,
-                    reachCalibrationReference = state.reachCalibrationReference,
-                    pendingReachCalibrationPoint = state.pendingReachCalibrationPoint,
-                    isReachCalibrationSelectionMode = state.isReachCalibrationSelectionMode,
-                    onReachCalibrationPointSelected = onReachCalibrationPointSelected,
-                    modifier = Modifier.fillMaxSize()
-                )
+                        AppButton(
+                            onClick = onContinue,
+                            enabled = canContinue,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(ReachCalibrationContinue)
+                        }
+                    }
+                }
             }
         }
-
-        Text(
-            text = statusText,
-            color = AppTextColor,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            AppOutlinedButton(
-                onClick = onBack,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(backButtonText)
-            }
-
-            AppOutlinedButton(
-                onClick = onStartReachCalibrationSelection,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = selectButtonText,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        Row(
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, top = 16.dp)
         ) {
-            AppOutlinedButton(
-                onClick = onClearReachCalibration,
-                enabled = state.reachCalibrationReference != null || state.pendingReachCalibrationPoint != null,
-                modifier = Modifier.weight(1f)
+            Text(
+                text = ReachCalibrationTitle,
+                color = AppTextColor,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = ReachCalibrationDescription,
+                color = AppSecondaryTextColor,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
+                    .clipToBounds()
             ) {
-                Text(ReachCalibrationClear)
+                if (bitmap != null) {
+                    ReachCalibrationCanvasScreen(
+                        bitmap = bitmap,
+                        reachCalibrationReference = state.reachCalibrationReference,
+                        pendingReachCalibrationPoint = state.pendingReachCalibrationPoint,
+                        isReachCalibrationSelectionMode = state.isReachCalibrationSelectionMode,
+                        onReachCalibrationPointSelected = onReachCalibrationPointSelected,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
-            AppButton(
-                onClick = onContinue,
-                enabled = canContinue,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(ReachCalibrationContinue)
+            Text(
+                text = statusText,
+                color = AppTextColor,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+            )
+
+            if (isEditingExistingWall) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    AppOutlinedButton(
+                        onClick = onStartReachCalibrationSelection,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = selectButtonText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    AppOutlinedButton(
+                        onClick = onClearReachCalibration,
+                        enabled = state.reachCalibrationReference != null || state.pendingReachCalibrationPoint != null,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(ReachCalibrationClear)
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    AppOutlinedButton(
+                        onClick = onBack,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(backButtonText)
+                    }
+
+                    AppOutlinedButton(
+                        onClick = onStartReachCalibrationSelection,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = selectButtonText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
     }

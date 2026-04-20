@@ -21,6 +21,7 @@ import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppBusyOverlayColor
+import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.AppScreen
 import com.example.holddetector.ui.CameraScreenBackgroundColor
 import com.example.holddetector.ui.MainUiState
@@ -39,16 +40,19 @@ fun HoldDetectorApp(
     onBindPreview: (PreviewView) -> Unit,
     onBackToList: () -> Unit,
     onSaveWall: () -> Unit,
+    onOpenReachCalibrationFromEditMenu: () -> Unit,
+    onOpenHoldEditorFromEditMenu: () -> Unit,
+    onOpenHoldScoringFromEditMenu: () -> Unit,
     onOpenHoldScoring: () -> Unit,
     onBackFromHoldScoring: () -> Unit,
     onDifficultyScoreSelected: (Int) -> Unit,
     onSaveWallAndOpenChallenge: () -> Unit,
     onWallTitleChanged: (String) -> Unit,
+    onHoldTapAreaSizeChange: (HoldTapAreaSize) -> Unit,
     onDeleteSelectedHold: () -> Unit,
     onEditorHoldTapped: (Int?) -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onManualHoldCreated: (Hold) -> Unit,
-    onOpenReachCalibrationScreen: () -> Unit,
     onContinueToHoldEditorFromReachCalibration: () -> Unit,
     onBackFromReachCalibration: () -> Unit,
     onStartReachCalibrationSelection: () -> Unit,
@@ -82,7 +86,6 @@ fun HoldDetectorApp(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
-            .padding(contentPadding)
     ) {
         when (state.currentScreen) {
             AppScreen.LIST -> {
@@ -92,7 +95,9 @@ fun HoldDetectorApp(
                     onOpenSavedWallForEditing = onOpenSavedWallForEditing,
                     onOpenSavedWallForChallenge = onOpenSavedWallForChallenge,
                     onDeleteSavedWall = onDeleteSavedWall,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
                 )
             }
 
@@ -107,10 +112,24 @@ fun HoldDetectorApp(
                 )
             }
 
+            AppScreen.EDIT_MENU -> {
+                EditMenuScreen(
+                    state = state,
+                    onOpenReachCalibration = onOpenReachCalibrationFromEditMenu,
+                    onOpenHoldEditor = onOpenHoldEditorFromEditMenu,
+                    onOpenHoldScoring = onOpenHoldScoringFromEditMenu,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
+                )
+            }
+
             AppScreen.REACH_CALIBRATION -> {
                 ReachCalibrationScreen(
                     state = state,
                     onBack = onBackFromReachCalibration,
+                    onExitWithoutSaving = onBackToList,
+                    onSaveAndExit = onSaveWall,
                     onStartReachCalibrationSelection = onStartReachCalibrationSelection,
                     onClearReachCalibration = onClearReachCalibration,
                     onReachCalibrationPointSelected = onReachCalibrationPointSelected,
@@ -123,13 +142,13 @@ fun HoldDetectorApp(
                 HoldEditorScreen(
                     state = state,
                     onWallTitleChanged = onWallTitleChanged,
+                    onHoldTapAreaSizeChange = onHoldTapAreaSizeChange,
                     onSaveWall = onSaveWall,
                     onOpenHoldScoring = onOpenHoldScoring,
                     onBackToList = onBackToList,
                     onDeleteSelectedHold = onDeleteSelectedHold,
                     onEditorHoldTapped = onEditorHoldTapped,
                     onManualHoldCreated = onManualHoldCreated,
-                    onOpenReachCalibrationScreen = onOpenReachCalibrationScreen,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -138,6 +157,8 @@ fun HoldDetectorApp(
                 HoldScoringScreen(
                     state = state,
                     onBackToHoldEditor = onBackFromHoldScoring,
+                    onExitWithoutSaving = onBackToList,
+                    onSaveAndExit = onSaveWall,
                     onDifficultyScoreSelected = onDifficultyScoreSelected,
                     onOpenChallenge = onSaveWallAndOpenChallenge,
                     modifier = Modifier.fillMaxSize()
@@ -163,7 +184,9 @@ fun HoldDetectorApp(
                     onCandidateSelectionRandomnessChange = onCandidateSelectionRandomnessChange,
                     onFinalSelectionRandomnessChange = onFinalSelectionRandomnessChange,
                     onClearChallenge = onClearChallenge,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
                 )
             }
         }

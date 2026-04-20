@@ -52,6 +52,7 @@ import com.example.holddetector.ui.AppBusyOverlayColor
 import com.example.holddetector.ui.AppOverlayStrokePreviewColor
 import com.example.holddetector.ui.AppStartGoalLabelBackgroundColor
 import com.example.holddetector.ui.DefaultHoldStrokeWidth
+import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.RouteSelectionMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -118,6 +119,7 @@ fun HoldCanvasScreen(
     reachCalibrationReference: ReachCalibrationReference?,
     pendingReachCalibrationPoint: HoldPoint?,
     isReachCalibrationSelectionMode: Boolean,
+    holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     isDrawTargetSelectionMode: Boolean = false,
     onHoldTapped: (Int?) -> Unit,
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
@@ -137,6 +139,7 @@ fun HoldCanvasScreen(
         reachCalibrationReference = reachCalibrationReference,
         pendingReachCalibrationPoint = pendingReachCalibrationPoint,
         isReachCalibrationSelectionMode = isReachCalibrationSelectionMode,
+        holdTapAreaSize = holdTapAreaSize,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.HOLD_EDITOR,
         onHoldTapped = onHoldTapped,
@@ -232,6 +235,7 @@ private fun InteractiveCapturedImage(
     reachCalibrationReference: ReachCalibrationReference? = null,
     pendingReachCalibrationPoint: HoldPoint? = null,
     isReachCalibrationSelectionMode: Boolean = false,
+    holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     isDrawTargetSelectionMode: Boolean,
     focusHoldIndex: Int? = null,
     mode: CanvasMode,
@@ -253,10 +257,16 @@ private fun InteractiveCapturedImage(
     var draftStrokePoints by remember { mutableStateOf<List<Offset>>(emptyList()) }
 
     val density = LocalDensity.current
-    val brushRadiusXLocal = 10f
-    val brushRadiusYLocal = 8f
-    val tapRadiusXLocal = 10f
-    val tapRadiusYLocal = 8f
+    val holdEditorTapMoveThresholdLocal = 10f
+    val holdAreaScale = when (holdTapAreaSize) {
+        HoldTapAreaSize.SMALL -> 0.5f
+        HoldTapAreaSize.MEDIUM -> 1f
+        HoldTapAreaSize.LARGE -> 1.5f
+    }
+    val brushRadiusXLocal = 10f * holdAreaScale
+    val brushRadiusYLocal = 8f * holdAreaScale
+    val tapRadiusXLocal = 10f * holdAreaScale
+    val tapRadiusYLocal = 8f * holdAreaScale
     val labelPaint = remember {
         Paint().apply {
             color = android.graphics.Color.BLACK
@@ -509,7 +519,10 @@ private fun InteractiveCapturedImage(
                             )
                             val dx = currentLocal.x - startLocal.x
                             val dy = currentLocal.y - startLocal.y
-                            if (abs(dx) > 4f || abs(dy) > 4f) {
+                            if (
+                                abs(dx) > holdEditorTapMoveThresholdLocal ||
+                                    abs(dy) > holdEditorTapMoveThresholdLocal
+                            ) {
                                 movedEnough = true
                             }
                         }
@@ -593,7 +606,10 @@ private fun InteractiveCapturedImage(
                         val dx = currentLocal.x - startLocal.x
                         val dy = currentLocal.y - startLocal.y
 
-                        if (abs(dx) > 4f || abs(dy) > 4f) {
+                        if (
+                            abs(dx) > holdEditorTapMoveThresholdLocal ||
+                                abs(dy) > holdEditorTapMoveThresholdLocal
+                        ) {
                             movedEnough = true
                             val updatedPoints = appendPointIfNeeded(
                                 draftStrokePoints,

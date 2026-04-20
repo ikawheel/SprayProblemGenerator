@@ -48,6 +48,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentScreen = AppScreen.LIST,
                 savedWalls = summaries,
                 drawCountInput = _uiState.value.drawCountInput,
+                holdTapAreaSize = _uiState.value.holdTapAreaSize,
                 challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                 challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                 routeTuning = _uiState.value.routeTuning,
@@ -61,6 +62,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentScreen = AppScreen.CAMERA,
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
+            holdTapAreaSize = _uiState.value.holdTapAreaSize,
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             routeTuning = _uiState.value.routeTuning
@@ -147,15 +149,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 message = null
             )
         } else {
+            val fallbackScreen = if (state.currentWallId != null) {
+                AppScreen.LIST
+            } else {
+                AppScreen.CAMERA
+            }
             _uiState.value = MainUiState(
-                currentScreen = AppScreen.CAMERA,
+                currentScreen = fallbackScreen,
                 savedWalls = state.savedWalls,
                 drawCountInput = state.drawCountInput,
+                holdTapAreaSize = state.holdTapAreaSize,
                 challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
                 challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
                 routeTuning = state.routeTuning
             )
         }
+    }
+
+    fun openSavedWall(wallId: String) {
+        openSavedWallForEditing(wallId)
     }
 
     fun openSavedWallForEditing(wallId: String) {
@@ -168,6 +180,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     currentScreen = AppScreen.LIST,
                     savedWalls = refreshed,
                     drawCountInput = _uiState.value.drawCountInput,
+                    holdTapAreaSize = _uiState.value.holdTapAreaSize,
                     challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                     challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                     routeTuning = _uiState.value.routeTuning,
@@ -177,7 +190,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             _uiState.value = _uiState.value.copy(
-                currentScreen = AppScreen.HOLD_EDITOR,
+                currentScreen = AppScreen.EDIT_MENU,
                 currentWallId = detail.id,
                 wallTitle = detail.title,
                 capturedBitmap = detail.bitmap,
@@ -201,9 +214,58 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holdScoringPosition = 0,
                 showDiscardDialog = false,
                 isBusy = false,
-                message = "螢√ョ繝ｼ繧ｿ繧定ｪｭ縺ｿ霎ｼ縺ｿ縺ｾ縺励◆"
+                message = null
             )
         }
+    }
+
+    fun openReachCalibrationFromEditMenu() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.REACH_CALIBRATION,
+            selectedHoldIndex = null,
+            holdScoringPosition = 0,
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
+            reachCalibrationReturnToHoldEditor = false,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = if (state.reachCalibrationReference == null) {
+                "150cm基準の1点目をタップしてください"
+            } else {
+                "150cm基準を確認してください"
+            }
+        )
+    }
+
+    fun openHoldEditorFromEditMenu() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_EDITOR,
+            selectedHoldIndex = null,
+            holdScoringPosition = 0,
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = false,
+            reachCalibrationReturnToHoldEditor = false,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
+    }
+
+    fun openHoldScoringFromEditMenu() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_SCORING,
+            selectedHoldIndex = null,
+            holdScoringPosition = 0,
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = false,
+            reachCalibrationReturnToHoldEditor = false,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
     }
 
     fun openSavedWallForChallenge(wallId: String) {
@@ -216,6 +278,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     currentScreen = AppScreen.LIST,
                     savedWalls = refreshed,
                     drawCountInput = _uiState.value.drawCountInput,
+                    holdTapAreaSize = _uiState.value.holdTapAreaSize,
                     challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                     challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                     routeTuning = _uiState.value.routeTuning,
@@ -257,6 +320,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(
             wallTitle = value,
             isHoldEditorDirty = true
+        )
+    }
+
+    fun onHoldTapAreaSizeChanged(size: HoldTapAreaSize) {
+        _uiState.value = _uiState.value.copy(
+            holdTapAreaSize = size
         )
     }
 
@@ -365,6 +434,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentScreen = AppScreen.LIST,
                 savedWalls = refreshed,
                 drawCountInput = state.drawCountInput,
+                holdTapAreaSize = state.holdTapAreaSize,
                 challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
                 challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
                 routeTuning = state.routeTuning,
@@ -818,9 +888,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (_uiState.value.currentScreen) {
             AppScreen.LIST -> Unit
             AppScreen.CAMERA -> _uiState.value = _uiState.value.copy(currentScreen = AppScreen.LIST)
-            AppScreen.REACH_CALIBRATION -> backFromReachCalibration()
+            AppScreen.EDIT_MENU -> returnToList()
+            AppScreen.REACH_CALIBRATION -> {
+                if (_uiState.value.currentWallId != null && !_uiState.value.reachCalibrationReturnToHoldEditor) {
+                    requestBackToList()
+                } else {
+                    backFromReachCalibration()
+                }
+            }
             AppScreen.HOLD_EDITOR -> requestBackToList()
-            AppScreen.HOLD_SCORING -> returnToHoldEditorFromScoring()
+            AppScreen.HOLD_SCORING -> {
+                if (_uiState.value.currentWallId != null) {
+                    requestBackToList()
+                } else {
+                    returnToHoldEditorFromScoring()
+                }
+            }
             AppScreen.CHALLENGE_CREATOR -> returnToList()
         }
     }
@@ -828,7 +911,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun requestBackToList() {
         val state = _uiState.value
         when (state.currentScreen) {
-            AppScreen.HOLD_EDITOR -> {
+            AppScreen.EDIT_MENU -> returnToList()
+            AppScreen.REACH_CALIBRATION,
+            AppScreen.HOLD_EDITOR,
+            AppScreen.HOLD_SCORING -> {
                 if (state.isHoldEditorDirty) {
                     _uiState.value = state.copy(showDiscardDialog = true)
                 } else {
@@ -837,8 +923,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             AppScreen.CAMERA,
-            AppScreen.REACH_CALIBRATION,
-            AppScreen.HOLD_SCORING,
             AppScreen.CHALLENGE_CREATOR -> returnToList()
 
             AppScreen.LIST -> Unit
@@ -854,6 +938,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentScreen = AppScreen.LIST,
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
+            holdTapAreaSize = _uiState.value.holdTapAreaSize,
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             routeTuning = _uiState.value.routeTuning
@@ -865,6 +950,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentScreen = AppScreen.LIST,
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
+            holdTapAreaSize = _uiState.value.holdTapAreaSize,
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             routeTuning = _uiState.value.routeTuning
