@@ -13,7 +13,8 @@ object BinaryHoldExtractor {
 
     fun extract(
         bitmap: Bitmap,
-        tuning: AutoExtractionTuning = AutoExtractionTuning()
+        tuning: AutoExtractionTuning = AutoExtractionTuning(),
+        wallSamplePoints: List<HoldPoint> = emptyList()
     ): List<Hold> {
         if (bitmap.width < 24 || bitmap.height < 24) return emptyList()
 
@@ -54,12 +55,43 @@ object BinaryHoldExtractor {
             width = workingWidth,
             height = workingHeight
         )
+        val wallReferenceStats = sampleWallReferenceStats(
+            pixels = pixels,
+            grayscale = grayscale,
+            width = workingWidth,
+            height = workingHeight,
+            originalWidth = bitmap.width,
+            originalHeight = bitmap.height,
+            wallSamplePoints = wallSamplePoints
+        )
+        val grayStats = wallReferenceStats?.grayStats ?: borderStats
         val threshold = max(
             tuning.minimumThreshold.toDouble().coerceAtLeast(0.0),
-            borderStats.stdDev * tuning.standardDeviationMultiplier.toDouble().coerceAtLeast(0.0)
+            grayStats.stdDev * tuning.standardDeviationMultiplier.toDouble().coerceAtLeast(0.0)
         )
+        val colorThreshold = wallReferenceStats?.let { referenceStats ->
+            max(
+                8.0,
+                referenceStats.colorStdDev * tuning.standardDeviationMultiplier.toDouble().coerceAtLeast(0.0)
+            )
+        }
         val initialMask = BooleanArray(grayscale.size) { index ->
-            abs(grayscale[index] - borderStats.mean) >= threshold
+            val brightnessDifference = abs(grayscale[index] - grayStats.mean)
+            if (wallReferenceStats != null && colorThreshold != null) {
+                val pixel = pixels[index]
+                val colorDistance = deltaE(
+                    first = rgbToLab(
+                        red = pixel shr 16 and 0xFF,
+                        green = pixel shr 8 and 0xFF,
+                        blue = pixel and 0xFF
+                    ),
+                    second = wallReferenceStats.meanLab
+                )
+                colorDistance >= colorThreshold ||
+                    (brightnessDifference >= threshold && colorDistance >= colorThreshold * 0.35)
+            } else {
+                brightnessDifference >= threshold
+            }
         }
         val smoothedMask = smoothMask(
             mask = initialMask,
@@ -226,6 +258,18 @@ object BinaryHoldExtractor {
         val y: Float
     )
 
+    private data class LabColor(
+        val l: Double,
+        val a: Double,
+        val b: Double
+    )
+
+    private data class WallReferenceStats(
+        val grayStats: BorderStats,
+        val meanLab: LabColor,
+        val colorStdDev: Double
+    )
+
     private fun sampleBorderStats(
         grayscale: IntArray,
         width: Int,
@@ -255,6 +299,162 @@ object BinaryHoldExtractor {
         return BorderStats(
             mean = mean,
             stdDev = sqrt(max(variance, 0.0))
+        )
+    }
+
+    private fun sampleWallReferenceStats(
+        pixels: IntArray,
+        grayscale: IntArray,
+        width: Int,
+        height: Int,
+        originalWidth: Int,
+        originalHeight: Int,
+        wallSamplePoints: List<HoldPoint>
+    ): WallReferenceStats? {
+        if (wallSamplePoints.isEmpty()) return null
+
+        val sampleDescriptors = wallSamplePoints.mapNotNull { point ->
+            val localX = ((point.x.toFloat() / originalWidth.toFloat()) * width.toFloat()).roundToInt()
+            val localY = ((point.y.toFloat() / originalHeight.toFloat()) * height.toFloat()).roundToInt()
+            samplePatchDescriptor(
+                pixels = pixels,
+                grayscale = grayscale,
+                width = width,
+                height = height,
+                centerX = localX,
+                centerY = localY
+            )
+        }
+
+        if (sampleDescriptors.isEmpty()) return null
+
+        val grayMean = sampleDescriptors.map { it.gray }.average()
+        val grayVariance = sampleDescriptors
+            .map { descriptor -> (descriptor.gray - grayMean) * (descriptor.gray - grayMean) }
+            .average()
+        val meanLab = LabColor(
+            l = sampleDescriptors.map { it.lab.l }.average(),
+            a = sampleDescriptors.map { it.lab.a }.average(),
+            b = sampleDescriptors.map { it.lab.b }.average()
+        )
+        val colorVariance = sampleDescriptors
+            .map { descriptor ->
+                val distance = deltaE(descriptor.lab, meanLab)
+                distance * distance
+            }
+            .average()
+
+        return WallReferenceStats(
+            grayStats = BorderStats(
+                mean = grayMean,
+                stdDev = sqrt(max(grayVariance, 0.0))
+            ),
+            meanLab = meanLab,
+            colorStdDev = sqrt(max(colorVariance, 0.0))
+        )
+    }
+
+    private data class SamplePatchDescriptor(
+        val gray: Double,
+        val lab: LabColor
+    )
+
+    private fun samplePatchDescriptor(
+        pixels: IntArray,
+        grayscale: IntArray,
+        width: Int,
+        height: Int,
+        centerX: Int,
+        centerY: Int
+    ): SamplePatchDescriptor? {
+        val radius = 4
+        val startX = (centerX - radius).coerceIn(0, width - 1)
+        val endX = (centerX + radius).coerceIn(0, width - 1)
+        val startY = (centerY - radius).coerceIn(0, height - 1)
+        val endY = (centerY + radius).coerceIn(0, height - 1)
+
+        var graySum = 0.0
+        var lSum = 0.0
+        var aSum = 0.0
+        var bSum = 0.0
+        var count = 0
+
+        for (y in startY..endY) {
+            for (x in startX..endX) {
+                val index = y * width + x
+                val pixel = pixels[index]
+                val lab = rgbToLab(
+                    red = pixel shr 16 and 0xFF,
+                    green = pixel shr 8 and 0xFF,
+                    blue = pixel and 0xFF
+                )
+                graySum += grayscale[index].toDouble()
+                lSum += lab.l
+                aSum += lab.a
+                bSum += lab.b
+                count += 1
+            }
+        }
+
+        if (count == 0) return null
+
+        return SamplePatchDescriptor(
+            gray = graySum / count.toDouble(),
+            lab = LabColor(
+                l = lSum / count.toDouble(),
+                a = aSum / count.toDouble(),
+                b = bSum / count.toDouble()
+            )
+        )
+    }
+
+    private fun deltaE(
+        first: LabColor,
+        second: LabColor
+    ): Double {
+        val dl = first.l - second.l
+        val da = first.a - second.a
+        val db = first.b - second.b
+        return sqrt(dl * dl + da * da + db * db)
+    }
+
+    private fun rgbToLab(
+        red: Int,
+        green: Int,
+        blue: Int
+    ): LabColor {
+        fun pivotRgb(value: Double): Double {
+            return if (value > 0.04045) {
+                Math.pow((value + 0.055) / 1.055, 2.4)
+            } else {
+                value / 12.92
+            }
+        }
+
+        fun pivotXyz(value: Double): Double {
+            return if (value > 0.008856) {
+                Math.pow(value, 1.0 / 3.0)
+            } else {
+                (7.787 * value) + (16.0 / 116.0)
+            }
+        }
+
+        val r = pivotRgb(red / 255.0)
+        val g = pivotRgb(green / 255.0)
+        val b = pivotRgb(blue / 255.0)
+
+        val x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047
+        val y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000
+        val z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883
+
+        val fx = pivotXyz(x)
+        val fy = pivotXyz(y)
+        val fz = pivotXyz(z)
+
+        return LabColor(
+            l = (116.0 * fy) - 16.0,
+            a = 500.0 * (fx - fy),
+            b = 200.0 * (fy - fz)
         )
     }
 

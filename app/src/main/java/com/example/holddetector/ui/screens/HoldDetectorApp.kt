@@ -1,6 +1,5 @@
 package com.example.holddetector.ui.screens
 
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,15 +23,12 @@ import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppBusyOverlayColor
 import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.AppScreen
-import com.example.holddetector.ui.CameraScreenBackgroundColor
 import com.example.holddetector.ui.MainUiState
 
 @Composable
 fun HoldDetectorApp(
     state: MainUiState,
     isExternalBusy: Boolean,
-    cameraPermissionGranted: Boolean,
-    onRequestCameraPermission: () -> Unit,
     onNewWallClick: () -> Unit,
     onOpenSavedWallForReachCalibration: (String) -> Unit,
     onOpenSavedWallForHoldEditor: (String) -> Unit,
@@ -40,13 +36,17 @@ fun HoldDetectorApp(
     onOpenSavedWallForHoldScoring: (String) -> Unit,
     onOpenSavedWallForChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
-    onCaptureClick: () -> Unit,
-    onBindPreview: (PreviewView) -> Unit,
+    onTakePhoto: () -> Unit,
+    onPickPhoto: () -> Unit,
     onOpenManualHoldRegistrationAfterCapture: () -> Unit,
     onOpenAutoHoldExtractionAfterCapture: () -> Unit,
     onBackToCameraFromHoldRegistrationMethod: () -> Unit,
     onBackToHoldRegistrationMethodSelection: () -> Unit,
     onAutoExtractedHoldTapped: (Int?) -> Unit,
+    onStartAutoExtractionWallSampling: () -> Unit,
+    onStopAutoExtractionWallSampling: () -> Unit,
+    onAutoExtractionWallSamplePointSelected: (HoldPoint) -> Unit,
+    onClearAutoExtractionWallSamplePoints: () -> Unit,
     onAutoExtractionTuningChange: (AutoExtractionTuning) -> Unit,
     onApplyAutoExtractedHoldsAndContinue: () -> Unit,
     onBackToList: () -> Unit,
@@ -94,12 +94,8 @@ fun HoldDetectorApp(
     onDismissDiscardDialog: () -> Unit,
     onDiscardChanges: () -> Unit
 ) {
-    val contentPadding = if (state.currentScreen == AppScreen.CAMERA) 0.dp else 16.dp
-    val backgroundColor = if (state.currentScreen == AppScreen.CAMERA) {
-        CameraScreenBackgroundColor
-    } else {
-        AppBackgroundColor
-    }
+    val contentPadding = 16.dp
+    val backgroundColor = AppBackgroundColor
 
     Box(
         modifier = Modifier
@@ -125,12 +121,12 @@ fun HoldDetectorApp(
 
             AppScreen.CAMERA -> {
                 CameraFullscreenScreen(
-                    cameraPermissionGranted = cameraPermissionGranted,
-                    onRequestCameraPermission = onRequestCameraPermission,
-                    onCaptureClick = onCaptureClick,
-                    onBindPreview = onBindPreview,
+                    onTakePhoto = onTakePhoto,
+                    onPickPhoto = onPickPhoto,
                     onBackToList = onBackToList,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
                 )
             }
 
@@ -150,7 +146,13 @@ fun HoldDetectorApp(
                     extractedHolds = state.autoExtractedHolds,
                     tuning = state.autoExtractionTuning,
                     selectedHoldIndex = state.selectedHoldIndex,
+                    wallSamplePoints = state.autoExtractionWallSamplePoints,
+                    isWallSamplingMode = state.isAutoExtractionWallSamplingMode,
                     onHoldTapped = onAutoExtractedHoldTapped,
+                    onStartWallSampling = onStartAutoExtractionWallSampling,
+                    onStopWallSampling = onStopAutoExtractionWallSampling,
+                    onWallSamplePointSelected = onAutoExtractionWallSamplePointSelected,
+                    onClearWallSamplePoints = onClearAutoExtractionWallSamplePoints,
                     onTuningChange = onAutoExtractionTuningChange,
                     onBackToMethodSelection = onBackToHoldRegistrationMethodSelection,
                     onApplyExtraction = onApplyAutoExtractedHoldsAndContinue,

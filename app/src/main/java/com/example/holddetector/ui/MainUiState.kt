@@ -62,6 +62,8 @@ data class MainUiState(
     val holds: List<Hold> = emptyList(),
     val autoExtractedHolds: List<Hold> = emptyList(),
     val autoExtractionTuning: AutoExtractionTuning = AutoExtractionTuning(),
+    val autoExtractionWallSamplePoints: List<HoldPoint> = emptyList(),
+    val isAutoExtractionWallSamplingMode: Boolean = false,
     val reachCalibrationReference: ReachCalibrationReference? = null,
     val reachCalibrationLengthInput: String = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
     val pendingReachCalibrationPoint: HoldPoint? = null,

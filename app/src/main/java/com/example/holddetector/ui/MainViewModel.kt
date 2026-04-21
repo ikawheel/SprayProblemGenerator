@@ -93,6 +93,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             capturedRotationDegrees = capturedRotationDegrees,
             holds = emptyList(),
             autoExtractedHolds = emptyList(),
+            autoExtractionWallSamplePoints = emptyList(),
+            isAutoExtractionWallSamplingMode = false,
             reachCalibrationReference = null,
             reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
             pendingReachCalibrationPoint = null,
@@ -146,12 +148,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holds = emptyList(),
             selectedHoldIndex = null,
             autoExtractedHolds = emptyList(),
+            isAutoExtractionWallSamplingMode = false,
             reachCalibrationReturnToHoldEditor = false,
             reachCalibrationReturnToAutoExtraction = false,
             isBusy = true,
             message = null
         )
-        runAutoHoldExtraction(bitmap = bitmap, tuning = state.autoExtractionTuning)
+        runAutoHoldExtraction(
+            bitmap = bitmap,
+            tuning = state.autoExtractionTuning,
+            wallSamplePoints = state.autoExtractionWallSamplePoints
+        )
     }
 
     fun backToHoldRegistrationMethodSelection() {
@@ -161,6 +168,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holds = emptyList(),
             autoExtractedHolds = emptyList(),
             selectedHoldIndex = null,
+            isAutoExtractionWallSamplingMode = false,
             isBusy = false,
             message = text(R.string.message_hold_registration_method_select)
         )
@@ -176,7 +184,70 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val bitmap = state.capturedBitmap
         _uiState.value = state.copy(autoExtractionTuning = tuning)
         if (state.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && bitmap != null) {
-            runAutoHoldExtraction(bitmap = bitmap, tuning = tuning)
+            runAutoHoldExtraction(
+                bitmap = bitmap,
+                tuning = tuning,
+                wallSamplePoints = state.autoExtractionWallSamplePoints
+            )
+        }
+    }
+
+    fun startAutoExtractionWallSampling() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            isAutoExtractionWallSamplingMode = true,
+            message = text(R.string.message_auto_hold_extraction_wall_sample_mode)
+        )
+    }
+
+    fun stopAutoExtractionWallSampling() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            isAutoExtractionWallSamplingMode = false,
+            message = null
+        )
+    }
+
+    fun onAutoExtractionWallSamplePointSelected(point: HoldPoint) {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap ?: return
+        if (state.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) return
+
+        val updatedPoints = (state.autoExtractionWallSamplePoints + point)
+            .distinct()
+            .take(10)
+        val keepSampling = updatedPoints.size < 10
+
+        _uiState.value = state.copy(
+            autoExtractionWallSamplePoints = updatedPoints,
+            isAutoExtractionWallSamplingMode = keepSampling,
+            message = text(
+                R.string.message_auto_hold_extraction_wall_sample_added,
+                updatedPoints.size
+            )
+        )
+
+        runAutoHoldExtraction(
+            bitmap = bitmap,
+            tuning = state.autoExtractionTuning,
+            wallSamplePoints = updatedPoints
+        )
+    }
+
+    fun clearAutoExtractionWallSamplePoints() {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap
+        _uiState.value = state.copy(
+            autoExtractionWallSamplePoints = emptyList(),
+            isAutoExtractionWallSamplingMode = false,
+            message = text(R.string.message_auto_hold_extraction_wall_sample_cleared)
+        )
+        if (state.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && bitmap != null) {
+            runAutoHoldExtraction(
+                bitmap = bitmap,
+                tuning = state.autoExtractionTuning,
+                wallSamplePoints = emptyList()
+            )
         }
     }
 
@@ -1582,7 +1653,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun runAutoHoldExtraction(
         bitmap: Bitmap,
-        tuning: AutoExtractionTuning
+        tuning: AutoExtractionTuning,
+        wallSamplePoints: List<HoldPoint>
     ) {
         autoExtractionRequestId += 1
         val requestId = autoExtractionRequestId
@@ -1595,7 +1667,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val extractedHolds = withContext(Dispatchers.Default) {
                 BinaryHoldExtractor.extract(
                     bitmap = bitmap,
-                    tuning = tuning
+                    tuning = tuning,
+                    wallSamplePoints = wallSamplePoints
                 )
             }
             val currentState = _uiState.value

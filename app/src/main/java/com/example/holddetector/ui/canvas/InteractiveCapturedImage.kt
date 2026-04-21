@@ -66,6 +66,7 @@ import kotlin.math.roundToInt
 private enum class CanvasMode {
     HOLD_EDITOR,
     HOLD_ATTRIBUTE_EDITOR,
+    AUTO_EXTRACTION,
     CHALLENGE,
     REACH_CALIBRATION,
     SCORING
@@ -193,6 +194,44 @@ fun HoldAttributeCanvasScreen(
 }
 
 @Composable
+fun AutoExtractionCanvasScreen(
+    bitmap: Bitmap,
+    holds: List<Hold>,
+    selectedIndex: Int?,
+    wallSamplePoints: List<HoldPoint>,
+    isWallSamplingMode: Boolean,
+    onHoldTapped: (Int?) -> Unit,
+    onWallSamplePointSelected: (HoldPoint) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    InteractiveCapturedImage(
+        bitmap = bitmap,
+        holds = holds,
+        selectedIndex = selectedIndex,
+        challengeHoldIndices = emptySet(),
+        startCandidateHoldIndices = emptySet(),
+        goalCandidateHoldIndices = emptySet(),
+        challengeOrderedHoldIndices = emptyList(),
+        startHoldIndex = null,
+        goalHoldIndex = null,
+        routeSelectionMode = RouteSelectionMode.NONE,
+        reachCalibrationReference = null,
+        pendingReachCalibrationPoint = null,
+        isReachCalibrationSelectionMode = false,
+        wallColorSamplePoints = wallSamplePoints,
+        isWallColorSamplingMode = isWallSamplingMode,
+        isDrawTargetSelectionMode = false,
+        mode = CanvasMode.AUTO_EXTRACTION,
+        onHoldTapped = onHoldTapped,
+        onReachCalibrationPointSelected = {},
+        onWallColorSamplePointSelected = onWallSamplePointSelected,
+        onDrawTargetSelectionCompleted = {},
+        onManualHoldCreated = {},
+        modifier = modifier
+    )
+}
+
+@Composable
 fun ChallengeCanvasScreen(
     bitmap: Bitmap,
     holds: List<Hold>,
@@ -282,12 +321,15 @@ private fun InteractiveCapturedImage(
     reachCalibrationReference: ReachCalibrationReference? = null,
     pendingReachCalibrationPoint: HoldPoint? = null,
     isReachCalibrationSelectionMode: Boolean = false,
+    wallColorSamplePoints: List<HoldPoint> = emptyList(),
+    isWallColorSamplingMode: Boolean = false,
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     isDrawTargetSelectionMode: Boolean,
     focusHoldIndex: Int? = null,
     mode: CanvasMode,
     onHoldTapped: (Int?) -> Unit,
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
+    onWallColorSamplePointSelected: (HoldPoint) -> Unit = {},
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onManualHoldCreated: (Hold) -> Unit,
     modifier: Modifier = Modifier
@@ -592,7 +634,8 @@ private fun InteractiveCapturedImage(
 
                     if (
                         (mode == CanvasMode.CHALLENGE && !isDrawTargetSelectionMode) ||
-                            mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR
+                            mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR ||
+                            mode == CanvasMode.AUTO_EXTRACTION
                     ) {
                         var movedEnough = false
                         var multiTouchDetected = false
@@ -617,13 +660,24 @@ private fun InteractiveCapturedImage(
                             }
                         }
                         if (!multiTouchDetected && !movedEnough) {
-                            onHoldTapped(
-                                findTappedIndexFromLocal(
-                                    localPoint = startLocal,
-                                    holds = holds,
-                                    baseLayout = baseLayout
+                            if (mode == CanvasMode.AUTO_EXTRACTION && isWallColorSamplingMode) {
+                                onWallColorSamplePointSelected(
+                                    localOffsetToImagePoint(
+                                        localPoint = startLocal,
+                                        baseLayout = baseLayout,
+                                        imageWidth = bitmap.width,
+                                        imageHeight = bitmap.height
+                                    )
                                 )
-                            )
+                            } else {
+                                onHoldTapped(
+                                    findTappedIndexFromLocal(
+                                        localPoint = startLocal,
+                                        holds = holds,
+                                        baseLayout = baseLayout
+                                    )
+                                )
+                            }
                         }
                         return@awaitEachGesture
                     }
@@ -762,11 +816,9 @@ private fun InteractiveCapturedImage(
                         modifier = Modifier
                             .fillMaxSize()
                             .drawWithContent {
-                                val selectedPath = highlightedHoldPath
-                                if (selectedPath != null) {
-                                    clipPath(selectedPath) {
-                                        this@drawWithContent.drawContent()
-                                    }
+                                val highlightedPath = highlightedHoldPath ?: return@drawWithContent
+                                clipPath(highlightedPath) {
+                                    this@drawWithContent.drawContent()
                                 }
                             }
                     )
@@ -805,9 +857,25 @@ private fun InteractiveCapturedImage(
                         }
                     }
 
+                    if (mode == CanvasMode.AUTO_EXTRACTION) {
+                        wallColorSamplePoints.forEach { samplePoint ->
+                            drawCircle(
+                                color = if (isWallColorSamplingMode) {
+                                    Color(0xFF7C3AED)
+                                } else {
+                                    Color(0xFF2563EB)
+                                },
+                                radius = 4f,
+                                center = samplePoint.toLocalOffset(baseLayout)
+                            )
+                        }
+                    }
+
                     holds.forEachIndexed { index, hold ->
                         val shouldDrawOutline = when {
-                            mode == CanvasMode.HOLD_EDITOR || mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR -> true
+                            mode == CanvasMode.HOLD_EDITOR ||
+                                mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR ||
+                                mode == CanvasMode.AUTO_EXTRACTION -> true
                             mode == CanvasMode.SCORING -> index == focusHoldIndex
                             mode == CanvasMode.REACH_CALIBRATION -> false
                             routeSelectionMode != RouteSelectionMode.NONE ->

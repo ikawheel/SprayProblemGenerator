@@ -1,24 +1,13 @@
-﻿package com.example.holddetector.ui
+package com.example.holddetector.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
-import android.util.Rational
-import android.view.OrientationEventListener
-import android.view.Surface
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
-import androidx.camera.core.UseCaseGroup
-import androidx.camera.core.ViewPort
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,18 +15,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.ui.canvas.loadCorrectedBitmap
-import com.example.holddetector.ui.canvas.orientBitmapForCaptureRotation
 import com.example.holddetector.ui.screens.HoldDetectorApp
 import java.io.File
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 val AppBackgroundColor = Color(0xFFF7F7F7)
 val AppSurfaceColor = Color.White
@@ -50,56 +40,55 @@ val AppCoreHighlightBackgroundColor = Color(0x26F59E0B)
 val AppCoreLabelBackgroundColor = Color(0x99FDE68A)
 val AppOverlayStrokePreviewColor = Color(0x44222222)
 val AppBusyOverlayColor = Color(0x66FFFFFF)
-val CameraScreenBackgroundColor = Color.Black
-val CameraControlOverlayColor = Color(0x66000000)
 const val DefaultHoldStrokeWidth = 1f
 
 class MainActivity : ComponentActivity() {
 
-    private var imageCapture: ImageCapture? = null
-    private lateinit var cameraExecutor: ExecutorService
-    private lateinit var orientationEventListener: OrientationEventListener
-    private val cameraPermissionGranted = mutableStateOf(false)
+    // 外部カメラや画像選択の読込中だけ全画面インジケータを出します。
     private val isCaptureProcessing = mutableStateOf(false)
-    private var latestCapturedRotationDegrees = 0
 
+    // 標準カメラへ渡した一時保存先 Uri を保持します。
+    private var pendingCaptureUri: Uri? = null
+
+    // 画面状態を管理する ViewModel です。
     private val viewModel: MainViewModel by viewModels()
 
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            cameraPermissionGranted.value = granted
+    // 標準カメラアプリで撮影し、指定 Uri へ保存してもらいます。
+    private val takePictureLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            val captureUri = pendingCaptureUri
+            pendingCaptureUri = null
+            if (!success || captureUri == null) {
+                isCaptureProcessing.value = false
+                return@registerForActivityResult
+            }
+            loadCapturedImageFromUri(captureUri)
+        }
+
+    // 端末内の画像や写真から 1 枚選んでもらいます。
+    private val pickImageLauncher =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri == null) {
+                return@registerForActivityResult
+            }
+            isCaptureProcessing.value = true
+            loadCapturedImageFromUri(uri)
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // アプリ全体を没入表示寄りにします。
         WindowCompat.setDecorFitsSystemWindows(window, false)
         hideSystemBars()
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
-        orientationEventListener = object : OrientationEventListener(this) {
-            override fun onOrientationChanged(orientation: Int) {
-                if (orientation == ORIENTATION_UNKNOWN) return
-                latestCapturedRotationDegrees = quantizeRotationDegrees(orientation)
-            }
-        }
-        if (orientationEventListener.canDetectOrientation()) {
-            orientationEventListener.enable()
-        }
-
-        cameraPermissionGranted.value =
-            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
-
-        if (!cameraPermissionGranted.value) {
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
 
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
+                    // ViewModel の状態を Compose 側へ接続します。
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+                    // 一覧以外ではシステムバックを ViewModel 側へ流します。
                     BackHandler(enabled = uiState.currentScreen != AppScreen.LIST) {
                         viewModel.onBackPressed()
                     }
@@ -107,10 +96,6 @@ class MainActivity : ComponentActivity() {
                     HoldDetectorApp(
                         state = uiState,
                         isExternalBusy = isCaptureProcessing.value,
-                        cameraPermissionGranted = cameraPermissionGranted.value,
-                        onRequestCameraPermission = {
-                            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        },
                         onNewWallClick = viewModel::startNewWall,
                         onOpenSavedWallForReachCalibration = viewModel::openSavedWallForReachCalibration,
                         onOpenSavedWallForHoldEditor = viewModel::openSavedWallForHoldEditor,
@@ -118,13 +103,17 @@ class MainActivity : ComponentActivity() {
                         onOpenSavedWallForHoldScoring = viewModel::openSavedWallForHoldScoring,
                         onOpenSavedWallForChallenge = viewModel::openSavedWallForChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
-                        onCaptureClick = ::capturePhoto,
-                        onBindPreview = ::bindCameraPreview,
+                        onTakePhoto = ::launchSystemCamera,
+                        onPickPhoto = ::launchPhotoPicker,
                         onOpenManualHoldRegistrationAfterCapture = viewModel::openManualHoldRegistrationAfterCapture,
                         onOpenAutoHoldExtractionAfterCapture = viewModel::openAutoHoldExtractionAfterCapture,
                         onBackToCameraFromHoldRegistrationMethod = { viewModel.startNewWall() },
                         onBackToHoldRegistrationMethodSelection = viewModel::backToHoldRegistrationMethodSelection,
                         onAutoExtractedHoldTapped = viewModel::onAutoExtractedHoldTapped,
+                        onStartAutoExtractionWallSampling = viewModel::startAutoExtractionWallSampling,
+                        onStopAutoExtractionWallSampling = viewModel::stopAutoExtractionWallSampling,
+                        onAutoExtractionWallSamplePointSelected = viewModel::onAutoExtractionWallSamplePointSelected,
+                        onClearAutoExtractionWallSamplePoints = viewModel::clearAutoExtractionWallSamplePoints,
                         onAutoExtractionTuningChange = viewModel::onAutoExtractionTuningChanged,
                         onApplyAutoExtractedHoldsAndContinue = viewModel::applyAutoExtractedHoldsAndContinue,
                         onBackToList = viewModel::requestBackToList,
@@ -184,6 +173,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // システムバーを自動で隠して、必要時だけスワイプで出せるようにします。
     private fun hideSystemBars() {
         val controller = WindowCompat.getInsetsController(window, window.decorView) ?: return
         controller.systemBarsBehavior =
@@ -191,130 +181,60 @@ class MainActivity : ComponentActivity() {
         controller.hide(WindowInsetsCompat.Type.systemBars())
     }
 
-    private fun bindCameraPreview(previewView: PreviewView) {
-        if (
-            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-        if (previewView.width <= 0 || previewView.height <= 0) {
-            previewView.post { bindCameraPreview(previewView) }
-            return
-        }
-
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener(
-            {
-                val cameraProvider = cameraProviderFuture.get()
-                val targetRotation = previewView.display?.rotation ?: Surface.ROTATION_0
-                val previewViewWidth = previewView.width.coerceAtLeast(1)
-                val previewViewHeight = previewView.height.coerceAtLeast(1)
-                val viewPort = ViewPort.Builder(
-                    Rational(previewViewWidth, previewViewHeight),
-                    targetRotation
-                )
-                    .setScaleType(ViewPort.FILL_CENTER)
-                    .build()
-
-                val preview = Preview.Builder()
-                    .setTargetRotation(targetRotation)
-                    .build()
-                    .also { it.setSurfaceProvider(previewView.surfaceProvider) }
-
-                val imageCaptureUseCase = ImageCapture.Builder()
-                    .setTargetRotation(targetRotation)
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .build()
-                imageCapture = imageCaptureUseCase
-
-                val useCaseGroup = UseCaseGroup.Builder()
-                    .setViewPort(viewPort)
-                    .addUseCase(preview)
-                    .addUseCase(imageCaptureUseCase)
-                    .build()
-
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    this,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    useCaseGroup
-                )
-            },
-            ContextCompat.getMainExecutor(this)
-        )
-    }
-
-    private fun capturePhoto() {
-        val currentImageCapture = imageCapture ?: run {
-            return
-        }
+    // 標準カメラアプリを起動します。
+    private fun launchSystemCamera() {
+        val captureUri = createTemporaryCaptureUri() ?: return
+        pendingCaptureUri = captureUri
         isCaptureProcessing.value = true
+        takePictureLauncher.launch(captureUri)
+    }
 
-        val photoFile = File(cacheDir, "capture_${System.currentTimeMillis()}.jpg")
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
-        currentImageCapture.takePicture(
-            outputOptions,
-            cameraExecutor,
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val rawBitmap = loadCorrectedBitmap(photoFile)
-                    if (rawBitmap == null) {
-                        runOnUiThread {
-                            isCaptureProcessing.value = false
-                        }
-                        return
-                    }
-                    val capturedRotationDegrees = currentCapturedRotationDegrees()
-                    val bitmap = orientBitmapForCaptureRotation(
-                        bitmap = rawBitmap,
-                        rotationDegrees = capturedRotationDegrees
-                    )
-                    val capturedOrientation = if (bitmap.width > bitmap.height) {
-                        CapturedOrientation.LANDSCAPE
-                    } else {
-                        CapturedOrientation.PORTRAIT
-                    }
-
-                    runOnUiThread {
-                        isCaptureProcessing.value = false
-                        viewModel.onPhotoCaptured(
-                            bitmap = bitmap,
-                            capturedOrientation = capturedOrientation,
-                            capturedRotationDegrees = 0
-                        )
-                    }
-                }
-
-                override fun onError(unused: ImageCaptureException) {
-                    runOnUiThread {
-                        isCaptureProcessing.value = false
-                    }
-                }
-            }
+    // 端末内の画像選択 UI を開きます。
+    private fun launchPhotoPicker() {
+        pickImageLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
         )
     }
 
-    private fun currentCapturedRotationDegrees(): Int {
-        return latestCapturedRotationDegrees
-    }
+    // 取得した画像 Uri から Bitmap を読み込み、既存の撮影後フローへつなぎます。
+    private fun loadCapturedImageFromUri(uri: Uri) {
+        lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                loadCorrectedBitmap(contentResolver = contentResolver, uri = uri)
+            }
 
-    private fun quantizeRotationDegrees(orientation: Int): Int {
-        return when (orientation) {
-            in 45..134 -> 90
-            in 135..224 -> 180
-            in 225..314 -> 270
-            else -> 0
+            if (bitmap == null) {
+                isCaptureProcessing.value = false
+                return@launch
+            }
+
+            val capturedOrientation = if (bitmap.width > bitmap.height) {
+                CapturedOrientation.LANDSCAPE
+            } else {
+                CapturedOrientation.PORTRAIT
+            }
+
+            isCaptureProcessing.value = false
+            viewModel.onPhotoCaptured(
+                bitmap = bitmap,
+                capturedOrientation = capturedOrientation,
+                capturedRotationDegrees = 0
+            )
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        orientationEventListener.disable()
-        cameraExecutor.shutdown()
+    // 標準カメラアプリに渡す一時保存先 Uri を作ります。
+    private fun createTemporaryCaptureUri(): Uri? {
+        return try {
+            val captureDirectory = File(cacheDir, "captured").apply { mkdirs() }
+            val captureFile = File.createTempFile("capture_", ".jpg", captureDirectory)
+            FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                captureFile
+            )
+        } catch (_: Throwable) {
+            null
+        }
     }
 }
-
-
-
