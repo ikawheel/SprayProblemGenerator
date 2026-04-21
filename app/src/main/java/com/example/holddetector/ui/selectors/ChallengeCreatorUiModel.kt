@@ -7,9 +7,18 @@ import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.RouteSelectionMode
-import java.util.Locale
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+
+internal data class ChallengeDebugSummaryRow(
+    val stepNumber: Int,
+    val totalDifficulty: Double,
+    val distanceCentimeters: Int?,
+    val previousHoldDifficulty: Int,
+    val nextHoldDifficulty: Int,
+    val distanceMultiplier: Double,
+    val isCore: Boolean
+)
 
 internal data class ChallengeCreatorUiModel(
     val selectionCandidateIndices: Set<Int>,
@@ -24,7 +33,8 @@ internal data class ChallengeCreatorUiModel(
     val drawTargetStatus: DrawTargetStatus,
     val challengeDifficultyScore: Double?,
     val coreMoveDifficulty: Double?,
-    val challengeDebugSummaryLines: List<String>
+    val coreChallengeHoldIndex: Int?,
+    val challengeDebugSummaryRows: List<ChallengeDebugSummaryRow>
 )
 
 internal sealed interface DrawTargetStatus {
@@ -55,16 +65,20 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         orderedIndices = orderedChallengeIndices,
         reachCalibrationReference = state.reachCalibrationReference
     )
-    val challengeDebugSummaryLines = buildChallengeDebugSummaryLines(
+    val challengeDebugSummaryRows = buildChallengeDebugSummaryRows(
         state = state,
         challengeDifficultyScore = challengeDifficulty
     )
+
+    val requestedDrawCount = state.drawCountInput.toIntOrNull()
+    val hasValidRequestedDrawCount = state.drawCountInput.isBlank() ||
+        (requestedDrawCount ?: 0) >= 2
 
     val isReadyToGenerate = !state.isDrawTargetSelectionMode &&
         state.routeSelectionMode == RouteSelectionMode.NONE &&
         state.startHoldIndex != null &&
         state.goalHoldIndex != null &&
-        (state.drawCountInput.toIntOrNull() ?: 0) >= 2
+        hasValidRequestedDrawCount
 
     val helpTextResId = when {
         state.isDrawTargetSelectionMode -> R.string.draw_target_status_selecting
@@ -114,20 +128,24 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         drawTargetStatus = drawTargetStatus,
         challengeDifficultyScore = challengeDifficulty?.totalDifficulty,
         coreMoveDifficulty = challengeDifficulty?.coreMoveDifficulty,
-        challengeDebugSummaryLines = challengeDebugSummaryLines
+        coreChallengeHoldIndex = challengeDifficulty
+            ?.moveDetails
+            ?.getOrNull(challengeDifficulty.coreMoveIndex)
+            ?.nextIndex,
+        challengeDebugSummaryRows = challengeDebugSummaryRows
     )
 }
 
-private fun buildChallengeDebugSummaryLines(
+private fun buildChallengeDebugSummaryRows(
     state: MainUiState,
     challengeDifficultyScore: com.example.holddetector.domain.challenge.ChallengeDifficultyResult?
-): List<String> {
+): List<ChallengeDebugSummaryRow> {
     val pixelsPerCentimeter = state.reachCalibrationReference?.pixelsPerCentimeterOrNull()
 
     return challengeDifficultyScore?.moveDetails?.mapIndexed { index, move ->
         val previousHold = state.holds.getOrNull(move.previousIndex)
         val nextHold = state.holds.getOrNull(move.nextIndex)
-        val distanceText = if (
+        val distanceCentimeters = if (
             pixelsPerCentimeter != null &&
             previousHold != null &&
             nextHold != null
@@ -136,19 +154,21 @@ private fun buildChallengeDebugSummaryLines(
                 (nextHold.centerX - previousHold.centerX).toDouble(),
                 (nextHold.centerY - previousHold.centerY).toDouble()
             ) / pixelsPerCentimeter
-            "${distanceCentimeters.roundToInt()}cm"
+            distanceCentimeters.roundToInt()
         } else {
-            "--cm"
+            null
         }
 
-        "${index + 2} ${formatDebugNumber(move.totalDifficulty)} " +
-            "$distanceText (${move.previousHoldDifficulty}+${move.nextHoldDifficulty})x" +
-            formatDebugNumber(move.distanceMultiplier)
+        ChallengeDebugSummaryRow(
+            stepNumber = index + 2,
+            totalDifficulty = move.totalDifficulty,
+            distanceCentimeters = distanceCentimeters,
+            previousHoldDifficulty = move.previousHoldDifficulty,
+            nextHoldDifficulty = move.nextHoldDifficulty,
+            distanceMultiplier = move.distanceMultiplier,
+            isCore = index == challengeDifficultyScore.coreMoveIndex
+        )
     } ?: emptyList()
-}
-
-private fun formatDebugNumber(value: Double): String {
-    return String.format(Locale.US, "%.2f", value)
 }
 
 private fun com.example.holddetector.model.ReachCalibrationReference.pixelsPerCentimeterOrNull(): Double? {
@@ -157,5 +177,5 @@ private fun com.example.holddetector.model.ReachCalibrationReference.pixelsPerCe
         (secondPoint.y - firstPoint.y).toDouble()
     )
     if (calibrationDistancePx <= 0.0) return null
-    return calibrationDistancePx / 150.0
+    return calibrationDistancePx / referenceLengthCm.toDouble()
 }

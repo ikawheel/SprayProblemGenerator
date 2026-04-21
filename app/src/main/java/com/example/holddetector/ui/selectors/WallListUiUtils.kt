@@ -12,7 +12,11 @@ internal fun findWallPendingDeletion(
     return savedWalls.firstOrNull { it.id == deletingWallId }
 }
 
-internal fun formatWallTimestamp(timestamp: Long): String {
-    if (timestamp <= 0L) return "-"
-    return SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.JAPAN).format(Date(timestamp))
+internal fun formatWallTimestamp(
+    timestamp: Long,
+    timestampPattern: String,
+    unknownValue: String
+): String {
+    if (timestamp <= 0L) return unknownValue
+    return SimpleDateFormat(timestampPattern, Locale.JAPAN).format(Date(timestamp))
 }

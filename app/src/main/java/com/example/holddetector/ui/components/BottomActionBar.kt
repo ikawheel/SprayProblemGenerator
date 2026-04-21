@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,7 +19,6 @@ fun BottomActionBar(
     Surface(
         color = AppSurfaceColor,
         shadowElevation = 14.dp,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(

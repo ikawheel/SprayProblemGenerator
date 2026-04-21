@@ -16,7 +16,7 @@ object ChallengeRouteGenerator {
         sourceIndices: Set<Int>,
         startIndex: Int,
         goalIndex: Int,
-        targetCount: Int,
+        targetCount: Int?,
         tuning: RouteGenerationTuning,
         reachCalibrationReference: ReachCalibrationReference?
     ): List<Int>? {
@@ -28,7 +28,6 @@ object ChallengeRouteGenerator {
         }
         if (usableIndices.size < 2) return null
 
-        val requestedCount = targetCount.coerceIn(2, usableIndices.size)
         val holdCenters = holds.indices.associateWith { index -> holds[index].toCenterPoint(index) }
         val start = holdCenters.getValue(startIndex)
         val goal = holdCenters.getValue(goalIndex)
@@ -41,14 +40,18 @@ object ChallengeRouteGenerator {
             ).coerceAtLeast(1.0)
             kotlin.math.ceil(directDistance / directLimit).toInt() + 1
         } ?: 2
-        val actualCount = max(
-            chooseAutoRouteCount(
-                requestedCount = requestedCount,
-                maxAvailableCount = usableIndices.size,
-                randomness = tuning.holdCountVariance.toDouble()
-            ),
-            minimumCountByReach
-        )
+        val actualCount = if (targetCount != null) {
+            val maximumRequestedCount = targetCount.coerceIn(2, usableIndices.size)
+            chooseBoundedRouteCount(
+                minimumCount = minimumCountByReach,
+                maximumCount = maximumRequestedCount
+            ) ?: return null
+        } else {
+            chooseUnspecifiedRouteCount(
+                minimumCount = minimumCountByReach.coerceAtMost(usableIndices.size),
+                maxAvailableCount = usableIndices.size
+            )
+        }
         if (actualCount > usableIndices.size) return null
         if (actualCount == 2) return listOf(startIndex, goalIndex)
 
@@ -71,7 +74,7 @@ object ChallengeRouteGenerator {
 
         val attempts = buildList {
             routeVariants.forEach { variant ->
-                repeat(blendInt(3, 15, tuning.finalSelectionRandomness.toDouble())) {
+                repeat(8) {
                     buildRouteAttempt(
                         variant = variant,
                         start = start,
@@ -84,23 +87,21 @@ object ChallengeRouteGenerator {
                         deterministic = false
                     )?.let(::add)
                 }
-                if (Random.nextDouble() < blendDouble(1.0, 0.45, tuning.finalSelectionRandomness.toDouble())) {
-                    buildRouteAttempt(
-                        variant = variant,
-                        start = start,
-                        goal = goal,
-                        candidates = candidateCenters,
-                        holdCenters = holdCenters,
-                        actualCount = actualCount,
-                        tuning = tuning,
-                        reachConstraint = reachConstraint,
-                        deterministic = true
-                    )?.let(::add)
-                }
+                buildRouteAttempt(
+                    variant = variant,
+                    start = start,
+                    goal = goal,
+                    candidates = candidateCenters,
+                    holdCenters = holdCenters,
+                    actualCount = actualCount,
+                    tuning = tuning,
+                    reachConstraint = reachConstraint,
+                    deterministic = true
+                )?.let(::add)
             }
         }
 
-        return selectRouteAttempt(attempts, tuning.finalSelectionRandomness.toDouble())?.indices
+        return selectBestRouteAttempt(attempts)?.indices
     }
 }
 
@@ -165,26 +166,34 @@ private fun blendInt(stable: Int, wild: Int, randomness: Double): Int {
     return blendDouble(stable.toDouble(), wild.toDouble(), randomness).roundToInt()
 }
 
-private fun chooseAutoRouteCount(
-    requestedCount: Int,
-    maxAvailableCount: Int,
-    randomness: Double
+private fun chooseUnspecifiedRouteCount(
+    minimumCount: Int,
+    maxAvailableCount: Int
 ): Int {
-    if (maxAvailableCount <= 2) return 2
-
-    val variance = when {
-        requestedCount <= 4 -> blendInt(0, 2, randomness)
-        requestedCount <= 8 -> blendInt(1, 4, randomness)
-        else -> blendInt(1, 5, randomness)
-    }
-    val lowerBound = max(2, requestedCount - variance)
-    val upperBound = min(maxAvailableCount, requestedCount + variance)
-
+    val lowerBound = minimumCount.coerceIn(2, maxAvailableCount)
+    val upperBound = maxAvailableCount.coerceAtLeast(lowerBound)
     if (upperBound <= lowerBound) {
         return lowerBound
     }
 
     return Random.nextInt(lowerBound, upperBound + 1)
+}
+
+private fun chooseBoundedRouteCount(
+    minimumCount: Int,
+    maximumCount: Int
+): Int? {
+    val normalizedMinimumCount = minimumCount.coerceAtLeast(2)
+    val normalizedMaximumCount = maximumCount.coerceAtLeast(2)
+    if (normalizedMinimumCount > normalizedMaximumCount) {
+        return null
+    }
+
+    if (normalizedMinimumCount == normalizedMaximumCount) {
+        return normalizedMinimumCount
+    }
+
+    return Random.nextInt(normalizedMinimumCount, normalizedMaximumCount + 1)
 }
 
 private fun buildRouteAttempt(
@@ -246,7 +255,7 @@ private fun buildRouteAttempt(
     var previousDistanceAlongRoute = 0.0
     var previousHoldCenter = start
     val stepVariance = tuning.stepDistanceVariance.toDouble()
-    val candidateRandomness = tuning.candidateSelectionRandomness.toDouble()
+    val candidateRandomness = stepVariance
     val minimumStepRatio = if (deterministic) {
         0.35
     } else {
@@ -498,28 +507,28 @@ private fun buildRouteVariants(
                     start = start,
                     goal = goal,
                     firstProgress = Random.nextDouble(
-                        blendDouble(0.20, 0.10, routeWaviness),
-                        blendDouble(0.32, 0.40, routeWaviness)
+                        blendDouble(0.20, 0.04, detourStrength),
+                        blendDouble(0.32, 0.18, detourStrength)
                     ),
                     midpointProgress = Random.nextDouble(
-                        blendDouble(0.46, 0.28, routeWaviness),
-                        blendDouble(0.56, 0.70, routeWaviness)
+                        blendDouble(0.46, 0.18, detourStrength),
+                        blendDouble(0.56, 0.44, detourStrength)
                     ),
                     secondProgress = Random.nextDouble(
-                        blendDouble(0.70, 0.58, routeWaviness),
-                        blendDouble(0.82, 0.92, routeWaviness)
+                        blendDouble(0.70, 0.48, detourStrength),
+                        blendDouble(0.82, 0.78, detourStrength)
                     ),
                     firstOffset = leftOffset * Random.nextDouble(
-                        blendDouble(0.85, 0.32, detourStrength),
-                        blendDouble(1.10, 1.95, detourStrength)
+                        blendDouble(0.85, 0.68, detourStrength),
+                        blendDouble(1.10, 3.20, detourStrength)
                     ),
                     midpointOffset = leftOffset * Random.nextDouble(
-                        -blendDouble(0.12, 0.55, routeWaviness),
-                        blendDouble(0.55, 1.55, routeWaviness)
+                        -blendDouble(0.12, 0.18, routeWaviness),
+                        blendDouble(0.55, 2.25, detourStrength)
                     ),
                     secondOffset = leftOffset * Random.nextDouble(
-                        -blendDouble(0.20, 1.05, routeWaviness),
-                        blendDouble(0.55, 1.20, routeWaviness)
+                        -blendDouble(0.20, 0.45, routeWaviness),
+                        blendDouble(0.55, 1.75, detourStrength)
                     ),
                     minimumWidth = max(
                         leftWidth,
@@ -540,28 +549,28 @@ private fun buildRouteVariants(
                     start = start,
                     goal = goal,
                     firstProgress = Random.nextDouble(
-                        blendDouble(0.20, 0.10, routeWaviness),
-                        blendDouble(0.32, 0.40, routeWaviness)
+                        blendDouble(0.20, 0.04, detourStrength),
+                        blendDouble(0.32, 0.18, detourStrength)
                     ),
                     midpointProgress = Random.nextDouble(
-                        blendDouble(0.46, 0.28, routeWaviness),
-                        blendDouble(0.56, 0.70, routeWaviness)
+                        blendDouble(0.46, 0.18, detourStrength),
+                        blendDouble(0.56, 0.44, detourStrength)
                     ),
                     secondProgress = Random.nextDouble(
-                        blendDouble(0.70, 0.58, routeWaviness),
-                        blendDouble(0.82, 0.92, routeWaviness)
+                        blendDouble(0.70, 0.48, detourStrength),
+                        blendDouble(0.82, 0.78, detourStrength)
                     ),
                     firstOffset = -rightOffset * Random.nextDouble(
-                        blendDouble(0.85, 0.32, detourStrength),
-                        blendDouble(1.10, 1.95, detourStrength)
+                        blendDouble(0.85, 0.68, detourStrength),
+                        blendDouble(1.10, 3.20, detourStrength)
                     ),
                     midpointOffset = -rightOffset * Random.nextDouble(
-                        -blendDouble(0.12, 0.55, routeWaviness),
-                        blendDouble(0.55, 1.55, routeWaviness)
+                        -blendDouble(0.12, 0.18, routeWaviness),
+                        blendDouble(0.55, 2.25, detourStrength)
                     ),
                     secondOffset = -rightOffset * Random.nextDouble(
-                        -blendDouble(0.20, 1.05, routeWaviness),
-                        blendDouble(0.55, 1.20, routeWaviness)
+                        -blendDouble(0.20, 0.45, routeWaviness),
+                        blendDouble(0.55, 1.75, detourStrength)
                     ),
                     minimumWidth = max(
                         rightWidth,
@@ -584,17 +593,17 @@ private fun chooseDetourOffset(
     randomness: Double
 ): Double {
     val lowerBound = baseDetour * 0.75
-    val upperBound = max(lowerBound, directLength * 0.62)
+    val upperBound = max(lowerBound, directLength * blendDouble(0.62, 1.25, randomness))
     val preferredOffset = if (availableExtent > 0.0) {
-        max(baseDetour * 0.75, availableExtent * 0.85)
+        max(baseDetour * 0.75, availableExtent * blendDouble(0.85, 1.05, randomness))
     } else {
         baseDetour
     }
     val clampedPreferred = preferredOffset.coerceIn(lowerBound, upperBound)
-    val randomLowerBound = max(lowerBound, clampedPreferred * blendDouble(0.90, 0.35, randomness))
+    val randomLowerBound = max(lowerBound, clampedPreferred * blendDouble(0.90, 0.55, randomness))
     val randomUpperBound = min(
         upperBound,
-        max(randomLowerBound, clampedPreferred * blendDouble(1.10, 1.95, randomness))
+        max(randomLowerBound, clampedPreferred * blendDouble(1.10, 3.20, randomness))
     )
 
     if (randomUpperBound - randomLowerBound < 0.0001) {
@@ -747,44 +756,12 @@ private fun pickRouteCandidate(
     return pickWeighted(weightedPool)
 }
 
-private fun selectRouteAttempt(
-    attempts: List<RouteAttempt>,
-    randomness: Double
-): RouteAttempt? {
+private fun selectBestRouteAttempt(attempts: List<RouteAttempt>): RouteAttempt? {
     if (attempts.isEmpty()) return null
 
-    val uniqueAttempts = attempts
+    return attempts
         .distinctBy { it.shape to it.indices }
-        .map { attempt ->
-            val noisyScore = attempt.score + if (attempt.deterministic) {
-                Random.nextDouble(
-                    blendDouble(0.0, 18.0, randomness),
-                    blendDouble(8.0, 42.0, randomness)
-                )
-            } else {
-                Random.nextDouble(
-                    -blendDouble(2.0, 18.0, randomness),
-                    blendDouble(4.0, 28.0, randomness)
-                )
-            }
-            attempt to noisyScore
-        }
-        .sortedBy { (_, noisyScore) -> noisyScore }
-    val pool = uniqueAttempts.take(min(blendInt(4, 14, randomness), uniqueAttempts.size))
-    if (pool.size == 1) return pool.first().first
-
-    val weightedPool = pool.mapIndexed { index, (attempt, noisyScore) ->
-        val noiseBoost = Random.nextDouble(
-            blendDouble(0.95, 0.78, randomness),
-            blendDouble(1.05, 1.32, randomness)
-        )
-        val scoreBoost = 1.0 / (
-            1.0 + max(0.0, noisyScore - pool.first().second) * blendDouble(0.08, 0.012, randomness)
-            )
-        attempt to (noiseBoost * scoreBoost / (1.0 + index * blendDouble(0.85, 0.22, randomness)))
-    }
-
-    return pickWeighted(weightedPool)
+        .minByOrNull { it.score }
 }
 
 private fun <T> pickWeighted(weightedItems: List<Pair<T, Double>>): T {

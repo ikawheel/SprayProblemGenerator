@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
+import com.example.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
@@ -245,7 +246,11 @@ class WallStorageRepository(context: Context) {
         val secondPoint = json.optJSONObject(KEY_SECOND_POINT)?.toHoldPoint() ?: return null
         return ReachCalibrationReference(
             firstPoint = firstPoint,
-            secondPoint = secondPoint
+            secondPoint = secondPoint,
+            referenceLengthCm = json.optInt(
+                KEY_REFERENCE_LENGTH_CM,
+                DEFAULT_REACH_REFERENCE_LENGTH_CM
+            ).coerceAtLeast(1)
         )
     }
 
@@ -253,6 +258,7 @@ class WallStorageRepository(context: Context) {
         return JSONObject().apply {
             put(KEY_FIRST_POINT, firstPoint.toJson())
             put(KEY_SECOND_POINT, secondPoint.toJson())
+            put(KEY_REFERENCE_LENGTH_CM, referenceLengthCm)
         }
     }
 
@@ -287,6 +293,7 @@ class WallStorageRepository(context: Context) {
         private const val KEY_POINTS = "points"
         private const val KEY_FIRST_POINT = "firstPoint"
         private const val KEY_SECOND_POINT = "secondPoint"
+        private const val KEY_REFERENCE_LENGTH_CM = "referenceLengthCm"
         private const val KEY_CREATED_AT = "createdAt"
         private const val KEY_UPDATED_AT = "updatedAt"
         private const val KEY_X = "x"

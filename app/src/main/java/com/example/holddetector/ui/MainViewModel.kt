@@ -2,15 +2,18 @@
 
 import android.app.Application
 import android.graphics.Bitmap
+import androidx.annotation.StringRes
 import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
 import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
 import com.example.holddetector.domain.hold.buildHoldScoringOrder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.holddetector.R
 import com.example.holddetector.data.WallStorageRepository
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
+import com.example.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
@@ -30,6 +33,7 @@ import kotlin.math.roundToInt
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = WallStorageRepository(application.applicationContext)
+    private val appContext = application.applicationContext
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -83,12 +87,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             capturedRotationDegrees = capturedRotationDegrees,
             holds = emptyList(),
             reachCalibrationReference = null,
+            reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = true,
             reachCalibrationReturnToHoldEditor = false,
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
             drawTargetHoldIndices = emptySet(),
             hasDrawTargetSelection = false,
             startHoldIndex = null,
@@ -97,7 +103,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isDrawTargetSelectionMode = false,
             isHoldEditorDirty = true,
             showDiscardDialog = false,
-            message = "150cm基準の1点目をタップしてください"
+            message = text(R.string.message_reach_first_point)
         )
     }
 
@@ -109,10 +115,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
             reachCalibrationReturnToHoldEditor = true,
+            reachCalibrationLengthInput = state.reachCalibrationReference
+                ?.referenceLengthCm
+                ?.toString()
+                ?: state.reachCalibrationLengthInput,
             message = if (state.reachCalibrationReference == null) {
-                "150cm基準の1点目をタップしてください"
+                text(R.string.message_reach_first_point)
             } else {
-                "150cm基準を確認してください"
+                text(R.string.message_reach_confirm)
             }
         )
     }
@@ -120,8 +130,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun continueToHoldEditorFromReachCalibration() {
         val state = _uiState.value
         if (state.capturedBitmap == null) return
+        if (parseReachCalibrationLengthCentimeters(state) == null) {
+            _uiState.value = state.copy(message = text(R.string.message_reach_input_length))
+            return
+        }
         if (state.reachCalibrationReference == null) {
-            _uiState.value = state.copy(message = "150cm基準を設定してください")
+            _uiState.value = state.copy(message = text(R.string.message_reach_set_required))
             return
         }
 
@@ -132,7 +146,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = false,
             reachCalibrationReturnToHoldEditor = false,
-            message = "ホールド登録へ進みます"
+            reachCalibrationReference = state.reachCalibrationReference.withCurrentLength(state),
+            message = text(R.string.message_reach_go_hold_editor)
         )
     }
 
@@ -167,104 +182,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openSavedWall(wallId: String) {
-        openSavedWallForEditing(wallId)
+        openSavedWallForHoldEditor(wallId)
     }
 
     fun openSavedWallForEditing(wallId: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isBusy = true)
-            val detail = withContext(Dispatchers.IO) { repository.loadWall(wallId) }
-            if (detail == null) {
-                val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
-                _uiState.value = MainUiState(
-                    currentScreen = AppScreen.LIST,
-                    savedWalls = refreshed,
-                    drawCountInput = _uiState.value.drawCountInput,
-                    holdTapAreaSize = _uiState.value.holdTapAreaSize,
-                    challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
-                    challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
-                    routeTuning = _uiState.value.routeTuning,
-                    message = "螢√ョ繝ｼ繧ｿ繧帝幕縺代∪縺帙ｓ縺ｧ縺励◆"
-                )
-                return@launch
-            }
-
-            _uiState.value = _uiState.value.copy(
-                currentScreen = AppScreen.EDIT_MENU,
-                currentWallId = detail.id,
-                wallTitle = detail.title,
-                capturedBitmap = detail.bitmap,
-                capturedOrientation = detail.capturedOrientation,
-                capturedRotationDegrees = detail.capturedRotationDegrees,
-                holds = detail.holds,
-                reachCalibrationReference = detail.reachCalibrationReference,
-                pendingReachCalibrationPoint = null,
-                isReachCalibrationSelectionMode = false,
-                reachCalibrationReturnToHoldEditor = false,
-                selectedHoldIndex = null,
-                challengeHoldIndices = emptySet(),
-                challengeOrderedHoldIndices = emptyList(),
-                drawTargetHoldIndices = emptySet(),
-                hasDrawTargetSelection = false,
-                startHoldIndex = null,
-                goalHoldIndex = null,
-                routeSelectionMode = RouteSelectionMode.NONE,
-                isDrawTargetSelectionMode = false,
-                isHoldEditorDirty = false,
-                holdScoringPosition = 0,
-                showDiscardDialog = false,
-                isBusy = false,
-                message = null
-            )
-        }
+        openSavedWallForHoldEditor(wallId)
     }
 
-    fun openReachCalibrationFromEditMenu() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.REACH_CALIBRATION,
-            selectedHoldIndex = null,
-            holdScoringPosition = 0,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
-            reachCalibrationReturnToHoldEditor = false,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = if (state.reachCalibrationReference == null) {
-                "150cm基準の1点目をタップしてください"
-            } else {
-                "150cm基準を確認してください"
-            }
+    fun openSavedWallForReachCalibration(wallId: String) {
+        openSavedWallIntoScreen(
+            wallId = wallId,
+            targetScreen = AppScreen.REACH_CALIBRATION
         )
     }
 
-    fun openHoldEditorFromEditMenu() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_EDITOR,
-            selectedHoldIndex = null,
-            holdScoringPosition = 0,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            reachCalibrationReturnToHoldEditor = false,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = null
+    fun openSavedWallForHoldEditor(wallId: String) {
+        openSavedWallIntoScreen(
+            wallId = wallId,
+            targetScreen = AppScreen.HOLD_EDITOR
         )
     }
 
-    fun openHoldScoringFromEditMenu() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_SCORING,
-            selectedHoldIndex = null,
-            holdScoringPosition = 0,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            reachCalibrationReturnToHoldEditor = false,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = null
+    fun openSavedWallForHoldScoring(wallId: String) {
+        openSavedWallIntoScreen(
+            wallId = wallId,
+            targetScreen = AppScreen.HOLD_SCORING
         )
     }
 
@@ -282,7 +224,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                     challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                     routeTuning = _uiState.value.routeTuning,
-                    message = "螢√ョ繝ｼ繧ｿ繧帝幕縺代∪縺帙ｓ縺ｧ縺励◆"
+                    message = text(R.string.message_open_wall_failed)
                 )
                 return@launch
             }
@@ -296,12 +238,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 capturedRotationDegrees = detail.capturedRotationDegrees,
                 holds = detail.holds,
                 reachCalibrationReference = detail.reachCalibrationReference,
+                reachCalibrationLengthInput = detail.reachCalibrationReference
+                    ?.referenceLengthCm
+                    ?.toString()
+                    ?: DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
                 pendingReachCalibrationPoint = null,
                 isReachCalibrationSelectionMode = false,
                 reachCalibrationReturnToHoldEditor = false,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
+                lastGeneratedIntermediateHoldIndices = emptySet(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -311,7 +258,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holdScoringPosition = 0,
                 isBusy = false,
                 showDiscardDialog = false,
-                message = "隱ｲ鬘御ｽ懈・繧帝幕蟋九＠縺ｾ縺励◆"
+                message = text(R.string.message_open_challenge_creator)
             )
         }
     }
@@ -337,7 +284,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedHoldIndex = updatedHolds.lastIndex,
             isHoldEditorDirty = true,
             holdScoringPosition = 0,
-            message = "ホールドを追加しました: ${updatedHolds.size} 個"
+            message = text(R.string.message_hold_added, updatedHolds.size)
         )
     }
 
@@ -347,7 +294,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedHoldIndex = index,
             message = index?.let {
                 val hold = state.holds[it]
-                "驕ｸ謚樔ｸｭ #$it 荳ｭ蠢・${hold.centerX}, ${hold.centerY}) 鬆らせ謨ｰ:${hold.points.size}"
+                text(
+                    R.string.selected_hold_debug,
+                    it,
+                    hold.centerX,
+                    hold.centerY,
+                    hold.points.size
+                )
             }
         )
     }
@@ -355,7 +308,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun removeSelectedHold() {
         val state = _uiState.value
         val selected = state.selectedHoldIndex ?: run {
-            _uiState.value = state.copy(message = "蜑企勁縺吶ｋ繝帙・繝ｫ繝峨ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞")
+            _uiState.value = state.copy(message = text(R.string.message_select_hold_to_delete))
             return
         }
 
@@ -364,14 +317,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedHoldIndex = null,
             isHoldEditorDirty = true,
             holdScoringPosition = 0,
-            message = "繝帙・繝ｫ繝峨ｒ蜑企勁縺励∪縺励◆"
+            message = text(R.string.message_hold_deleted)
         )
     }
 
     fun openHoldScoring() {
         val state = _uiState.value
         if (state.holds.isEmpty()) {
-            _uiState.value = state.copy(message = "ホールドを登録してください")
+            _uiState.value = state.copy(message = text(R.string.message_register_hold_first))
             return
         }
 
@@ -412,19 +365,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun saveWallAndReturnToList() {
         val state = _uiState.value
         val bitmap = state.capturedBitmap ?: run {
-            _uiState.value = state.copy(message = "菫晏ｭ倥☆繧狗判蜒上′縺ゅｊ縺ｾ縺帙ｓ")
+            _uiState.value = state.copy(message = text(R.string.message_image_missing_to_save))
+            return
+        }
+        if (state.currentScreen == AppScreen.REACH_CALIBRATION &&
+            parseReachCalibrationLengthCentimeters(state) == null
+        ) {
+            _uiState.value = state.copy(message = text(R.string.message_reach_input_length))
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = state.copy(isBusy = true)
+            val normalizedReference = state.reachCalibrationReference.withCurrentLength(state)
+            _uiState.value = state.copy(
+                isBusy = true,
+                reachCalibrationReference = normalizedReference
+            )
             val savedSummary = withContext(Dispatchers.IO) {
                 repository.saveWall(
                     wallId = state.currentWallId,
                     title = state.wallTitle.ifBlank { defaultWallTitle() },
                     bitmap = bitmap,
                     holds = state.holds,
-                    reachCalibrationReference = state.reachCalibrationReference,
+                    reachCalibrationReference = normalizedReference,
                     capturedOrientation = state.capturedOrientation,
                     capturedRotationDegrees = state.capturedRotationDegrees
                 )
@@ -438,7 +401,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
                 challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
                 routeTuning = state.routeTuning,
-                message = "菫晏ｭ倥＠縺ｾ縺励◆: ${savedSummary.title}"
+                message = text(R.string.message_saved_wall_title, savedSummary.title)
             )
         }
     }
@@ -446,19 +409,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun saveWallAndOpenChallenge() {
         val state = _uiState.value
         val bitmap = state.capturedBitmap ?: run {
-            _uiState.value = state.copy(message = "菫晏ｭ倥☆繧狗判蜒上′縺ゅｊ縺ｾ縺帙ｓ")
+            _uiState.value = state.copy(message = text(R.string.message_image_missing_to_save))
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = state.copy(isBusy = true)
+            val normalizedReference = state.reachCalibrationReference.withCurrentLength(state)
+            _uiState.value = state.copy(
+                isBusy = true,
+                reachCalibrationReference = normalizedReference
+            )
             val savedSummary = withContext(Dispatchers.IO) {
                 repository.saveWall(
                     wallId = state.currentWallId,
                     title = state.wallTitle.ifBlank { defaultWallTitle() },
                     bitmap = bitmap,
                     holds = state.holds,
-                    reachCalibrationReference = state.reachCalibrationReference,
+                    reachCalibrationReference = normalizedReference,
                     capturedOrientation = state.capturedOrientation,
                     capturedRotationDegrees = state.capturedRotationDegrees
                 )
@@ -472,6 +439,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
+                lastGeneratedIntermediateHoldIndices = emptySet(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -485,7 +453,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holdScoringPosition = 0,
                 showDiscardDialog = false,
                 isBusy = false,
-                message = "螢√ｒ菫晏ｭ倥＠縺ｦ隱ｲ鬘御ｽ懈・繧帝幕縺阪∪縺励◆"
+                message = text(R.string.message_saved_and_open_challenge)
             )
         }
     }
@@ -496,7 +464,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedHoldIndex = null,
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = true,
-            message = "150cm基準の1点目をタップしてください"
+            message = text(R.string.message_reach_first_point)
+        )
+    }
+
+    fun onReachCalibrationLengthInputChanged(value: String) {
+        val state = _uiState.value
+        val normalizedInput = value.filter(Char::isDigit).take(3)
+        val parsedLength = normalizedInput.toIntOrNull()?.takeIf { it > 0 }
+        val updatedReference = if (parsedLength != null) {
+            state.reachCalibrationReference?.copy(referenceLengthCm = parsedLength)
+        } else {
+            state.reachCalibrationReference
+        }
+
+        _uiState.value = state.copy(
+            reachCalibrationLengthInput = normalizedInput,
+            reachCalibrationReference = updatedReference,
+            isHoldEditorDirty = state.isHoldEditorDirty ||
+                (normalizedInput != state.reachCalibrationLengthInput) ||
+                (updatedReference != state.reachCalibrationReference)
         )
     }
 
@@ -508,7 +495,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isReachCalibrationSelectionMode = false,
             selectedHoldIndex = null,
             isHoldEditorDirty = true,
-            message = "150cm基準をクリアしました"
+            message = text(R.string.message_reach_cleared)
         )
     }
 
@@ -521,28 +508,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = state.copy(
                 pendingReachCalibrationPoint = point,
                 selectedHoldIndex = null,
-                message = "150cm基準の2点目をタップしてください"
+                message = text(R.string.message_reach_second_point)
             )
             return
         }
 
         if (firstPoint == point) {
             _uiState.value = state.copy(
-                message = "1点目と別の位置をタップしてください"
+                message = text(R.string.message_reach_select_different_second_point)
             )
+            return
+        }
+
+        val referenceLengthCm = parseReachCalibrationLengthCentimeters(state)
+        if (referenceLengthCm == null) {
+            _uiState.value = state.copy(message = text(R.string.message_reach_input_length))
             return
         }
 
         _uiState.value = state.copy(
             reachCalibrationReference = ReachCalibrationReference(
                 firstPoint = firstPoint,
-                secondPoint = point
+                secondPoint = point,
+                referenceLengthCm = referenceLengthCm
             ),
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = false,
             selectedHoldIndex = null,
             isHoldEditorDirty = true,
-            message = "150cm基準を設定しました"
+            message = text(R.string.message_reach_set)
         )
     }
 
@@ -555,7 +549,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentScreen = AppScreen.LIST,
                 savedWalls = refreshed,
                 isBusy = false,
-                message = "蜑企勁縺励∪縺励◆"
+                message = text(R.string.message_wall_deleted)
             )
         }
     }
@@ -568,7 +562,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (state.routeSelectionMode) {
             RouteSelectionMode.SELECTING_START -> {
                 if (index == null || index !in selectionCandidateIndices) {
-                    _uiState.value = state.copy(message = "隱ｲ鬘悟・縺ｮ繝帙・繝ｫ繝峨°繧峨せ繧ｿ繝ｼ繝医ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞")
+                    _uiState.value = state.copy(message = text(R.string.message_select_start_from_candidates))
                     return
                 }
                 _uiState.value = state.copy(
@@ -577,18 +571,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     goalHoldIndex = null,
                     challengeHoldIndices = emptySet(),
                     challengeOrderedHoldIndices = emptyList(),
+                    lastGeneratedIntermediateHoldIndices = emptySet(),
                     routeSelectionMode = RouteSelectionMode.SELECTING_GOAL,
-                    message = "繧ｹ繧ｿ繝ｼ繝医ｒ險ｭ螳壹＠縺ｾ縺励◆縲よｬ｡縺ｫ繧ｴ繝ｼ繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞"
+                    message = text(R.string.message_start_set_next_goal)
                 )
             }
 
             RouteSelectionMode.SELECTING_GOAL -> {
                 if (index == null || index !in selectionCandidateIndices) {
-                    _uiState.value = state.copy(message = "隱ｲ鬘悟・縺ｮ繝帙・繝ｫ繝峨°繧峨ざ繝ｼ繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞")
+                    _uiState.value = state.copy(message = text(R.string.message_select_goal_from_candidates))
                     return
                 }
                 if (index == state.startHoldIndex) {
-                    _uiState.value = state.copy(message = "繧ｹ繧ｿ繝ｼ繝医→繧ｴ繝ｼ繝ｫ縺ｯ蛻･縺ｮ繝帙・繝ｫ繝峨↓縺励※縺上□縺輔＞")
+                    _uiState.value = state.copy(message = text(R.string.message_start_goal_must_differ))
                     return
                 }
                 _uiState.value = state.copy(
@@ -596,8 +591,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     goalHoldIndex = index,
                     challengeHoldIndices = emptySet(),
                     challengeOrderedHoldIndices = emptyList(),
+                    lastGeneratedIntermediateHoldIndices = emptySet(),
                     routeSelectionMode = RouteSelectionMode.NONE,
-                    message = "繧ｴ繝ｼ繝ｫ繧定ｨｭ螳壹＠縺ｾ縺励◆"
+                    message = text(R.string.message_goal_set)
                 )
             }
 
@@ -627,9 +623,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     startHoldIndex = if (state.startHoldIndex == index && !added) null else state.startHoldIndex,
                     goalHoldIndex = if (state.goalHoldIndex == index && !added) null else state.goalHoldIndex,
                     message = if (added) {
-                        "隱ｲ鬘後↓繝帙・繝ｫ繝峨ｒ霑ｽ蜉縺励∪縺励◆"
+                        text(R.string.message_challenge_hold_added)
                     } else {
-                        "隱ｲ鬘後°繧峨・繝ｼ繝ｫ繝峨ｒ螟悶＠縺ｾ縺励◆"
+                        text(R.string.message_challenge_hold_removed)
                     }
                 )
             }
@@ -705,12 +701,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     maxScore = normalizedMax
                 )
             },
-            routeSelectionMode = normalizedRouteSelectionMode
+            routeSelectionMode = normalizedRouteSelectionMode,
+            lastGeneratedIntermediateHoldIndices = state.lastGeneratedIntermediateHoldIndices.filterTo(linkedSetOf()) { index ->
+                index in filterChallengeEligibleIndices(
+                    holds = state.holds,
+                    indices = setOf(index),
+                    minScore = normalizedMin,
+                    maxScore = normalizedMax
+                )
+            }
         )
-    }
-
-    fun onHoldCountVarianceChanged(value: Float) {
-        updateRouteTuning { copy(holdCountVariance = value.coerceIn(0f, 1f)) }
     }
 
     fun onDetourStrengthChanged(value: Float) {
@@ -729,82 +729,82 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         updateRouteTuning { copy(corridorWidth = value.coerceIn(0f, 1f)) }
     }
 
-    fun onCandidateSelectionRandomnessChanged(value: Float) {
-        updateRouteTuning { copy(candidateSelectionRandomness = value.coerceIn(0f, 1f)) }
-    }
-
-    fun onFinalSelectionRandomnessChanged(value: Float) {
-        updateRouteTuning { copy(finalSelectionRandomness = value.coerceIn(0f, 1f)) }
-    }
-
     fun drawRandomChallengeHolds() {
         val state = _uiState.value
         if (state.holds.isEmpty()) {
-            _uiState.value = state.copy(message = "繝帙・繝ｫ繝峨′縺ゅｊ縺ｾ縺帙ｓ")
+            _uiState.value = state.copy(message = text(R.string.message_no_holds))
             return
         }
 
         val requestedCount = state.drawCountInput.toIntOrNull()
-        if (requestedCount == null || requestedCount < 2) {
-            _uiState.value = state.copy(message = "謚ｽ驕ｸ縺吶ｋ繝帙・繝ｫ繝画焚繧貞・蜉帙＠縺ｦ縺上□縺輔＞")
+        if (state.drawCountInput.isNotBlank() && (requestedCount == null || requestedCount < 2)) {
+            _uiState.value = state.copy(message = text(R.string.message_invalid_draw_count))
             return
         }
 
         val startIndex = state.startHoldIndex ?: run {
-            _uiState.value = state.copy(message = "繧ｹ繧ｿ繝ｼ繝医ｒ險ｭ螳壹＠縺ｦ縺上□縺輔＞")
+            _uiState.value = state.copy(message = text(R.string.message_set_start))
             return
         }
         val goalIndex = state.goalHoldIndex ?: run {
-            _uiState.value = state.copy(message = "繧ｴ繝ｼ繝ｫ繧定ｨｭ螳壹＠縺ｦ縺上□縺輔＞")
+            _uiState.value = state.copy(message = text(R.string.message_set_goal))
             return
         }
         if (startIndex == goalIndex) {
-            _uiState.value = state.copy(message = "繧ｹ繧ｿ繝ｼ繝医→繧ｴ繝ｼ繝ｫ縺ｯ蛻･縺ｮ繝帙・繝ｫ繝峨↓縺励※縺上□縺輔＞")
+            _uiState.value = state.copy(message = text(R.string.message_start_goal_must_differ))
             return
         }
 
         val drawSourceIndices = challengeSelectionCandidateIndices(state).toMutableSet().apply {
+            removeAll(state.lastGeneratedIntermediateHoldIndices)
             add(startIndex)
             add(goalIndex)
         }
         if (drawSourceIndices.isEmpty()) {
-            _uiState.value = state.copy(message = "謚ｽ驕ｸ蟇ｾ雎｡縺ｮ繝帙・繝ｫ繝峨′縺ゅｊ縺ｾ縺帙ｓ")
+            _uiState.value = state.copy(message = text(R.string.message_no_draw_source))
             return
         }
 
-        val actualCount = requestedCount.coerceAtMost(drawSourceIndices.size)
-        val selectedOrderedIndices = ChallengeRouteGenerator.generate(
-            holds = state.holds,
-            sourceIndices = drawSourceIndices,
-            startIndex = startIndex,
-            goalIndex = goalIndex,
-            targetCount = actualCount,
-            tuning = state.routeTuning,
-            reachCalibrationReference = state.reachCalibrationReference
-        ) ?: run {
-            _uiState.value = state.copy(
-                message = if (state.reachCalibrationReference != null) {
-                    "150cm以内でつながる課題を生成できませんでした"
-                } else {
-                    "隱ｲ鬘後ｒ逕滓・縺ｧ縺阪∪縺帙ｓ縺ｧ縺励◆"
-                }
-            )
-            return
-        }
-        val selectedIndices = selectedOrderedIndices.toSet()
+        viewModelScope.launch {
+            _uiState.value = state.copy(isBusy = true)
 
-        _uiState.value = state.copy(
-            challengeHoldIndices = selectedIndices,
-            challengeOrderedHoldIndices = selectedOrderedIndices,
-            selectedHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = if (requestedCount > drawSourceIndices.size) {
-                "蛟呵｣懈焚繧定ｶ・∴縺溘◆繧・${drawSourceIndices.size} 蛟九☆縺ｹ縺ｦ繧帝∈謚槭＠縺ｾ縺励◆"
-            } else {
-                "謚ｽ驕ｸ縺ｧ繝帙・繝ｫ繝峨ｒ驕ｸ謚槭＠縺ｾ縺励◆"
+            val selectedOrderedIndices = withContext(Dispatchers.Default) {
+                generateChallengeRouteWithRetries(
+                    holds = state.holds,
+                    sourceIndices = drawSourceIndices,
+                    startIndex = startIndex,
+                    goalIndex = goalIndex,
+                    targetCount = requestedCount,
+                    tuning = state.routeTuning,
+                    reachCalibrationReference = state.reachCalibrationReference
+                )
             }
-        )
+
+            if (selectedOrderedIndices == null) {
+                _uiState.value = state.copy(
+                    isBusy = false,
+                    message = if (state.reachCalibrationReference != null) {
+                        text(R.string.message_unable_generate_with_reach)
+                    } else {
+                        text(R.string.message_unable_generate)
+                    }
+                )
+                return@launch
+            }
+
+            val selectedIndices = selectedOrderedIndices.toSet()
+            _uiState.value = state.copy(
+                isBusy = false,
+                challengeHoldIndices = selectedIndices,
+                challengeOrderedHoldIndices = selectedOrderedIndices,
+                lastGeneratedIntermediateHoldIndices = selectedIndices
+                    .filterNotTo(linkedSetOf()) { index -> index == startIndex || index == goalIndex },
+                selectedHoldIndex = null,
+                routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
+                message = text(R.string.message_draw_generated)
+            )
+        }
     }
 
     fun startDrawTargetSelection() {
@@ -813,11 +813,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = true,
-            message = "繝輔Μ繝ｼ繝上Φ繝峨〒謚ｽ驕ｸ蟇ｾ雎｡縺ｮ遽・峇繧偵↑縺槭▲縺ｦ縺上□縺輔＞"
+            message = text(R.string.message_draw_target_instruction)
         )
     }
 
@@ -833,6 +834,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
             drawTargetHoldIndices = indices,
             hasDrawTargetSelection = true,
             startHoldIndex = null,
@@ -840,9 +842,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
             message = if (eligibleIndices.isEmpty()) {
-                "謚ｽ驕ｸ蟇ｾ雎｡縺ｫ蜈･繧九・繝ｼ繝ｫ繝峨′隕九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆"
+                text(R.string.message_draw_target_empty_after_filter)
             } else {
-                "謚ｽ驕ｸ蟇ｾ雎｡繧・${eligibleIndices.size} 蛟九・繝帙・繝ｫ繝峨↓險ｭ螳壹＠縺ｾ縺励◆"
+                text(R.string.message_draw_target_selected_count, eligibleIndices.size)
             }
         )
     }
@@ -850,21 +852,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun startChallengeStartGoalSelection() {
         val state = _uiState.value
         if (state.isDrawTargetSelectionMode) {
-            _uiState.value = state.copy(message = "遽・峇驕ｸ謚槭ｒ邨ゅ∴縺ｦ縺九ｉ繧ｹ繧ｿ繝ｼ繝医→繧ｴ繝ｼ繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞")
+            _uiState.value = state.copy(message = text(R.string.message_finish_range_selection_first))
             return
         }
         if (challengeSelectionCandidateIndices(state).isEmpty()) {
-            _uiState.value = state.copy(message = "蜈医↓隱ｲ鬘後↓蜷ｫ繧√ｋ繝帙・繝ｫ繝峨ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞")
+            _uiState.value = state.copy(message = text(R.string.message_select_candidate_holds_first))
             return
         }
         _uiState.value = state.copy(
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.SELECTING_START,
-            message = "隱ｲ鬘悟・縺ｮ繝帙・繝ｫ繝峨ｒ繧ｿ繝・・縺励※繧ｹ繧ｿ繝ｼ繝医ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞"
+            message = text(R.string.message_select_start_prompt)
         )
     }
 
@@ -874,13 +877,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
             drawTargetHoldIndices = emptySet(),
             hasDrawTargetSelection = false,
             startHoldIndex = null,
             goalHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
-            message = "隱ｲ鬘碁∈謚槭ｒ繧ｯ繝ｪ繧｢縺励∪縺励◆"
+            message = text(R.string.message_challenge_cleared)
         )
     }
 
@@ -888,7 +892,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (_uiState.value.currentScreen) {
             AppScreen.LIST -> Unit
             AppScreen.CAMERA -> _uiState.value = _uiState.value.copy(currentScreen = AppScreen.LIST)
-            AppScreen.EDIT_MENU -> returnToList()
             AppScreen.REACH_CALIBRATION -> {
                 if (_uiState.value.currentWallId != null && !_uiState.value.reachCalibrationReturnToHoldEditor) {
                     requestBackToList()
@@ -911,7 +914,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun requestBackToList() {
         val state = _uiState.value
         when (state.currentScreen) {
-            AppScreen.EDIT_MENU -> returnToList()
             AppScreen.REACH_CALIBRATION,
             AppScreen.HOLD_EDITOR,
             AppScreen.HOLD_SCORING -> {
@@ -962,7 +964,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun defaultWallTitle(): String {
-        return "螢＼" + SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.JAPAN).format(Date())
+        return text(
+            R.string.default_wall_title,
+            SimpleDateFormat(text(R.string.wall_timestamp_format), Locale.JAPAN).format(Date())
+        )
+    }
+
+    private fun text(@StringRes resId: Int, vararg args: Any): String {
+        return appContext.getString(resId, *args)
     }
 
     private fun updateRouteTuning(
@@ -971,6 +980,79 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(
             routeTuning = _uiState.value.routeTuning.transform()
         )
+    }
+
+    private fun openSavedWallIntoScreen(
+        wallId: String,
+        targetScreen: AppScreen
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isBusy = true)
+            val detail = withContext(Dispatchers.IO) { repository.loadWall(wallId) }
+            if (detail == null) {
+                val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
+                _uiState.value = MainUiState(
+                    currentScreen = AppScreen.LIST,
+                    savedWalls = refreshed,
+                    drawCountInput = _uiState.value.drawCountInput,
+                    holdTapAreaSize = _uiState.value.holdTapAreaSize,
+                    challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
+                    challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
+                    routeTuning = _uiState.value.routeTuning,
+                    message = text(R.string.message_open_wall_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(
+                currentScreen = targetScreen,
+                currentWallId = detail.id,
+                wallTitle = detail.title,
+                capturedBitmap = detail.bitmap,
+                capturedOrientation = detail.capturedOrientation,
+                capturedRotationDegrees = detail.capturedRotationDegrees,
+                holds = detail.holds,
+                reachCalibrationReference = detail.reachCalibrationReference,
+                reachCalibrationLengthInput = detail.reachCalibrationReference
+                    ?.referenceLengthCm
+                    ?.toString()
+                    ?: DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
+                pendingReachCalibrationPoint = null,
+                isReachCalibrationSelectionMode = targetScreen == AppScreen.REACH_CALIBRATION &&
+                    detail.reachCalibrationReference == null,
+                reachCalibrationReturnToHoldEditor = false,
+                selectedHoldIndex = null,
+                challengeHoldIndices = emptySet(),
+                challengeOrderedHoldIndices = emptyList(),
+                drawTargetHoldIndices = emptySet(),
+                hasDrawTargetSelection = false,
+                startHoldIndex = null,
+                goalHoldIndex = null,
+                routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
+                isHoldEditorDirty = false,
+                holdScoringPosition = 0,
+                showDiscardDialog = false,
+                isBusy = false,
+                message = when (targetScreen) {
+                    AppScreen.REACH_CALIBRATION -> if (detail.reachCalibrationReference == null) {
+                        text(R.string.message_reach_first_point)
+                    } else {
+                        text(R.string.message_reach_confirm)
+                    }
+                    else -> null
+                }
+            )
+        }
+    }
+
+    private fun parseReachCalibrationLengthCentimeters(state: MainUiState): Int? {
+        return state.reachCalibrationLengthInput.toIntOrNull()?.takeIf { it > 0 }
+    }
+
+    private fun ReachCalibrationReference?.withCurrentLength(state: MainUiState): ReachCalibrationReference? {
+        val parsedLength = parseReachCalibrationLengthCentimeters(state) ?: return this
+        return this?.copy(referenceLengthCm = parsedLength)
     }
 
     private fun challengeSelectionCandidateIndices(state: MainUiState): Set<Int> {
@@ -997,5 +1079,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val score = holds.getOrNull(index)?.difficultyScore ?: DEFAULT_HOLD_DIFFICULTY_SCORE
             score in minScore..maxScore
         }
+    }
+
+    private fun generateChallengeRouteWithRetries(
+        holds: List<Hold>,
+        sourceIndices: Set<Int>,
+        startIndex: Int,
+        goalIndex: Int,
+        targetCount: Int?,
+        tuning: RouteGenerationTuning,
+        reachCalibrationReference: ReachCalibrationReference?
+    ): List<Int>? {
+        val maximumAttempts = 512
+
+        repeat(maximumAttempts) {
+            ChallengeRouteGenerator.generate(
+                holds = holds,
+                sourceIndices = sourceIndices,
+                startIndex = startIndex,
+                goalIndex = goalIndex,
+                targetCount = targetCount,
+                tuning = tuning,
+                reachCalibrationReference = reachCalibrationReference
+            )?.let { generatedRoute ->
+                return generatedRoute
+            }
+        }
+
+        return null
     }
 }

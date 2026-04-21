@@ -15,9 +15,12 @@ data class SavedWallSummary(
     val updatedAt: Long
 )
 
+const val DEFAULT_REACH_REFERENCE_LENGTH_CM = 160
+
 data class ReachCalibrationReference(
     val firstPoint: HoldPoint,
-    val secondPoint: HoldPoint
+    val secondPoint: HoldPoint,
+    val referenceLengthCm: Int = DEFAULT_REACH_REFERENCE_LENGTH_CM
 )
 
 data class SavedWallDetail(

@@ -42,13 +42,16 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import com.example.holddetector.R
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppBusyOverlayColor
+import com.example.holddetector.ui.AppCoreLabelBackgroundColor
 import com.example.holddetector.ui.AppOverlayStrokePreviewColor
 import com.example.holddetector.ui.AppStartGoalLabelBackgroundColor
 import com.example.holddetector.ui.DefaultHoldStrokeWidth
@@ -160,6 +163,7 @@ fun ChallengeCanvasScreen(
     selectionCandidateIndices: Set<Int>,
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
+    coreChallengeHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
     isDrawTargetSelectionMode: Boolean,
     onHoldTapped: (Int?) -> Unit,
@@ -175,6 +179,7 @@ fun ChallengeCanvasScreen(
         selectionCandidateIndices = selectionCandidateIndices,
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
+        coreChallengeHoldIndex = coreChallengeHoldIndex,
         routeSelectionMode = routeSelectionMode,
         reachCalibrationReference = null,
         pendingReachCalibrationPoint = null,
@@ -231,6 +236,7 @@ private fun InteractiveCapturedImage(
     selectionCandidateIndices: Set<Int> = emptySet(),
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
+    coreChallengeHoldIndex: Int? = null,
     routeSelectionMode: RouteSelectionMode,
     reachCalibrationReference: ReachCalibrationReference? = null,
     pendingReachCalibrationPoint: HoldPoint? = null,
@@ -280,6 +286,8 @@ private fun InteractiveCapturedImage(
             .withIndex()
             .associate { (position, holdIndex) -> holdIndex to (position + 1).toString() }
     }
+    val startMarkerLabel = stringResource(R.string.challenge_start_marker)
+    val goalMarkerLabel = stringResource(R.string.challenge_goal_marker)
 
     val baseLayout = remember(bitmap.width, bitmap.height, containerSize) {
         calculateBaseImageLayout(
@@ -734,12 +742,12 @@ private fun InteractiveCapturedImage(
                                 )
                                 drawCircle(
                                     color = Color(0xFF2563EB),
-                                    radius = 8f,
+                                    radius = 4f,
                                     center = first
                                 )
                                 drawCircle(
                                     color = Color(0xFF2563EB),
-                                    radius = 8f,
+                                    radius = 4f,
                                     center = second
                                 )
                             }
@@ -747,7 +755,7 @@ private fun InteractiveCapturedImage(
                         pendingReachCalibrationPoint?.let { pendingPoint ->
                             drawCircle(
                                 color = Color(0xFF2563EB),
-                                radius = 8f,
+                                radius = 4f,
                                 center = pendingPoint.toLocalOffset(baseLayout)
                             )
                         }
@@ -786,8 +794,8 @@ private fun InteractiveCapturedImage(
                         )
 
                         val label = buildList {
-                            if (index == startHoldIndex) add("S")
-                            if (index == goalHoldIndex) add("G")
+                            if (index == startHoldIndex) add(startMarkerLabel)
+                            if (index == goalHoldIndex) add(goalMarkerLabel)
                             if (mode == CanvasMode.CHALLENGE && challengeHoldIndices.contains(index)) {
                                 challengeOrderLabels[index]?.let(::add)
                             }
@@ -803,7 +811,15 @@ private fun InteractiveCapturedImage(
                             val labelWidth = max(labelPaint.measureText(label) + horizontalPadding * 2f, 24f)
 
                             drawRect(
-                                color = AppStartGoalLabelBackgroundColor,
+                                color = if (
+                                    mode == CanvasMode.CHALLENGE &&
+                                    index == coreChallengeHoldIndex &&
+                                    challengeHoldIndices.contains(index)
+                                ) {
+                                    AppCoreLabelBackgroundColor
+                                } else {
+                                    AppStartGoalLabelBackgroundColor
+                                },
                                 topLeft = Offset(labelLeft, labelTop),
                                 size = Size(labelWidth, labelHeight)
                             )

@@ -33,16 +33,15 @@ fun HoldDetectorApp(
     cameraPermissionGranted: Boolean,
     onRequestCameraPermission: () -> Unit,
     onNewWallClick: () -> Unit,
-    onOpenSavedWallForEditing: (String) -> Unit,
+    onOpenSavedWallForReachCalibration: (String) -> Unit,
+    onOpenSavedWallForHoldEditor: (String) -> Unit,
+    onOpenSavedWallForHoldScoring: (String) -> Unit,
     onOpenSavedWallForChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     onCaptureClick: () -> Unit,
     onBindPreview: (PreviewView) -> Unit,
     onBackToList: () -> Unit,
     onSaveWall: () -> Unit,
-    onOpenReachCalibrationFromEditMenu: () -> Unit,
-    onOpenHoldEditorFromEditMenu: () -> Unit,
-    onOpenHoldScoringFromEditMenu: () -> Unit,
     onOpenHoldScoring: () -> Unit,
     onBackFromHoldScoring: () -> Unit,
     onDifficultyScoreSelected: (Int) -> Unit,
@@ -56,6 +55,7 @@ fun HoldDetectorApp(
     onContinueToHoldEditorFromReachCalibration: () -> Unit,
     onBackFromReachCalibration: () -> Unit,
     onStartReachCalibrationSelection: () -> Unit,
+    onReachCalibrationLengthInputChange: (String) -> Unit,
     onClearReachCalibration: () -> Unit,
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     onStartGoalSelection: () -> Unit,
@@ -64,13 +64,10 @@ fun HoldDetectorApp(
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
-    onHoldCountVarianceChange: (Float) -> Unit,
     onDetourStrengthChange: (Float) -> Unit,
     onRouteWavinessChange: (Float) -> Unit,
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
-    onCandidateSelectionRandomnessChange: (Float) -> Unit,
-    onFinalSelectionRandomnessChange: (Float) -> Unit,
     onClearChallenge: () -> Unit,
     onDismissDiscardDialog: () -> Unit,
     onDiscardChanges: () -> Unit
@@ -92,7 +89,9 @@ fun HoldDetectorApp(
                 WallListScreen(
                     savedWalls = state.savedWalls,
                     onNewWallClick = onNewWallClick,
-                    onOpenSavedWallForEditing = onOpenSavedWallForEditing,
+                    onOpenSavedWallForReachCalibration = onOpenSavedWallForReachCalibration,
+                    onOpenSavedWallForHoldEditor = onOpenSavedWallForHoldEditor,
+                    onOpenSavedWallForHoldScoring = onOpenSavedWallForHoldScoring,
                     onOpenSavedWallForChallenge = onOpenSavedWallForChallenge,
                     onDeleteSavedWall = onDeleteSavedWall,
                     modifier = Modifier
@@ -112,18 +111,6 @@ fun HoldDetectorApp(
                 )
             }
 
-            AppScreen.EDIT_MENU -> {
-                EditMenuScreen(
-                    state = state,
-                    onOpenReachCalibration = onOpenReachCalibrationFromEditMenu,
-                    onOpenHoldEditor = onOpenHoldEditorFromEditMenu,
-                    onOpenHoldScoring = onOpenHoldScoringFromEditMenu,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding)
-                )
-            }
-
             AppScreen.REACH_CALIBRATION -> {
                 ReachCalibrationScreen(
                     state = state,
@@ -131,6 +118,7 @@ fun HoldDetectorApp(
                     onExitWithoutSaving = onBackToList,
                     onSaveAndExit = onSaveWall,
                     onStartReachCalibrationSelection = onStartReachCalibrationSelection,
+                    onReachCalibrationLengthInputChange = onReachCalibrationLengthInputChange,
                     onClearReachCalibration = onClearReachCalibration,
                     onReachCalibrationPointSelected = onReachCalibrationPointSelected,
                     onContinue = onContinueToHoldEditorFromReachCalibration,
@@ -176,13 +164,10 @@ fun HoldDetectorApp(
                     onDrawClick = onDrawClick,
                     onDrawCountChange = onDrawCountChange,
                     onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
-                    onHoldCountVarianceChange = onHoldCountVarianceChange,
                     onDetourStrengthChange = onDetourStrengthChange,
                     onRouteWavinessChange = onRouteWavinessChange,
                     onStepDistanceVarianceChange = onStepDistanceVarianceChange,
                     onCorridorWidthChange = onCorridorWidthChange,
-                    onCandidateSelectionRandomnessChange = onCandidateSelectionRandomnessChange,
-                    onFinalSelectionRandomnessChange = onFinalSelectionRandomnessChange,
                     onClearChallenge = onClearChallenge,
                     modifier = Modifier
                         .fillMaxSize()

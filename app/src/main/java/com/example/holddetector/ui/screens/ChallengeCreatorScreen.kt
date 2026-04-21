@@ -19,15 +19,22 @@ import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
+import com.example.holddetector.ui.AppCoreHighlightBackgroundColor
 import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
@@ -37,11 +44,8 @@ import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.selectors.DrawTargetStatus
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
+import java.util.Locale
 import kotlin.math.roundToInt
-
-private const val DifficultyRangeLabel = "\u4f7f\u3046\u70b9\u6570"
-private const val ChallengeDifficultyLabel = "\u66ab\u5b9a\u96e3\u5ea6"
-private const val CoreMoveDifficultyLabel = "\u6838\u5fc3"
 
 @Composable
 fun ChallengeCreatorScreen(
@@ -54,19 +58,17 @@ fun ChallengeCreatorScreen(
     onDrawClick: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
-    onHoldCountVarianceChange: (Float) -> Unit,
     onDetourStrengthChange: (Float) -> Unit,
     onRouteWavinessChange: (Float) -> Unit,
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
-    onCandidateSelectionRandomnessChange: (Float) -> Unit,
-    onFinalSelectionRandomnessChange: (Float) -> Unit,
     onClearChallenge: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
     val scrollState = rememberScrollState()
     val uiModel = deriveChallengeCreatorUiModel(state)
+    var isDebugSummaryExpanded by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier.verticalScroll(scrollState)
@@ -102,6 +104,7 @@ fun ChallengeCreatorScreen(
                     selectionCandidateIndices = uiModel.selectionCandidateIndices,
                     startHoldIndex = state.startHoldIndex,
                     goalHoldIndex = state.goalHoldIndex,
+                    coreChallengeHoldIndex = uiModel.coreChallengeHoldIndex,
                     routeSelectionMode = state.routeSelectionMode,
                     isDrawTargetSelectionMode = state.isDrawTargetSelectionMode,
                     onHoldTapped = onChallengeHoldTapped,
@@ -111,17 +114,66 @@ fun ChallengeCreatorScreen(
             }
         }
 
-        if (uiModel.challengeDebugSummaryLines.isNotEmpty()) {
-            Column(
-                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+        if (uiModel.challengeDebugSummaryRows.isNotEmpty()) {
+            AppOutlinedButton(
+                onClick = { isDebugSummaryExpanded = !isDebugSummaryExpanded },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
             ) {
-                uiModel.challengeDebugSummaryLines.forEach { debugLine ->
-                    Text(
-                        text = debugLine,
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodySmall
+                Text(
+                    text = stringResource(
+                        if (isDebugSummaryExpanded) {
+                            R.string.challenge_debug_hide
+                        } else {
+                            R.string.challenge_debug_show
+                        }
                     )
+                )
+            }
+
+            if (isDebugSummaryExpanded) {
+                Column(
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    uiModel.challengeDebugSummaryRows.forEach { debugRow ->
+                        val distanceText = debugRow.distanceCentimeters?.let { distanceCentimeters ->
+                            stringResource(
+                                R.string.challenge_debug_distance_centimeters,
+                                distanceCentimeters
+                            )
+                        } ?: stringResource(R.string.challenge_debug_distance_unknown)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = if (debugRow.isCore) {
+                                        AppCoreHighlightBackgroundColor
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    R.string.challenge_debug_summary,
+                                    debugRow.stepNumber,
+                                    formatChallengeDebugNumber(debugRow.totalDifficulty),
+                                    distanceText,
+                                    debugRow.previousHoldDifficulty,
+                                    debugRow.nextHoldDifficulty,
+                                    formatChallengeDebugNumber(debugRow.distanceMultiplier)
+                                ),
+                                color = AppSecondaryTextColor,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -140,7 +192,10 @@ fun ChallengeCreatorScreen(
 
         uiModel.challengeDifficultyScore?.let { totalDifficulty ->
             Text(
-                text = "$ChallengeDifficultyLabel: ${"%.2f".format(totalDifficulty)}",
+                text = stringResource(
+                    R.string.challenge_difficulty_score_label,
+                    formatChallengeDebugNumber(totalDifficulty)
+                ),
                 color = AppTextColor,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
@@ -148,7 +203,10 @@ fun ChallengeCreatorScreen(
             )
             uiModel.coreMoveDifficulty?.let { coreDifficulty ->
                 Text(
-                    text = "$CoreMoveDifficultyLabel: ${"%.2f".format(coreDifficulty)}",
+                    text = stringResource(
+                        R.string.challenge_core_move_difficulty_label,
+                        formatChallengeDebugNumber(coreDifficulty)
+                    ),
                     color = AppSecondaryTextColor,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -167,6 +225,7 @@ fun ChallengeCreatorScreen(
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 label = { Text(stringResource(R.string.draw_count_label)) },
+                placeholder = { Text(stringResource(R.string.draw_count_placeholder_auto)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
@@ -188,7 +247,7 @@ fun ChallengeCreatorScreen(
         )
 
         HoldDifficultyRangeSlider(
-            label = DifficultyRangeLabel,
+            label = stringResource(R.string.challenge_difficulty_range_label),
             startValue = state.challengeDifficultyScoreMin.toFloat(),
             endValue = state.challengeDifficultyScoreMax.toFloat(),
             onValueChange = onChallengeDifficultyRangeChange,
@@ -196,16 +255,10 @@ fun ChallengeCreatorScreen(
         )
 
         ChallengeTuningSlider(
-            label = stringResource(R.string.challenge_hold_count_variance_label),
-            value = state.routeTuning.holdCountVariance,
-            onValueChange = onHoldCountVarianceChange,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        ChallengeTuningSlider(
             label = stringResource(R.string.challenge_detour_strength_label),
             value = state.routeTuning.detourStrength,
-            onValueChange = onDetourStrengthChange
+            onValueChange = onDetourStrengthChange,
+            modifier = Modifier.padding(top = 8.dp)
         )
 
         ChallengeTuningSlider(
@@ -224,18 +277,6 @@ fun ChallengeCreatorScreen(
             label = stringResource(R.string.challenge_corridor_width_label),
             value = state.routeTuning.corridorWidth,
             onValueChange = onCorridorWidthChange
-        )
-
-        ChallengeTuningSlider(
-            label = stringResource(R.string.challenge_candidate_selection_randomness_label),
-            value = state.routeTuning.candidateSelectionRandomness,
-            onValueChange = onCandidateSelectionRandomnessChange
-        )
-
-        ChallengeTuningSlider(
-            label = stringResource(R.string.challenge_final_selection_randomness_label),
-            value = state.routeTuning.finalSelectionRandomness,
-            onValueChange = onFinalSelectionRandomnessChange
         )
 
         Text(
@@ -321,7 +362,11 @@ private fun HoldDifficultyRangeSlider(
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                text = "${startValue.roundToInt()}〜${endValue.roundToInt()}点",
+                text = stringResource(
+                    R.string.challenge_difficulty_range_value,
+                    startValue.roundToInt(),
+                    endValue.roundToInt()
+                ),
                 color = AppSecondaryTextColor,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -337,6 +382,10 @@ private fun HoldDifficultyRangeSlider(
             modifier = Modifier.padding(top = 4.dp)
         )
     }
+}
+
+private fun formatChallengeDebugNumber(value: Double): String {
+    return String.format(Locale.US, "%.2f", value)
 }
 
 @Composable

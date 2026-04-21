@@ -43,7 +43,7 @@ internal fun ReachCalibrationReference.toReachConstraint(): ReachConstraint? {
     )
     if (calibrationDistancePx <= 0.0) return null
 
-    val pixelsPerCentimeter = calibrationDistancePx / 150.0
+    val pixelsPerCentimeter = calibrationDistancePx / referenceLengthCm.toDouble()
     return ReachConstraint(
         horizontalReachPx = pixelsPerCentimeter * 120.0,
         verticalReachPx = pixelsPerCentimeter * 60.0

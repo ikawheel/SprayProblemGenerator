@@ -4,17 +4,14 @@ import androidx.annotation.StringRes
 import com.example.holddetector.R
 import com.example.holddetector.ui.MainUiState
 
-private const val ReachStatusConfigured = "150cm\u57fa\u6e96: \u8a2d\u5b9a\u6e08\u307f"
-private const val ReachStatusUnset = "150cm\u57fa\u6e96: \u672a\u8a2d\u5b9a"
-
 internal data class HoldEditorUiModel(
     @StringRes val titleResId: Int,
     @StringRes val saveButtonTextResId: Int,
-    val reachStatusText: String
+    val reachReferenceLengthCm: Int?
 )
 
 internal fun deriveHoldEditorUiModel(state: MainUiState): HoldEditorUiModel {
-    val isConfigured = state.reachCalibrationReference != null
+    val reference = state.reachCalibrationReference
 
     return HoldEditorUiModel(
         titleResId = if (state.currentWallId == null) {
@@ -27,10 +24,6 @@ internal fun deriveHoldEditorUiModel(state: MainUiState): HoldEditorUiModel {
         } else {
             R.string.overwrite_save
         },
-        reachStatusText = if (isConfigured) {
-            ReachStatusConfigured
-        } else {
-            ReachStatusUnset
-        }
+        reachReferenceLengthCm = reference?.referenceLengthCm
     )
 }

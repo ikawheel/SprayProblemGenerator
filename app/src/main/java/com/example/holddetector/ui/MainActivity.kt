@@ -46,6 +46,8 @@ val AppTextColor = Color(0xFF1F2937)
 val AppSecondaryTextColor = Color(0xFF6B7280)
 val AppOverlayBackgroundColor = Color(0xEFFFFFFF)
 val AppStartGoalLabelBackgroundColor = Color(0x55FFFFFF)
+val AppCoreHighlightBackgroundColor = Color(0x26F59E0B)
+val AppCoreLabelBackgroundColor = Color(0x99FDE68A)
 val AppOverlayStrokePreviewColor = Color(0x44222222)
 val AppBusyOverlayColor = Color(0x66FFFFFF)
 val CameraScreenBackgroundColor = Color.Black
@@ -110,16 +112,15 @@ class MainActivity : ComponentActivity() {
                             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
                         },
                         onNewWallClick = viewModel::startNewWall,
-                        onOpenSavedWallForEditing = viewModel::openSavedWallForEditing,
+                        onOpenSavedWallForReachCalibration = viewModel::openSavedWallForReachCalibration,
+                        onOpenSavedWallForHoldEditor = viewModel::openSavedWallForHoldEditor,
+                        onOpenSavedWallForHoldScoring = viewModel::openSavedWallForHoldScoring,
                         onOpenSavedWallForChallenge = viewModel::openSavedWallForChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
                         onCaptureClick = ::capturePhoto,
                         onBindPreview = ::bindCameraPreview,
                         onBackToList = viewModel::requestBackToList,
                         onSaveWall = viewModel::saveWallAndReturnToList,
-                        onOpenReachCalibrationFromEditMenu = viewModel::openReachCalibrationFromEditMenu,
-                        onOpenHoldEditorFromEditMenu = viewModel::openHoldEditorFromEditMenu,
-                        onOpenHoldScoringFromEditMenu = viewModel::openHoldScoringFromEditMenu,
                         onOpenHoldScoring = viewModel::openHoldScoring,
                         onBackFromHoldScoring = viewModel::returnToHoldEditorFromScoring,
                         onDifficultyScoreSelected = viewModel::setCurrentHoldDifficultyScore,
@@ -133,6 +134,7 @@ class MainActivity : ComponentActivity() {
                         onContinueToHoldEditorFromReachCalibration = viewModel::continueToHoldEditorFromReachCalibration,
                         onBackFromReachCalibration = viewModel::backFromReachCalibration,
                         onStartReachCalibrationSelection = viewModel::startReachCalibrationSelection,
+                        onReachCalibrationLengthInputChange = viewModel::onReachCalibrationLengthInputChanged,
                         onClearReachCalibration = viewModel::clearReachCalibration,
                         onReachCalibrationPointSelected = viewModel::onReachCalibrationPointSelected,
                         onStartGoalSelection = viewModel::startChallengeStartGoalSelection,
@@ -141,13 +143,10 @@ class MainActivity : ComponentActivity() {
                         onDrawClick = viewModel::drawRandomChallengeHolds,
                         onDrawCountChange = viewModel::onDrawCountChanged,
                         onChallengeDifficultyRangeChange = viewModel::onChallengeDifficultyRangeChanged,
-                        onHoldCountVarianceChange = viewModel::onHoldCountVarianceChanged,
                         onDetourStrengthChange = viewModel::onDetourStrengthChanged,
                         onRouteWavinessChange = viewModel::onRouteWavinessChanged,
                         onStepDistanceVarianceChange = viewModel::onStepDistanceVarianceChanged,
                         onCorridorWidthChange = viewModel::onCorridorWidthChanged,
-                        onCandidateSelectionRandomnessChange = viewModel::onCandidateSelectionRandomnessChanged,
-                        onFinalSelectionRandomnessChange = viewModel::onFinalSelectionRandomnessChanged,
                         onClearChallenge = viewModel::clearChallengeSelection,
                         onDismissDiscardDialog = viewModel::dismissDiscardDialog,
                         onDiscardChanges = viewModel::discardEditorAndReturnToList

@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,18 +25,18 @@ import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.model.Hold
 import com.example.holddetector.ui.AppSecondaryTextColor
+import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.RouteSelectionMode
+import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.HoldCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.BottomActionBar
 import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
-
-private const val OpenHoldScoringButtonText = "\u70b9\u6570\u4ed8\u3051\u3078"
 
 @Composable
 fun HoldEditorScreen(
@@ -53,6 +54,14 @@ fun HoldEditorScreen(
     val bitmap = state.capturedBitmap
     val uiModel = deriveHoldEditorUiModel(state)
     val isEditingExistingWall = state.currentWallId != null
+    val reachStatusText = if (uiModel.reachReferenceLengthCm != null) {
+        stringResourceByName(
+            "hold_editor_reach_status_configured",
+            uiModel.reachReferenceLengthCm
+        )
+    } else {
+        stringResourceByName("hold_editor_reach_status_unset")
+    }
 
     Scaffold(
         modifier = modifier,
@@ -102,7 +111,7 @@ fun HoldEditorScreen(
                         onClick = onOpenHoldScoring,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(OpenHoldScoringButtonText)
+                        Text(stringResourceByName("open_hold_scoring"))
                     }
                 }
             }
@@ -112,126 +121,130 @@ fun HoldEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, top = 16.dp)
         ) {
-            Text(
-                text = stringResource(uiModel.titleResId),
-                color = AppTextColor,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            OutlinedTextField(
-                value = state.wallTitle,
-                onValueChange = onWallTitleChanged,
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
-                singleLine = true,
-                label = { Text(stringResource(R.string.wall_title_label)) }
-            )
+                    .padding(bottom = 16.dp),
+                color = AppSurfaceColor,
+                shadowElevation = 12.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+                ) {
+                    Text(
+                        text = stringResource(uiModel.titleResId),
+                        color = AppTextColor,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
 
-            Box(
+                    OutlinedTextField(
+                        value = state.wallTitle,
+                        onValueChange = onWallTitleChanged,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.wall_title_label)) }
+                    )
+                }
+            }
+
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
-                    .clipToBounds()
+                    .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp)
             ) {
-                if (bitmap != null) {
-                    HoldCanvasScreen(
-                        bitmap = bitmap,
-                        holds = state.holds,
-                        selectedIndex = state.selectedHoldIndex,
-                        challengeHoldIndices = emptySet(),
-                        startHoldIndex = null,
-                        goalHoldIndex = null,
-                        routeSelectionMode = RouteSelectionMode.NONE,
-                        reachCalibrationReference = null,
-                        pendingReachCalibrationPoint = null,
-                        isReachCalibrationSelectionMode = false,
-                        holdTapAreaSize = state.holdTapAreaSize,
-                        onHoldTapped = onEditorHoldTapped,
-                        onReachCalibrationPointSelected = {},
-                        onManualHoldCreated = onManualHoldCreated,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-
-            Text(
-                text = stringResource(R.string.hold_editor_help),
-                color = AppTextColor,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
-            )
-
-            Text(
-                text = stringResource(R.string.hold_count_label, state.holds.size),
-                color = AppTextColor,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Text(
-                text = stringResource(R.string.hold_tap_size_label),
-                color = AppTextColor,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                HoldTapAreaSize.values().forEach { size ->
-                    val buttonText = when (size) {
-                        HoldTapAreaSize.SMALL -> stringResource(R.string.hold_tap_size_small)
-                        HoldTapAreaSize.MEDIUM -> stringResource(R.string.hold_tap_size_medium)
-                        HoldTapAreaSize.LARGE -> stringResource(R.string.hold_tap_size_large)
-                    }
-                    val buttonModifier = Modifier.weight(1f)
-
-                    if (size == state.holdTapAreaSize) {
-                        AppButton(
-                            onClick = { onHoldTapAreaSizeChange(size) },
-                            modifier = buttonModifier
-                        ) {
-                            Text(buttonText)
-                        }
-                    } else {
-                        AppOutlinedButton(
-                            onClick = { onHoldTapAreaSizeChange(size) },
-                            modifier = buttonModifier
-                        ) {
-                            Text(buttonText)
-                        }
-                    }
-                }
-            }
-
-            Text(
-                text = uiModel.reachStatusText,
-                color = AppSecondaryTextColor,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            if (isEditingExistingWall) {
-                AppButton(
-                    onClick = onDeleteSelectedHold,
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
+                        .clipToBounds()
                 ) {
-                    Text(
-                        text = stringResource(R.string.delete_selected),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (bitmap != null) {
+                        HoldCanvasScreen(
+                            bitmap = bitmap,
+                            holds = state.holds,
+                            selectedIndex = state.selectedHoldIndex,
+                            challengeHoldIndices = emptySet(),
+                            startHoldIndex = null,
+                            goalHoldIndex = null,
+                            routeSelectionMode = RouteSelectionMode.NONE,
+                            reachCalibrationReference = null,
+                            pendingReachCalibrationPoint = null,
+                            isReachCalibrationSelectionMode = false,
+                            holdTapAreaSize = state.holdTapAreaSize,
+                            onHoldTapped = onEditorHoldTapped,
+                            onReachCalibrationPointSelected = {},
+                            onManualHoldCreated = onManualHoldCreated,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
-            } else {
+
+                Text(
+                    text = stringResource(R.string.hold_editor_help),
+                    color = AppTextColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                )
+
+                Text(
+                    text = stringResource(R.string.hold_count_label, state.holds.size),
+                    color = AppTextColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = stringResource(R.string.hold_tap_size_label),
+                    color = AppTextColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HoldTapAreaSize.values().forEach { size ->
+                        val buttonText = when (size) {
+                            HoldTapAreaSize.SMALL -> stringResource(R.string.hold_tap_size_small)
+                            HoldTapAreaSize.MEDIUM -> stringResource(R.string.hold_tap_size_medium)
+                            HoldTapAreaSize.LARGE -> stringResource(R.string.hold_tap_size_large)
+                        }
+                        val buttonModifier = Modifier.weight(1f)
+
+                        if (size == state.holdTapAreaSize) {
+                            AppButton(
+                                onClick = { onHoldTapAreaSizeChange(size) },
+                                modifier = buttonModifier
+                            ) {
+                                Text(buttonText)
+                            }
+                        } else {
+                            AppOutlinedButton(
+                                onClick = { onHoldTapAreaSizeChange(size) },
+                                modifier = buttonModifier
+                            ) {
+                                Text(buttonText)
+                            }
+                        }
+                    }
+                }
+
+                Text(
+                    text = reachStatusText,
+                    color = AppSecondaryTextColor,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
                 AppButton(
                     onClick = onDeleteSelectedHold,
                     modifier = Modifier.fillMaxWidth()

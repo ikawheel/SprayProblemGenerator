@@ -9,6 +9,7 @@ import kotlin.math.sqrt
 data class ChallengeDifficultyResult(
     val totalDifficulty: Double,
     val coreMoveDifficulty: Double,
+    val coreMoveIndex: Int,
     val supportMoveRatio: Double,
     val moveDifficulties: List<Double>,
     val moveDetails: List<ChallengeMoveDifficulty>
@@ -71,6 +72,7 @@ object ChallengeDifficultyCalculator {
         return ChallengeDifficultyResult(
             totalDifficulty = coreMoveDifficulty * (1.0 + GlobalBeta * supportMoveRatio),
             coreMoveDifficulty = coreMoveDifficulty,
+            coreMoveIndex = coreMoveIndex,
             supportMoveRatio = supportMoveRatio,
             moveDifficulties = moveDifficulties,
             moveDetails = moveDetails

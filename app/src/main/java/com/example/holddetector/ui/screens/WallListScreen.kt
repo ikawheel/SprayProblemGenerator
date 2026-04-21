@@ -44,12 +44,15 @@ import com.example.holddetector.ui.selectors.formatWallTimestamp
 fun WallListScreen(
     savedWalls: List<SavedWallSummary>,
     onNewWallClick: () -> Unit,
-    onOpenSavedWallForEditing: (String) -> Unit,
+    onOpenSavedWallForReachCalibration: (String) -> Unit,
+    onOpenSavedWallForHoldEditor: (String) -> Unit,
+    onOpenSavedWallForHoldScoring: (String) -> Unit,
     onOpenSavedWallForChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var deletingWallId by remember { mutableStateOf<String?>(null) }
+    var editingWallId by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = modifier) {
         Text(
@@ -94,13 +97,71 @@ fun WallListScreen(
                 items(savedWalls, key = { it.id }) { wall ->
                     SavedWallCard(
                         wall = wall,
-                        onEdit = { onOpenSavedWallForEditing(wall.id) },
+                        onEdit = { editingWallId = wall.id },
                         onCreateChallenge = { onOpenSavedWallForChallenge(wall.id) },
                         onDelete = { deletingWallId = wall.id }
                     )
                 }
             }
         }
+    }
+
+    editingWallId?.let { wallId ->
+        val wall = savedWalls.firstOrNull { it.id == wallId }
+        AlertDialog(
+            onDismissRequest = { editingWallId = null },
+            title = { Text(stringResource(R.string.edit_menu_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    wall?.let {
+                        Text(
+                            text = it.title,
+                            color = AppTextColor,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.edit_menu_description),
+                        color = AppSecondaryTextColor,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    AppButton(
+                        onClick = {
+                            editingWallId = null
+                            onOpenSavedWallForReachCalibration(wallId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.edit_menu_reach_calibration))
+                    }
+                    AppButton(
+                        onClick = {
+                            editingWallId = null
+                            onOpenSavedWallForHoldEditor(wallId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.edit_menu_hold_editor))
+                    }
+                    AppButton(
+                        onClick = {
+                            editingWallId = null
+                            onOpenSavedWallForHoldScoring(wallId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.edit_menu_hold_scoring))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                AppOutlinedButton(onClick = { editingWallId = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 
     deletingWallId?.let { wallId ->
@@ -165,7 +226,14 @@ private fun SavedWallCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = stringResource(R.string.updated_at_label, formatWallTimestamp(wall.updatedAt)),
+                    text = stringResource(
+                        R.string.updated_at_label,
+                        formatWallTimestamp(
+                            wall.updatedAt,
+                            stringResource(R.string.wall_timestamp_format),
+                            stringResource(R.string.wall_timestamp_unknown)
+                        )
+                    ),
                     color = AppSecondaryTextColor,
                     style = MaterialTheme.typography.bodySmall
                 )
