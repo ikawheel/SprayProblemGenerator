@@ -5,7 +5,9 @@ import android.graphics.Bitmap
 import androidx.annotation.StringRes
 import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
 import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
+import com.example.holddetector.domain.hold.AutoExtractionTuning
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
+import com.example.holddetector.domain.hold.BinaryHoldExtractor
 import com.example.holddetector.domain.hold.buildHoldScoringOrder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -35,6 +37,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = WallStorageRepository(application.applicationContext)
     private val appContext = application.applicationContext
+    private var autoExtractionRequestId = 0L
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -56,6 +59,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holdTapAreaSize = _uiState.value.holdTapAreaSize,
                 challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                 challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
+                autoExtractionTuning = _uiState.value.autoExtractionTuning,
                 routeTuning = _uiState.value.routeTuning,
                 isBusy = false
             )
@@ -70,6 +74,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holdTapAreaSize = _uiState.value.holdTapAreaSize,
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
+            autoExtractionTuning = _uiState.value.autoExtractionTuning,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -80,18 +85,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         capturedRotationDegrees: Int
     ) {
         _uiState.value = _uiState.value.copy(
-            currentScreen = AppScreen.REACH_CALIBRATION,
+            currentScreen = AppScreen.HOLD_REGISTRATION_METHOD,
             currentWallId = null,
             wallTitle = defaultWallTitle(),
             capturedBitmap = bitmap,
             capturedOrientation = capturedOrientation,
             capturedRotationDegrees = capturedRotationDegrees,
             holds = emptyList(),
+            autoExtractedHolds = emptyList(),
             reachCalibrationReference = null,
             reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
             pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = true,
+            isReachCalibrationSelectionMode = false,
             reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
@@ -104,7 +111,97 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isDrawTargetSelectionMode = false,
             isHoldEditorDirty = true,
             showDiscardDialog = false,
-            message = text(R.string.message_reach_first_point)
+            message = text(R.string.message_hold_registration_method_select)
+        )
+    }
+
+    fun openManualHoldRegistrationAfterCapture() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.REACH_CALIBRATION,
+            holds = emptyList(),
+            autoExtractedHolds = emptyList(),
+            selectedHoldIndex = null,
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
+            reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
+            message = if (state.reachCalibrationReference == null) {
+                text(R.string.message_reach_first_point)
+            } else {
+                text(R.string.message_reach_confirm)
+            }
+        )
+    }
+
+    fun openAutoHoldExtractionAfterCapture() {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap ?: run {
+            _uiState.value = state.copy(message = text(R.string.message_image_missing_to_save))
+            return
+        }
+
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
+            holds = emptyList(),
+            selectedHoldIndex = null,
+            autoExtractedHolds = emptyList(),
+            reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
+            isBusy = true,
+            message = null
+        )
+        runAutoHoldExtraction(bitmap = bitmap, tuning = state.autoExtractionTuning)
+    }
+
+    fun backToHoldRegistrationMethodSelection() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_REGISTRATION_METHOD,
+            holds = emptyList(),
+            autoExtractedHolds = emptyList(),
+            selectedHoldIndex = null,
+            isBusy = false,
+            message = text(R.string.message_hold_registration_method_select)
+        )
+    }
+
+    fun onAutoExtractedHoldTapped(index: Int?) {
+        val state = _uiState.value
+        _uiState.value = state.copy(selectedHoldIndex = index)
+    }
+
+    fun onAutoExtractionTuningChanged(tuning: AutoExtractionTuning) {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap
+        _uiState.value = state.copy(autoExtractionTuning = tuning)
+        if (state.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && bitmap != null) {
+            runAutoHoldExtraction(bitmap = bitmap, tuning = tuning)
+        }
+    }
+
+    fun applyAutoExtractedHoldsAndContinue() {
+        val state = _uiState.value
+        if (state.autoExtractedHolds.isEmpty()) {
+            _uiState.value = state.copy(message = text(R.string.message_auto_hold_extraction_empty))
+            return
+        }
+
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.REACH_CALIBRATION,
+            holds = state.autoExtractedHolds,
+            selectedHoldIndex = null,
+            holdScoringPosition = 0,
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
+            reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = true,
+            isHoldEditorDirty = true,
+            message = if (state.reachCalibrationReference == null) {
+                text(R.string.message_auto_hold_extraction_applied)
+            } else {
+                text(R.string.message_reach_confirm)
+            }
         )
     }
 
@@ -116,6 +213,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
             reachCalibrationReturnToHoldEditor = true,
+            reachCalibrationReturnToAutoExtraction = false,
             reachCalibrationLengthInput = state.reachCalibrationReference
                 ?.referenceLengthCm
                 ?.toString()
@@ -147,6 +245,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = false,
             reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
+            autoExtractedHolds = emptyList(),
             reachCalibrationReference = state.reachCalibrationReference.withCurrentLength(state),
             message = text(R.string.message_reach_go_hold_editor)
         )
@@ -162,6 +262,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 pendingReachCalibrationPoint = null,
                 isReachCalibrationSelectionMode = false,
                 reachCalibrationReturnToHoldEditor = false,
+                reachCalibrationReturnToAutoExtraction = false,
+                message = null
+            )
+        } else if (state.reachCalibrationReturnToAutoExtraction) {
+            _uiState.value = state.copy(
+                currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
+                selectedHoldIndex = state.autoExtractedHolds.indices.firstOrNull(),
+                pendingReachCalibrationPoint = null,
+                isReachCalibrationSelectionMode = false,
+                reachCalibrationReturnToHoldEditor = false,
+                reachCalibrationReturnToAutoExtraction = false,
                 message = null
             )
         } else {
@@ -177,6 +288,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holdTapAreaSize = state.holdTapAreaSize,
                 challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
                 challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
+                autoExtractionTuning = state.autoExtractionTuning,
                 routeTuning = state.routeTuning
             )
         }
@@ -231,6 +343,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     holdTapAreaSize = _uiState.value.holdTapAreaSize,
                     challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                     challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
+                    autoExtractionTuning = _uiState.value.autoExtractionTuning,
                     routeTuning = _uiState.value.routeTuning,
                     message = text(R.string.message_open_wall_failed)
                 )
@@ -245,6 +358,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 capturedOrientation = detail.capturedOrientation,
                 capturedRotationDegrees = detail.capturedRotationDegrees,
                 holds = detail.holds,
+                autoExtractedHolds = emptyList(),
                 reachCalibrationReference = detail.reachCalibrationReference,
                 reachCalibrationLengthInput = detail.reachCalibrationReference
                     ?.referenceLengthCm
@@ -253,6 +367,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 pendingReachCalibrationPoint = null,
                 isReachCalibrationSelectionMode = false,
                 reachCalibrationReturnToHoldEditor = false,
+                reachCalibrationReturnToAutoExtraction = false,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
@@ -467,6 +582,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 holdTapAreaSize = state.holdTapAreaSize,
                 challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
                 challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
+                autoExtractionTuning = state.autoExtractionTuning,
                 routeTuning = state.routeTuning,
                 message = text(R.string.message_saved_wall_title, savedSummary.title)
             )
@@ -518,6 +634,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 pendingReachCalibrationPoint = null,
                 isReachCalibrationSelectionMode = false,
                 reachCalibrationReturnToHoldEditor = false,
+                reachCalibrationReturnToAutoExtraction = false,
+                autoExtractedHolds = emptyList(),
                 isHoldEditorDirty = false,
                 holdScoringPosition = 0,
                 showDiscardDialog = false,
@@ -1098,8 +1216,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (_uiState.value.currentScreen) {
             AppScreen.LIST -> Unit
             AppScreen.CAMERA -> _uiState.value = _uiState.value.copy(currentScreen = AppScreen.LIST)
+            AppScreen.HOLD_REGISTRATION_METHOD -> {
+                _uiState.value = _uiState.value.copy(currentScreen = AppScreen.CAMERA)
+            }
+            AppScreen.AUTO_HOLD_EXTRACTION -> {
+                backToHoldRegistrationMethodSelection()
+            }
             AppScreen.REACH_CALIBRATION -> {
-                if (_uiState.value.currentWallId != null && !_uiState.value.reachCalibrationReturnToHoldEditor) {
+                if (
+                    _uiState.value.currentWallId != null &&
+                    !_uiState.value.reachCalibrationReturnToHoldEditor &&
+                    !_uiState.value.reachCalibrationReturnToAutoExtraction
+                ) {
                     requestBackToList()
                 } else {
                     backFromReachCalibration()
@@ -1139,6 +1267,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             AppScreen.CAMERA,
+            AppScreen.HOLD_REGISTRATION_METHOD,
+            AppScreen.AUTO_HOLD_EXTRACTION,
             AppScreen.CHALLENGE_CREATOR -> returnToList()
 
             AppScreen.LIST -> Unit
@@ -1157,6 +1287,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holdTapAreaSize = _uiState.value.holdTapAreaSize,
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
+            autoExtractionTuning = _uiState.value.autoExtractionTuning,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -1169,6 +1300,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holdTapAreaSize = _uiState.value.holdTapAreaSize,
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
+            autoExtractionTuning = _uiState.value.autoExtractionTuning,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -1212,6 +1344,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     holdTapAreaSize = _uiState.value.holdTapAreaSize,
                     challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                     challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
+                    autoExtractionTuning = _uiState.value.autoExtractionTuning,
                     routeTuning = _uiState.value.routeTuning,
                     message = text(R.string.message_open_wall_failed)
                 )
@@ -1226,6 +1359,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 capturedOrientation = detail.capturedOrientation,
                 capturedRotationDegrees = detail.capturedRotationDegrees,
                 holds = detail.holds,
+                autoExtractedHolds = emptyList(),
                 reachCalibrationReference = detail.reachCalibrationReference,
                 reachCalibrationLengthInput = detail.reachCalibrationReference
                     ?.referenceLengthCm
@@ -1235,6 +1369,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isReachCalibrationSelectionMode = targetScreen == AppScreen.REACH_CALIBRATION &&
                     detail.reachCalibrationReference == null,
                 reachCalibrationReturnToHoldEditor = false,
+                reachCalibrationReturnToAutoExtraction = false,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
@@ -1442,6 +1577,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
             }
+        }
+    }
+
+    private fun runAutoHoldExtraction(
+        bitmap: Bitmap,
+        tuning: AutoExtractionTuning
+    ) {
+        autoExtractionRequestId += 1
+        val requestId = autoExtractionRequestId
+        _uiState.value = _uiState.value.copy(
+            isBusy = true,
+            message = null
+        )
+
+        viewModelScope.launch {
+            val extractedHolds = withContext(Dispatchers.Default) {
+                BinaryHoldExtractor.extract(
+                    bitmap = bitmap,
+                    tuning = tuning
+                )
+            }
+            val currentState = _uiState.value
+            if (requestId != autoExtractionRequestId) {
+                return@launch
+            }
+            if (currentState.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) {
+                _uiState.value = currentState.copy(isBusy = false)
+                return@launch
+            }
+
+            _uiState.value = currentState.copy(
+                autoExtractedHolds = extractedHolds,
+                selectedHoldIndex = extractedHolds.indices.firstOrNull(),
+                isBusy = false,
+                message = if (extractedHolds.isEmpty()) {
+                    text(R.string.message_auto_hold_extraction_empty)
+                } else {
+                    text(R.string.message_auto_hold_extraction_completed, extractedHolds.size)
+                }
+            )
         }
     }
 }

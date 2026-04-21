@@ -1,6 +1,7 @@
 package com.example.holddetector.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -657,7 +658,13 @@ private fun ChallengeCanvasSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(560.dp)
+            .then(
+                if (bitmap != null && bitmap.height > 0) {
+                    Modifier.aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                } else {
+                    Modifier.height(560.dp)
+                }
+            )
             .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
             .clipToBounds()
     ) {

@@ -1,6 +1,7 @@
 package com.example.holddetector.ui
 
 import android.graphics.Bitmap
+import com.example.holddetector.domain.hold.AutoExtractionTuning
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
@@ -15,6 +16,8 @@ import com.example.holddetector.model.SavedWallSummary
 enum class AppScreen {
     LIST,
     CAMERA,
+    HOLD_REGISTRATION_METHOD,
+    AUTO_HOLD_EXTRACTION,
     REACH_CALIBRATION,
     HOLD_EDITOR,
     HOLD_ATTRIBUTE_EDITOR,
@@ -57,11 +60,14 @@ data class MainUiState(
     val capturedOrientation: CapturedOrientation = CapturedOrientation.PORTRAIT,
     val capturedRotationDegrees: Int = 0,
     val holds: List<Hold> = emptyList(),
+    val autoExtractedHolds: List<Hold> = emptyList(),
+    val autoExtractionTuning: AutoExtractionTuning = AutoExtractionTuning(),
     val reachCalibrationReference: ReachCalibrationReference? = null,
     val reachCalibrationLengthInput: String = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
     val pendingReachCalibrationPoint: HoldPoint? = null,
     val isReachCalibrationSelectionMode: Boolean = false,
     val reachCalibrationReturnToHoldEditor: Boolean = false,
+    val reachCalibrationReturnToAutoExtraction: Boolean = false,
     val selectedHoldIndex: Int? = null,
     val challengeHoldIndices: Set<Int> = emptySet(),
     val challengeOrderedHoldIndices: List<Int> = emptyList(),

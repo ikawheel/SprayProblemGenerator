@@ -1,6 +1,7 @@
 package com.example.holddetector.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -100,6 +103,7 @@ fun HoldScoringScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
         ) {
             Surface(
                 modifier = Modifier
@@ -129,14 +133,19 @@ fun HoldScoringScreen(
 
             Column(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
                     .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .weight(1f)
                         .fillMaxWidth()
+                        .then(
+                            if (bitmap != null && bitmap.height > 0) {
+                                Modifier.aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                            } else {
+                                Modifier
+                            }
+                        )
                         .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
                         .clipToBounds()
                 ) {

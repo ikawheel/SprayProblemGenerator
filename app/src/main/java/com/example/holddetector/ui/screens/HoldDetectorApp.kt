@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
+import com.example.holddetector.domain.hold.AutoExtractionTuning
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.ui.components.AppButton
@@ -41,6 +42,13 @@ fun HoldDetectorApp(
     onDeleteSavedWall: (String) -> Unit,
     onCaptureClick: () -> Unit,
     onBindPreview: (PreviewView) -> Unit,
+    onOpenManualHoldRegistrationAfterCapture: () -> Unit,
+    onOpenAutoHoldExtractionAfterCapture: () -> Unit,
+    onBackToCameraFromHoldRegistrationMethod: () -> Unit,
+    onBackToHoldRegistrationMethodSelection: () -> Unit,
+    onAutoExtractedHoldTapped: (Int?) -> Unit,
+    onAutoExtractionTuningChange: (AutoExtractionTuning) -> Unit,
+    onApplyAutoExtractedHoldsAndContinue: () -> Unit,
     onBackToList: () -> Unit,
     onSaveWall: () -> Unit,
     onOpenHoldAttributeEditor: () -> Unit,
@@ -122,6 +130,30 @@ fun HoldDetectorApp(
                     onCaptureClick = onCaptureClick,
                     onBindPreview = onBindPreview,
                     onBackToList = onBackToList,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            AppScreen.HOLD_REGISTRATION_METHOD -> {
+                HoldRegistrationMethodScreen(
+                    bitmap = state.capturedBitmap,
+                    onBackToCamera = onBackToCameraFromHoldRegistrationMethod,
+                    onOpenManualRegistration = onOpenManualHoldRegistrationAfterCapture,
+                    onOpenAutoExtraction = onOpenAutoHoldExtractionAfterCapture,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            AppScreen.AUTO_HOLD_EXTRACTION -> {
+                AutoHoldExtractionScreen(
+                    bitmap = state.capturedBitmap,
+                    extractedHolds = state.autoExtractedHolds,
+                    tuning = state.autoExtractionTuning,
+                    selectedHoldIndex = state.selectedHoldIndex,
+                    onHoldTapped = onAutoExtractedHoldTapped,
+                    onTuningChange = onAutoExtractionTuningChange,
+                    onBackToMethodSelection = onBackToHoldRegistrationMethodSelection,
+                    onApplyExtraction = onApplyAutoExtractedHoldsAndContinue,
                     modifier = Modifier.fillMaxSize()
                 )
             }
