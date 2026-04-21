@@ -77,7 +77,9 @@ class WallStorageRepository(context: Context) {
                             ).coerceIn(
                                 MIN_HOLD_DIFFICULTY_SCORE,
                                 MAX_HOLD_DIFFICULTY_SCORE
-                            )
+                            ),
+                            isStartCandidate = item.optBoolean(KEY_IS_START_CANDIDATE, false),
+                            isGoalCandidate = item.optBoolean(KEY_IS_GOAL_CANDIDATE, false)
                         )
                     )
                 }
@@ -148,6 +150,8 @@ class WallStorageRepository(context: Context) {
                     put(
                         JSONObject().apply {
                             put(KEY_DIFFICULTY_SCORE, hold.difficultyScore)
+                            put(KEY_IS_START_CANDIDATE, hold.isStartCandidate)
+                            put(KEY_IS_GOAL_CANDIDATE, hold.isGoalCandidate)
                             put(KEY_POINTS, JSONArray().apply {
                                 hold.points.forEach { point ->
                                     put(
@@ -290,6 +294,8 @@ class WallStorageRepository(context: Context) {
         private const val KEY_REACH_CALIBRATION_REFERENCE = "reachCalibrationReference"
         private const val KEY_HOLDS = "holds"
         private const val KEY_DIFFICULTY_SCORE = "difficultyScore"
+        private const val KEY_IS_START_CANDIDATE = "isStartCandidate"
+        private const val KEY_IS_GOAL_CANDIDATE = "isGoalCandidate"
         private const val KEY_POINTS = "points"
         private const val KEY_FIRST_POINT = "firstPoint"
         private const val KEY_SECOND_POINT = "secondPoint"

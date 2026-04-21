@@ -13,7 +13,9 @@ const val DEFAULT_HOLD_DIFFICULTY_SCORE = 3
 
 data class Hold(
     val points: List<HoldPoint>,
-    val difficultyScore: Int = DEFAULT_HOLD_DIFFICULTY_SCORE
+    val difficultyScore: Int = DEFAULT_HOLD_DIFFICULTY_SCORE,
+    val isStartCandidate: Boolean = false,
+    val isGoalCandidate: Boolean = false
 ) {
     init {
         require(points.size >= 3) { "Hold must contain at least 3 points" }

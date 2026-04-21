@@ -24,6 +24,7 @@ internal data class ChallengeCreatorUiModel(
     val selectionCandidateIndices: Set<Int>,
     val orderedChallengeIndices: List<Int>,
     val isReadyToGenerate: Boolean,
+    val canAutoGenerateWithRandomStartGoal: Boolean,
     val canStartGoalSelection: Boolean,
     @StringRes val helpTextResId: Int,
     @StringRes val drawTargetButtonTextResId: Int,
@@ -79,6 +80,9 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         state.startHoldIndex != null &&
         state.goalHoldIndex != null &&
         hasValidRequestedDrawCount
+    val canAutoGenerateWithRandomStartGoal = !state.isDrawTargetSelectionMode &&
+        state.routeSelectionMode == RouteSelectionMode.NONE &&
+        selectionCandidateIndices.size >= 2
 
     val helpTextResId = when {
         state.isDrawTargetSelectionMode -> R.string.draw_target_status_selecting
@@ -107,6 +111,7 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         selectionCandidateIndices = selectionCandidateIndices,
         orderedChallengeIndices = orderedChallengeIndices,
         isReadyToGenerate = isReadyToGenerate,
+        canAutoGenerateWithRandomStartGoal = canAutoGenerateWithRandomStartGoal,
         canStartGoalSelection = !state.isDrawTargetSelectionMode && selectionCandidateIndices.isNotEmpty(),
         helpTextResId = helpTextResId,
         drawTargetButtonTextResId = if (!state.hasDrawTargetSelection) {

@@ -44,7 +44,7 @@ fun HoldEditorScreen(
     onWallTitleChanged: (String) -> Unit,
     onHoldTapAreaSizeChange: (HoldTapAreaSize) -> Unit,
     onSaveWall: () -> Unit,
-    onOpenHoldScoring: () -> Unit,
+    onOpenHoldAttributeEditor: () -> Unit,
     onBackToList: () -> Unit,
     onDeleteSelectedHold: () -> Unit,
     onEditorHoldTapped: (Int?) -> Unit,
@@ -108,10 +108,10 @@ fun HoldEditorScreen(
                     }
 
                     AppButton(
-                        onClick = onOpenHoldScoring,
+                        onClick = onOpenHoldAttributeEditor,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(stringResourceByName("open_hold_scoring"))
+                        Text(stringResourceByName("open_hold_attribute_editor"))
                     }
                 }
             }
@@ -170,6 +170,12 @@ fun HoldEditorScreen(
                             holds = state.holds,
                             selectedIndex = state.selectedHoldIndex,
                             challengeHoldIndices = emptySet(),
+                            startCandidateHoldIndices = state.holds.withIndex()
+                                .filter { it.value.isStartCandidate }
+                                .mapTo(linkedSetOf()) { it.index },
+                            goalCandidateHoldIndices = state.holds.withIndex()
+                                .filter { it.value.isGoalCandidate }
+                                .mapTo(linkedSetOf()) { it.index },
                             startHoldIndex = null,
                             goalHoldIndex = null,
                             routeSelectionMode = RouteSelectionMode.NONE,

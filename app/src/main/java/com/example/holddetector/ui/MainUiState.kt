@@ -17,6 +17,7 @@ enum class AppScreen {
     CAMERA,
     REACH_CALIBRATION,
     HOLD_EDITOR,
+    HOLD_ATTRIBUTE_EDITOR,
     HOLD_SCORING,
     CHALLENGE_CREATOR
 }
@@ -31,6 +32,19 @@ enum class HoldTapAreaSize {
     SMALL,
     MEDIUM,
     LARGE
+}
+
+enum class ChallengeGenerationMethod {
+    MANUAL_START_GOAL,
+    RANDOM_START_GOAL
+}
+
+enum class ChallengeFlowStep {
+    METHOD_SELECT,
+    COMMON_SETTINGS,
+    GENERATION,
+    RESULT,
+    TUNING
 }
 
 data class MainUiState(
@@ -52,6 +66,8 @@ data class MainUiState(
     val challengeHoldIndices: Set<Int> = emptySet(),
     val challengeOrderedHoldIndices: List<Int> = emptyList(),
     val lastGeneratedIntermediateHoldIndices: Set<Int> = emptySet(),
+    val challengeGenerationMethod: ChallengeGenerationMethod? = null,
+    val challengeFlowStep: ChallengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
     val drawTargetHoldIndices: Set<Int> = emptySet(),
     val hasDrawTargetSelection: Boolean = false,
     val startHoldIndex: Int? = null,

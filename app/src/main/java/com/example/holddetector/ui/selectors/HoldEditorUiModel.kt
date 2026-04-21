@@ -7,11 +7,15 @@ import com.example.holddetector.ui.MainUiState
 internal data class HoldEditorUiModel(
     @StringRes val titleResId: Int,
     @StringRes val saveButtonTextResId: Int,
-    val reachReferenceLengthCm: Int?
+    val reachReferenceLengthCm: Int?,
+    val hasSelectedHold: Boolean,
+    val selectedHoldIsStartCandidate: Boolean,
+    val selectedHoldIsGoalCandidate: Boolean
 )
 
 internal fun deriveHoldEditorUiModel(state: MainUiState): HoldEditorUiModel {
     val reference = state.reachCalibrationReference
+    val selectedHold = state.selectedHoldIndex?.let(state.holds::getOrNull)
 
     return HoldEditorUiModel(
         titleResId = if (state.currentWallId == null) {
@@ -24,6 +28,9 @@ internal fun deriveHoldEditorUiModel(state: MainUiState): HoldEditorUiModel {
         } else {
             R.string.overwrite_save
         },
-        reachReferenceLengthCm = reference?.referenceLengthCm
+        reachReferenceLengthCm = reference?.referenceLengthCm,
+        hasSelectedHold = selectedHold != null,
+        selectedHoldIsStartCandidate = selectedHold?.isStartCandidate == true,
+        selectedHoldIsGoalCandidate = selectedHold?.isGoalCandidate == true
     )
 }

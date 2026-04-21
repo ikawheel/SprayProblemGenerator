@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -203,6 +204,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun openSavedWallForHoldAttributeEditor(wallId: String) {
+        openSavedWallIntoScreen(
+            wallId = wallId,
+            targetScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR
+        )
+    }
+
     fun openSavedWallForHoldScoring(wallId: String) {
         openSavedWallIntoScreen(
             wallId = wallId,
@@ -249,6 +257,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
                 lastGeneratedIntermediateHoldIndices = emptySet(),
+                challengeGenerationMethod = null,
+                challengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -305,6 +315,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun toggleSelectedHoldStartCandidate() {
+        updateSelectedHoldAttribute { hold ->
+            hold.copy(isStartCandidate = !hold.isStartCandidate)
+        }
+    }
+
+    fun toggleSelectedHoldGoalCandidate() {
+        updateSelectedHoldAttribute { hold ->
+            hold.copy(isGoalCandidate = !hold.isGoalCandidate)
+        }
+    }
+
+    fun assignHoldAsStartCandidate(index: Int?) {
+        updateHoldAttribute(index) { hold ->
+            hold.copy(isStartCandidate = true)
+        }
+    }
+
+    fun assignHoldAsGoalCandidate(index: Int?) {
+        updateHoldAttribute(index) { hold ->
+            hold.copy(isGoalCandidate = true)
+        }
+    }
+
+    fun clearHoldAttributes(index: Int?) {
+        updateHoldAttribute(index) { hold ->
+            hold.copy(
+                isStartCandidate = false,
+                isGoalCandidate = false
+            )
+        }
+    }
+
     fun removeSelectedHold() {
         val state = _uiState.value
         val selected = state.selectedHoldIndex ?: run {
@@ -318,6 +361,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isHoldEditorDirty = true,
             holdScoringPosition = 0,
             message = text(R.string.message_hold_deleted)
+        )
+    }
+
+    fun openHoldAttributeEditor() {
+        val state = _uiState.value
+        if (state.holds.isEmpty()) {
+            _uiState.value = state.copy(message = text(R.string.message_register_hold_first))
+            return
+        }
+
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR,
+            selectedHoldIndex = null,
+            showDiscardDialog = false,
+            message = null
+        )
+    }
+
+    fun returnToHoldEditorFromAttributeEditor() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_EDITOR,
+            selectedHoldIndex = null,
+            message = null
         )
     }
 
@@ -337,10 +404,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun returnToHoldEditorFromScoring() {
+    fun returnToHoldAttributeEditorFromScoring() {
         val state = _uiState.value
         _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_EDITOR,
+            currentScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR,
             selectedHoldIndex = null,
             message = null
         )
@@ -440,6 +507,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
                 lastGeneratedIntermediateHoldIndices = emptySet(),
+                challengeGenerationMethod = null,
+                challengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -729,6 +798,73 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         updateRouteTuning { copy(corridorWidth = value.coerceIn(0f, 1f)) }
     }
 
+    fun selectManualStartGoalChallengeMethod() {
+        selectChallengeGenerationMethod(ChallengeGenerationMethod.MANUAL_START_GOAL)
+    }
+
+    fun selectRandomStartGoalChallengeMethod() {
+        selectChallengeGenerationMethod(ChallengeGenerationMethod.RANDOM_START_GOAL)
+    }
+
+    fun openChallengeMethodSelection() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            challengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
+            selectedHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
+    }
+
+    fun openChallengeCommonSettings() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            challengeFlowStep = ChallengeFlowStep.COMMON_SETTINGS,
+            selectedHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
+    }
+
+    fun openChallengeGeneration() {
+        val state = _uiState.value
+        if (state.challengeGenerationMethod == null) {
+            _uiState.value = state.copy(message = text(R.string.message_select_challenge_generation_method))
+            return
+        }
+        _uiState.value = state.copy(
+            challengeFlowStep = ChallengeFlowStep.GENERATION,
+            selectedHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
+    }
+
+    fun openChallengeTuning() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            challengeFlowStep = ChallengeFlowStep.TUNING,
+            selectedHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
+    }
+
+    fun rerunCurrentChallengeGeneration() {
+        when (_uiState.value.challengeGenerationMethod) {
+            ChallengeGenerationMethod.MANUAL_START_GOAL -> drawRandomChallengeHolds()
+            ChallengeGenerationMethod.RANDOM_START_GOAL -> drawRandomChallengeWithRandomStartGoal()
+            null -> {
+                val state = _uiState.value
+                _uiState.value = state.copy(message = text(R.string.message_select_challenge_generation_method))
+            }
+        }
+    }
+
     fun drawRandomChallengeHolds() {
         val state = _uiState.value
         if (state.holds.isEmpty()) {
@@ -799,10 +935,80 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 challengeOrderedHoldIndices = selectedOrderedIndices,
                 lastGeneratedIntermediateHoldIndices = selectedIndices
                     .filterNotTo(linkedSetOf()) { index -> index == startIndex || index == goalIndex },
+                challengeFlowStep = ChallengeFlowStep.RESULT,
                 selectedHoldIndex = null,
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
                 message = text(R.string.message_draw_generated)
+            )
+        }
+    }
+
+    fun drawRandomChallengeWithRandomStartGoal() {
+        val state = _uiState.value
+        if (state.holds.isEmpty()) {
+            _uiState.value = state.copy(message = text(R.string.message_no_holds))
+            return
+        }
+        if (state.isDrawTargetSelectionMode) {
+            _uiState.value = state.copy(message = text(R.string.message_finish_range_selection_first))
+            return
+        }
+
+        val requestedCount = state.drawCountInput.toIntOrNull()
+        if (state.drawCountInput.isNotBlank() && (requestedCount == null || requestedCount < 2)) {
+            _uiState.value = state.copy(message = text(R.string.message_invalid_draw_count))
+            return
+        }
+
+        val selectionCandidateIndices = challengeSelectionCandidateIndices(state)
+        if (selectionCandidateIndices.size < 2) {
+            _uiState.value = state.copy(message = text(R.string.message_random_start_goal_candidates_required))
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = state.copy(isBusy = true)
+
+            val generatedRoute = withContext(Dispatchers.Default) {
+                generateChallengeRouteWithRandomStartGoal(
+                    holds = state.holds,
+                    selectionCandidateIndices = selectionCandidateIndices,
+                    lastGeneratedIntermediateHoldIndices = state.lastGeneratedIntermediateHoldIndices,
+                    targetCount = requestedCount,
+                    tuning = state.routeTuning,
+                    reachCalibrationReference = state.reachCalibrationReference
+                )
+            }
+
+            if (generatedRoute == null) {
+                _uiState.value = state.copy(
+                    isBusy = false,
+                    message = if (state.reachCalibrationReference != null) {
+                        text(R.string.message_unable_generate_with_reach)
+                    } else {
+                        text(R.string.message_unable_generate)
+                    }
+                )
+                return@launch
+            }
+
+            val selectedIndices = generatedRoute.orderedIndices.toSet()
+            _uiState.value = state.copy(
+                isBusy = false,
+                selectedHoldIndex = null,
+                startHoldIndex = generatedRoute.startIndex,
+                goalHoldIndex = generatedRoute.goalIndex,
+                challengeHoldIndices = selectedIndices,
+                challengeOrderedHoldIndices = generatedRoute.orderedIndices,
+                lastGeneratedIntermediateHoldIndices = selectedIndices
+                    .filterNotTo(linkedSetOf()) { index ->
+                        index == generatedRoute.startIndex || index == generatedRoute.goalIndex
+                    },
+                challengeFlowStep = ChallengeFlowStep.RESULT,
+                routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
+                message = text(R.string.message_draw_generated_random_start_goal)
             )
         }
     }
@@ -900,11 +1106,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             AppScreen.HOLD_EDITOR -> requestBackToList()
+            AppScreen.HOLD_ATTRIBUTE_EDITOR -> {
+                if (_uiState.value.currentWallId != null) {
+                    requestBackToList()
+                } else {
+                    returnToHoldEditorFromAttributeEditor()
+                }
+            }
             AppScreen.HOLD_SCORING -> {
                 if (_uiState.value.currentWallId != null) {
                     requestBackToList()
                 } else {
-                    returnToHoldEditorFromScoring()
+                    returnToHoldAttributeEditorFromScoring()
                 }
             }
             AppScreen.CHALLENGE_CREATOR -> returnToList()
@@ -916,6 +1129,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         when (state.currentScreen) {
             AppScreen.REACH_CALIBRATION,
             AppScreen.HOLD_EDITOR,
+            AppScreen.HOLD_ATTRIBUTE_EDITOR,
             AppScreen.HOLD_SCORING -> {
                 if (state.isHoldEditorDirty) {
                     _uiState.value = state.copy(showDiscardDialog = true)
@@ -1050,6 +1264,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return state.reachCalibrationLengthInput.toIntOrNull()?.takeIf { it > 0 }
     }
 
+    private fun updateSelectedHoldAttribute(
+        transform: (Hold) -> Hold
+    ) {
+        val state = _uiState.value
+        val selectedIndex = state.selectedHoldIndex ?: return
+        updateHoldAttribute(selectedIndex, transform)
+    }
+
+    private fun updateHoldAttribute(
+        index: Int?,
+        transform: (Hold) -> Hold
+    ) {
+        val state = _uiState.value
+        val selectedIndex = index ?: return
+        val selectedHold = state.holds.getOrNull(selectedIndex) ?: return
+        val updatedHolds = state.holds.toMutableList().apply {
+            this[selectedIndex] = transform(selectedHold)
+        }
+
+        _uiState.value = state.copy(
+            selectedHoldIndex = selectedIndex,
+            holds = updatedHolds,
+            isHoldEditorDirty = true,
+            message = null
+        )
+    }
+
     private fun ReachCalibrationReference?.withCurrentLength(state: MainUiState): ReachCalibrationReference? {
         val parsedLength = parseReachCalibrationLengthCentimeters(state) ?: return this
         return this?.copy(referenceLengthCm = parsedLength)
@@ -1081,6 +1322,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun selectChallengeGenerationMethod(method: ChallengeGenerationMethod) {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            challengeGenerationMethod = method,
+            challengeFlowStep = ChallengeFlowStep.COMMON_SETTINGS,
+            selectedHoldIndex = null,
+            challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
+            startHoldIndex = null,
+            goalHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
+    }
+
     private fun generateChallengeRouteWithRetries(
         holds: List<Hold>,
         sourceIndices: Set<Int>,
@@ -1108,4 +1366,88 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         return null
     }
+
+    private fun generateChallengeRouteWithRandomStartGoal(
+        holds: List<Hold>,
+        selectionCandidateIndices: Set<Int>,
+        lastGeneratedIntermediateHoldIndices: Set<Int>,
+        targetCount: Int?,
+        tuning: RouteGenerationTuning,
+        reachCalibrationReference: ReachCalibrationReference?
+    ): RandomStartGoalGenerationResult? {
+        val filteredSelectionCandidateIndices = selectionCandidateIndices
+            .filterNotTo(linkedSetOf()) { it in lastGeneratedIntermediateHoldIndices }
+            .takeIf { it.size >= 2 }
+            ?: selectionCandidateIndices
+
+        val preferredStartIndices = filteredSelectionCandidateIndices.filterTo(linkedSetOf()) { index ->
+            holds.getOrNull(index)?.isStartCandidate == true
+        }
+        val preferredGoalIndices = filteredSelectionCandidateIndices.filterTo(linkedSetOf()) { index ->
+            holds.getOrNull(index)?.isGoalCandidate == true
+        }
+        val preferredPairs = buildDistinctStartGoalPairs(
+            startIndices = if (preferredStartIndices.isNotEmpty()) preferredStartIndices else filteredSelectionCandidateIndices,
+            goalIndices = if (preferredGoalIndices.isNotEmpty()) preferredGoalIndices else filteredSelectionCandidateIndices
+        )
+        val candidatePairs = if (preferredPairs.isNotEmpty()) {
+            preferredPairs
+        } else {
+            buildDistinctStartGoalPairs(
+                startIndices = filteredSelectionCandidateIndices,
+                goalIndices = filteredSelectionCandidateIndices
+            )
+        }
+        if (candidatePairs.isEmpty()) return null
+
+        candidatePairs
+            .shuffled(Random.Default)
+            .take(64)
+            .forEach { (startIndex, goalIndex) ->
+                val drawSourceIndices = selectionCandidateIndices.toMutableSet().apply {
+                    removeAll(lastGeneratedIntermediateHoldIndices)
+                    add(startIndex)
+                    add(goalIndex)
+                }
+                val orderedIndices = generateChallengeRouteWithRetries(
+                    holds = holds,
+                    sourceIndices = drawSourceIndices,
+                    startIndex = startIndex,
+                    goalIndex = goalIndex,
+                    targetCount = targetCount,
+                    tuning = tuning,
+                    reachCalibrationReference = reachCalibrationReference
+                )
+                if (orderedIndices != null) {
+                    return RandomStartGoalGenerationResult(
+                        startIndex = startIndex,
+                        goalIndex = goalIndex,
+                        orderedIndices = orderedIndices
+                    )
+                }
+            }
+
+        return null
+    }
+
+    private fun buildDistinctStartGoalPairs(
+        startIndices: Set<Int>,
+        goalIndices: Set<Int>
+    ): List<Pair<Int, Int>> {
+        return buildList {
+            startIndices.forEach { startIndex ->
+                goalIndices.forEach { goalIndex ->
+                    if (startIndex != goalIndex) {
+                        add(startIndex to goalIndex)
+                    }
+                }
+            }
+        }
+    }
 }
+
+private data class RandomStartGoalGenerationResult(
+    val startIndex: Int,
+    val goalIndex: Int,
+    val orderedIndices: List<Int>
+)

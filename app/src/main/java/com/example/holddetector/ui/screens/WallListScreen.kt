@@ -46,6 +46,7 @@ fun WallListScreen(
     onNewWallClick: () -> Unit,
     onOpenSavedWallForReachCalibration: (String) -> Unit,
     onOpenSavedWallForHoldEditor: (String) -> Unit,
+    onOpenSavedWallForHoldAttributeEditor: (String) -> Unit,
     onOpenSavedWallForHoldScoring: (String) -> Unit,
     onOpenSavedWallForChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
@@ -143,6 +144,15 @@ fun WallListScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.edit_menu_hold_editor))
+                    }
+                    AppButton(
+                        onClick = {
+                            editingWallId = null
+                            onOpenSavedWallForHoldAttributeEditor(wallId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.edit_menu_hold_attribute_editor))
                     }
                     AppButton(
                         onClick = {

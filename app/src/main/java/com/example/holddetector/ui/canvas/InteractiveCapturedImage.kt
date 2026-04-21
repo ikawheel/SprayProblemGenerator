@@ -65,6 +65,7 @@ import kotlin.math.roundToInt
 
 private enum class CanvasMode {
     HOLD_EDITOR,
+    HOLD_ATTRIBUTE_EDITOR,
     CHALLENGE,
     REACH_CALIBRATION,
     SCORING
@@ -115,6 +116,8 @@ fun HoldCanvasScreen(
     holds: List<Hold>,
     selectedIndex: Int?,
     challengeHoldIndices: Set<Int>,
+    startCandidateHoldIndices: Set<Int> = emptySet(),
+    goalCandidateHoldIndices: Set<Int> = emptySet(),
     challengeOrderedHoldIndices: List<Int> = emptyList(),
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
@@ -135,6 +138,8 @@ fun HoldCanvasScreen(
         holds = holds,
         selectedIndex = selectedIndex,
         challengeHoldIndices = challengeHoldIndices,
+        startCandidateHoldIndices = startCandidateHoldIndices,
+        goalCandidateHoldIndices = goalCandidateHoldIndices,
         challengeOrderedHoldIndices = challengeOrderedHoldIndices,
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
@@ -149,6 +154,40 @@ fun HoldCanvasScreen(
         onReachCalibrationPointSelected = onReachCalibrationPointSelected,
         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
         onManualHoldCreated = onManualHoldCreated,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun HoldAttributeCanvasScreen(
+    bitmap: Bitmap,
+    holds: List<Hold>,
+    selectedIndex: Int?,
+    startCandidateHoldIndices: Set<Int>,
+    goalCandidateHoldIndices: Set<Int>,
+    onHoldTapped: (Int?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    InteractiveCapturedImage(
+        bitmap = bitmap,
+        holds = holds,
+        selectedIndex = selectedIndex,
+        challengeHoldIndices = emptySet(),
+        startCandidateHoldIndices = startCandidateHoldIndices,
+        goalCandidateHoldIndices = goalCandidateHoldIndices,
+        challengeOrderedHoldIndices = emptyList(),
+        startHoldIndex = null,
+        goalHoldIndex = null,
+        routeSelectionMode = RouteSelectionMode.NONE,
+        reachCalibrationReference = null,
+        pendingReachCalibrationPoint = null,
+        isReachCalibrationSelectionMode = false,
+        isDrawTargetSelectionMode = false,
+        mode = CanvasMode.HOLD_ATTRIBUTE_EDITOR,
+        onHoldTapped = onHoldTapped,
+        onReachCalibrationPointSelected = {},
+        onDrawTargetSelectionCompleted = {},
+        onManualHoldCreated = {},
         modifier = modifier
     )
 }
@@ -232,6 +271,8 @@ private fun InteractiveCapturedImage(
     holds: List<Hold>,
     selectedIndex: Int?,
     challengeHoldIndices: Set<Int>,
+    startCandidateHoldIndices: Set<Int> = emptySet(),
+    goalCandidateHoldIndices: Set<Int> = emptySet(),
     challengeOrderedHoldIndices: List<Int> = emptyList(),
     selectionCandidateIndices: Set<Int> = emptySet(),
     startHoldIndex: Int?,
@@ -549,7 +590,10 @@ private fun InteractiveCapturedImage(
                         return@awaitEachGesture
                     }
 
-                    if (mode == CanvasMode.CHALLENGE && !isDrawTargetSelectionMode) {
+                    if (
+                        (mode == CanvasMode.CHALLENGE && !isDrawTargetSelectionMode) ||
+                            mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR
+                    ) {
                         var movedEnough = false
                         var multiTouchDetected = false
                         while (true) {
@@ -763,7 +807,7 @@ private fun InteractiveCapturedImage(
 
                     holds.forEachIndexed { index, hold ->
                         val shouldDrawOutline = when {
-                            mode == CanvasMode.HOLD_EDITOR -> true
+                            mode == CanvasMode.HOLD_EDITOR || mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR -> true
                             mode == CanvasMode.SCORING -> index == focusHoldIndex
                             mode == CanvasMode.REACH_CALIBRATION -> false
                             routeSelectionMode != RouteSelectionMode.NONE ->
@@ -794,8 +838,13 @@ private fun InteractiveCapturedImage(
                         )
 
                         val label = buildList {
-                            if (index == startHoldIndex) add(startMarkerLabel)
-                            if (index == goalHoldIndex) add(goalMarkerLabel)
+                            if (mode == CanvasMode.HOLD_EDITOR || mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR) {
+                                if (startCandidateHoldIndices.contains(index)) add(startMarkerLabel)
+                                if (goalCandidateHoldIndices.contains(index)) add(goalMarkerLabel)
+                            } else {
+                                if (index == startHoldIndex) add(startMarkerLabel)
+                                if (index == goalHoldIndex) add(goalMarkerLabel)
+                            }
                             if (mode == CanvasMode.CHALLENGE && challengeHoldIndices.contains(index)) {
                                 challengeOrderLabels[index]?.let(::add)
                             }

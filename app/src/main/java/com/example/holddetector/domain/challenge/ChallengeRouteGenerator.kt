@@ -370,12 +370,12 @@ private fun buildRouteAttempt(
     }
 
     val score = scoreGeneratedRoute(
+        shape = variant.shape,
         routePoints = routeIndices.mapNotNull { index -> holdCenters[index] },
         expectedStepDistance = expectedRouteStepDistance,
-        routeLength = routeIndices.size,
         adherenceDistances = selected.map { it.distanceToRoute },
         availableCandidateCount = corridorCandidates.size,
-        randomness = stepVariance
+        tuning = tuning
     )
 
     return RouteAttempt(
@@ -782,31 +782,80 @@ private fun <T> pickWeighted(weightedItems: List<Pair<T, Double>>): T {
 }
 
 private fun scoreGeneratedRoute(
+    shape: AutoRouteShape,
     routePoints: List<HoldCenterPoint>,
     expectedStepDistance: Double,
-    routeLength: Int,
     adherenceDistances: List<Double>,
     availableCandidateCount: Int,
-    randomness: Double
+    tuning: RouteGenerationTuning
 ): Double {
-    if (routePoints.size != routeLength || routePoints.size < 2) return Double.MAX_VALUE
+    if (routePoints.size < 2) return Double.MAX_VALUE
+
+    val detourStrength = tuning.detourStrength.toDouble()
+    val routeWaviness = tuning.routeWaviness.toDouble()
+    val stepDistanceVariance = tuning.stepDistanceVariance.toDouble()
+    val corridorWidth = tuning.corridorWidth.toDouble()
 
     val distances = routePoints.zipWithNext { first, second ->
         hypot(second.x - first.x, second.y - first.y)
     }
     val averageDistance = distances.average()
     val spacingPenalty = distances.sumOf { distance ->
-        abs(distance - expectedStepDistance) * blendDouble(0.32, 0.16, randomness)
+        abs(distance - expectedStepDistance) * blendDouble(0.34, 0.08, stepDistanceVariance)
     }
     val adherencePenalty = adherenceDistances.sumOf { distance ->
-        distance * blendDouble(0.52, 0.42, randomness)
+        distance * blendDouble(0.38, 0.06, corridorWidth)
     }
-    val densityBonus = min(availableCandidateCount, 10) * 3.4
+    val densityBonus = min(availableCandidateCount, 10) * blendDouble(1.80, 0.25, corridorWidth)
     val spacingVarietyBonus = distances.sumOf { distance ->
-        abs(distance - averageDistance) * blendDouble(0.04, 0.34, randomness)
+        abs(distance - averageDistance) * blendDouble(0.04, 0.85, stepDistanceVariance)
+    }
+    val startPoint = routePoints.first().toRoutePoint()
+    val goalPoint = routePoints.last().toRoutePoint()
+    val detourOffsets = routePoints
+        .drop(1)
+        .dropLast(1)
+        .map { routePoint ->
+            abs(
+                signedDistanceFromLine(
+                    point = routePoint.toRoutePoint(),
+                    lineStart = startPoint,
+                    lineEnd = goalPoint
+                )
+            )
+        }
+    val detourBonus = if (detourOffsets.isNotEmpty()) {
+        detourOffsets.average() * blendDouble(0.05, 0.95, detourStrength)
+    } else {
+        0.0
+    }
+    val turnBonus = routePoints
+        .windowed(size = 3)
+        .sumOf { (first, second, third) ->
+            val firstDx = second.x - first.x
+            val firstDy = second.y - first.y
+            val secondDx = third.x - second.x
+            val secondDy = third.y - second.y
+            val firstLength = hypot(firstDx, firstDy).coerceAtLeast(1.0)
+            val secondLength = hypot(secondDx, secondDy).coerceAtLeast(1.0)
+            val cosine = (
+                (firstDx * secondDx + firstDy * secondDy) /
+                    (firstLength * secondLength)
+                ).coerceIn(-1.0, 1.0)
+            kotlin.math.acos(cosine)
+        } * expectedStepDistance * blendDouble(0.01, 0.26, routeWaviness)
+    val shapeBonus = when (shape) {
+        AutoRouteShape.STRAIGHT -> 0.0
+        AutoRouteShape.LEFT_DETOUR,
+        AutoRouteShape.RIGHT_DETOUR -> expectedStepDistance * blendDouble(0.02, 0.36, detourStrength)
     }
 
-    return spacingPenalty + adherencePenalty - densityBonus - spacingVarietyBonus
+    return spacingPenalty + adherencePenalty -
+        densityBonus -
+        spacingVarietyBonus -
+        detourBonus -
+        turnBonus -
+        shapeBonus
 }
 
 private fun signedDistanceFromLine(
