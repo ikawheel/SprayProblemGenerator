@@ -5,17 +5,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,7 +40,6 @@ import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.canvas.AutoExtractionCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.BottomActionBar
 import kotlin.math.roundToInt
 
 @Composable
@@ -53,6 +51,7 @@ fun AutoHoldExtractionScreen(
     wallSamplePoints: List<HoldPoint>,
     isWallSamplingMode: Boolean,
     onHoldTapped: (Int?) -> Unit,
+    onEstimateWallSamplePoints: () -> Unit,
     onStartWallSampling: () -> Unit,
     onStopWallSampling: () -> Unit,
     onWallSamplePointSelected: (HoldPoint) -> Unit,
@@ -84,34 +83,11 @@ fun AutoHoldExtractionScreen(
         )
     }
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = Color.Transparent,
-        bottomBar = {
-            BottomActionBar {
-                AppOutlinedButton(
-                    onClick = onBackToMethodSelection,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.auto_hold_extraction_back))
-                }
-
-                AppButton(
-                    onClick = onApplyExtraction,
-                    enabled = extractedHolds.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.auto_hold_extraction_apply))
-                }
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-        ) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -168,36 +144,42 @@ fun AutoHoldExtractionScreen(
                         modifier = Modifier.padding(top = 4.dp)
                     )
 
-                    Row(
+                    AppButton(
+                        onClick = onEstimateWallSamplePoints,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(top = 12.dp)
                     ) {
-                        AppButton(
-                            onClick = if (isWallSamplingMode) {
-                                onStopWallSampling
-                            } else {
-                                onStartWallSampling
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                if (isWallSamplingMode) {
-                                    stringResource(R.string.auto_hold_extraction_wall_sample_stop)
-                                } else {
-                                    stringResource(R.string.auto_hold_extraction_wall_sample_start)
-                                }
-                            )
-                        }
+                        Text(stringResource(R.string.auto_hold_extraction_wall_sample_estimate))
+                    }
 
-                        AppOutlinedButton(
-                            onClick = onClearWallSamplePoints,
-                            enabled = wallSamplePoints.isNotEmpty(),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResource(R.string.auto_hold_extraction_wall_sample_clear))
-                        }
+                    AppButton(
+                        onClick = if (isWallSamplingMode) {
+                            onStopWallSampling
+                        } else {
+                            onStartWallSampling
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    ) {
+                        Text(
+                            if (isWallSamplingMode) {
+                                stringResource(R.string.auto_hold_extraction_wall_sample_stop)
+                            } else {
+                                stringResource(R.string.auto_hold_extraction_wall_sample_start)
+                            }
+                        )
+                    }
+
+                    AppOutlinedButton(
+                        onClick = onClearWallSamplePoints,
+                        enabled = wallSamplePoints.isNotEmpty(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    ) {
+                        Text(stringResource(R.string.auto_hold_extraction_wall_sample_clear))
                     }
                 }
             }
@@ -208,7 +190,12 @@ fun AutoHoldExtractionScreen(
                     .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp)
                     .then(
                         if (bitmap != null && bitmap.height > 0) {
-                            Modifier.aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                            Modifier.aspectRatio(
+                                wallImageDisplayAspectRatio(
+                                    imageWidth = bitmap.width,
+                                    imageHeight = bitmap.height
+                                )
+                            )
                         } else {
                             Modifier
                         }
@@ -342,8 +329,18 @@ fun AutoHoldExtractionScreen(
                         color = AppSecondaryTextColor,
                         style = MaterialTheme.typography.bodySmall
                     )
+
+                    AppButton(
+                        onClick = onApplyExtraction,
+                        enabled = extractedHolds.isNotEmpty(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                            .navigationBarsPadding()
+                    ) {
+                        Text(stringResource(R.string.auto_hold_extraction_apply))
+                    }
                 }
             }
-        }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.holddetector.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,15 +10,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,13 +60,10 @@ import kotlin.math.roundToInt
 @Composable
 fun ChallengeCreatorScreen(
     state: MainUiState,
-    onBackToList: () -> Unit,
     onSelectManualStartGoalChallengeMethod: () -> Unit,
     onSelectRandomStartGoalChallengeMethod: () -> Unit,
-    onOpenChallengeMethodSelection: () -> Unit,
     onOpenChallengeCommonSettings: () -> Unit,
     onOpenChallengeGeneration: () -> Unit,
-    onOpenChallengeTuning: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onStartGoalSelection: () -> Unit,
     onDrawWithRandomStartGoal: () -> Unit,
@@ -73,14 +77,19 @@ fun ChallengeCreatorScreen(
     onRouteWavinessChange: (Float) -> Unit,
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
+    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
     val uiModel = deriveChallengeCreatorUiModel(state)
     var isDebugSummaryExpanded by rememberSaveable { mutableStateOf(false) }
+    var isTuningDialogOpen by rememberSaveable { mutableStateOf(false) }
+    val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column(
-        modifier = modifier.verticalScroll(scrollState)
+        modifier = modifier
+            .verticalScroll(scrollState)
+            .padding(bottom = navigationBarBottomPadding)
     ) {
         Text(
             text = stringResource(R.string.challenge_creator_title),
@@ -108,9 +117,8 @@ fun ChallengeCreatorScreen(
                 ChallengeCommonSettingsContent(
                     state = state,
                     uiModel = uiModel,
-                    onOpenChallengeMethodSelection = onOpenChallengeMethodSelection,
                     onOpenChallengeGeneration = onOpenChallengeGeneration,
-                    onOpenChallengeTuning = onOpenChallengeTuning,
+                    onShowTuningDialog = { isTuningDialogOpen = true },
                     onChallengeHoldTapped = onChallengeHoldTapped,
                     onStartDrawTargetSelection = onStartDrawTargetSelection,
                     onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
@@ -125,7 +133,6 @@ fun ChallengeCreatorScreen(
                         ChallengeManualGenerationContent(
                             state = state,
                             uiModel = uiModel,
-                            onOpenChallengeCommonSettings = onOpenChallengeCommonSettings,
                             onChallengeHoldTapped = onChallengeHoldTapped,
                             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                             onStartGoalSelection = onStartGoalSelection,
@@ -137,7 +144,6 @@ fun ChallengeCreatorScreen(
                         ChallengeRandomGenerationContent(
                             state = state,
                             uiModel = uiModel,
-                            onOpenChallengeCommonSettings = onOpenChallengeCommonSettings,
                             onChallengeHoldTapped = onChallengeHoldTapped,
                             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                             onDrawWithRandomStartGoal = onDrawWithRandomStartGoal
@@ -159,7 +165,6 @@ fun ChallengeCreatorScreen(
                     uiModel = uiModel,
                     isDebugSummaryExpanded = isDebugSummaryExpanded,
                     onDebugSummaryExpandedChange = { isDebugSummaryExpanded = it },
-                    onOpenChallengeCommonSettings = onOpenChallengeCommonSettings,
                     onChallengeHoldTapped = onChallengeHoldTapped,
                     onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                     onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration
@@ -169,23 +174,49 @@ fun ChallengeCreatorScreen(
             ChallengeFlowStep.TUNING -> {
                 ChallengeTuningContent(
                     state = state,
-                    onOpenChallengeCommonSettings = onOpenChallengeCommonSettings,
                     onDetourStrengthChange = onDetourStrengthChange,
                     onRouteWavinessChange = onRouteWavinessChange,
                     onStepDistanceVarianceChange = onStepDistanceVarianceChange,
-                    onCorridorWidthChange = onCorridorWidthChange
+                    onCorridorWidthChange = onCorridorWidthChange,
+                    onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
                 )
             }
         }
 
-        AppOutlinedButton(
-            onClick = onBackToList,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp)
-        ) {
-            Text(stringResource(R.string.back_to_list))
-        }
+    }
+
+    if (isTuningDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isTuningDialogOpen = false },
+            title = {
+                Text(stringResource(R.string.challenge_tuning_title))
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.challenge_tuning_description),
+                        color = AppSecondaryTextColor,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    ChallengeTuningControls(
+                        state = state,
+                        onDetourStrengthChange = onDetourStrengthChange,
+                        onRouteWavinessChange = onRouteWavinessChange,
+                        onStepDistanceVarianceChange = onStepDistanceVarianceChange,
+                        onCorridorWidthChange = onCorridorWidthChange,
+                        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                AppOutlinedButton(onClick = { isTuningDialogOpen = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        )
     }
 }
 
@@ -215,7 +246,7 @@ private fun ChallengeMethodSelectionContent(
         Text(stringResource(R.string.challenge_method_manual_start_goal))
     }
 
-    AppOutlinedButton(
+    AppButton(
         onClick = onSelectRandomStartGoalChallengeMethod,
         modifier = Modifier
             .fillMaxWidth()
@@ -229,9 +260,8 @@ private fun ChallengeMethodSelectionContent(
 private fun ChallengeCommonSettingsContent(
     state: MainUiState,
     uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
-    onOpenChallengeMethodSelection: () -> Unit,
     onOpenChallengeGeneration: () -> Unit,
-    onOpenChallengeTuning: () -> Unit,
+    onShowTuningDialog: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onStartDrawTargetSelection: () -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
@@ -273,7 +303,7 @@ private fun ChallengeCommonSettingsContent(
         modifier = Modifier.padding(top = 12.dp)
     )
 
-    AppOutlinedButton(
+    AppButton(
         onClick = onStartDrawTargetSelection,
         enabled = !state.isDrawTargetSelectionMode,
         modifier = Modifier
@@ -291,37 +321,31 @@ private fun ChallengeCommonSettingsContent(
         modifier = Modifier.padding(top = 12.dp)
     )
 
+    Text(
+        text = stringResource(R.string.draw_count_label),
+        color = AppTextColor,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 12.dp, bottom = 6.dp)
+    )
+
     OutlinedTextField(
         value = state.drawCountInput,
         onValueChange = onDrawCountChange,
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp),
+            .fillMaxWidth(),
         singleLine = true,
-        label = { Text(stringResource(R.string.draw_count_label)) },
         placeholder = { Text(stringResource(R.string.draw_count_placeholder_auto)) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
 
-    Row(
+    AppButton(
+        onClick = onShowTuningDialog,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(top = 12.dp)
     ) {
-        AppOutlinedButton(
-            onClick = onOpenChallengeMethodSelection,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.challenge_change_method))
-        }
-
-        AppOutlinedButton(
-            onClick = onOpenChallengeTuning,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.challenge_open_tuning))
-        }
+        Text(stringResource(R.string.challenge_open_tuning))
     }
 
     AppButton(
@@ -352,7 +376,6 @@ private fun ChallengeCommonSettingsContent(
 private fun ChallengeManualGenerationContent(
     state: MainUiState,
     uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
-    onOpenChallengeCommonSettings: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onStartGoalSelection: () -> Unit,
@@ -391,30 +414,18 @@ private fun ChallengeManualGenerationContent(
         modifier = Modifier.padding(top = 12.dp)
     )
 
-    Row(
+    AppButton(
+        onClick = onStartGoalSelection,
+        enabled = uiModel.canStartGoalSelection,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(top = 12.dp)
     ) {
-        AppOutlinedButton(
-            onClick = onOpenChallengeCommonSettings,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.challenge_back_to_settings))
-        }
-
-        AppButton(
-            onClick = onStartGoalSelection,
-            enabled = uiModel.canStartGoalSelection,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = stringResource(uiModel.startGoalButtonTextResId),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        Text(
+            text = stringResource(uiModel.startGoalButtonTextResId),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 
     AppButton(
@@ -432,7 +443,6 @@ private fun ChallengeManualGenerationContent(
 private fun ChallengeRandomGenerationContent(
     state: MainUiState,
     uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
-    onOpenChallengeCommonSettings: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawWithRandomStartGoal: () -> Unit
@@ -470,15 +480,6 @@ private fun ChallengeRandomGenerationContent(
         modifier = Modifier.padding(top = 12.dp)
     )
 
-    AppOutlinedButton(
-        onClick = onOpenChallengeCommonSettings,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp)
-    ) {
-        Text(stringResource(R.string.challenge_back_to_settings))
-    }
-
     AppButton(
         onClick = onDrawWithRandomStartGoal,
         enabled = uiModel.canAutoGenerateWithRandomStartGoal,
@@ -496,7 +497,6 @@ private fun ChallengeResultContent(
     uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
     isDebugSummaryExpanded: Boolean,
     onDebugSummaryExpandedChange: (Boolean) -> Unit,
-    onOpenChallengeCommonSettings: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onRerunCurrentChallengeGeneration: () -> Unit
@@ -564,36 +564,24 @@ private fun ChallengeResultContent(
         onExpandedChange = onDebugSummaryExpandedChange
     )
 
-    Row(
+    AppButton(
+        onClick = onRerunCurrentChallengeGeneration,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(top = 12.dp)
     ) {
-        AppOutlinedButton(
-            onClick = onOpenChallengeCommonSettings,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.challenge_back_to_settings))
-        }
-
-        AppButton(
-            onClick = onRerunCurrentChallengeGeneration,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.challenge_regenerate))
-        }
+        Text(stringResource(R.string.challenge_regenerate))
     }
 }
 
 @Composable
 private fun ChallengeTuningContent(
     state: MainUiState,
-    onOpenChallengeCommonSettings: () -> Unit,
     onDetourStrengthChange: (Float) -> Unit,
     onRouteWavinessChange: (Float) -> Unit,
     onStepDistanceVarianceChange: (Float) -> Unit,
-    onCorridorWidthChange: (Float) -> Unit
+    onCorridorWidthChange: (Float) -> Unit,
+    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit
 ) {
     Text(
         text = stringResource(R.string.challenge_tuning_title),
@@ -609,40 +597,123 @@ private fun ChallengeTuningContent(
         modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
     )
 
+    ChallengeTuningControls(
+        state = state,
+        onDetourStrengthChange = onDetourStrengthChange,
+        onRouteWavinessChange = onRouteWavinessChange,
+        onStepDistanceVarianceChange = onStepDistanceVarianceChange,
+        onCorridorWidthChange = onCorridorWidthChange,
+        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
+    )
+}
+
+@Composable
+private fun ChallengeTuningControls(
+    state: MainUiState,
+    onDetourStrengthChange: (Float) -> Unit,
+    onRouteWavinessChange: (Float) -> Unit,
+    onStepDistanceVarianceChange: (Float) -> Unit,
+    onCorridorWidthChange: (Float) -> Unit,
+    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit
+) {
+    var helpDialogTitle by rememberSaveable { mutableStateOf<String?>(null) }
+    var helpDialogBody by rememberSaveable { mutableStateOf<String?>(null) }
+    val detourLabel = stringResource(R.string.challenge_detour_strength_label)
+    val detourHelp = stringResource(R.string.challenge_detour_strength_help)
+    val wavinessLabel = stringResource(R.string.challenge_route_waviness_label)
+    val wavinessHelp = stringResource(R.string.challenge_route_waviness_help)
+    val varianceLabel = stringResource(R.string.challenge_step_distance_variance_label)
+    val varianceHelp = stringResource(R.string.challenge_step_distance_variance_help)
+    val corridorLabel = stringResource(R.string.challenge_corridor_width_label)
+    val corridorHelp = stringResource(R.string.challenge_corridor_width_help)
+    val excludeLabel = stringResource(R.string.challenge_exclude_previous_holds_label)
+    val excludeHelp = stringResource(R.string.challenge_exclude_previous_holds_help)
+
     ChallengeTuningSlider(
-        label = stringResource(R.string.challenge_detour_strength_label),
+        label = detourLabel,
         value = state.routeTuning.detourStrength,
-        onValueChange = onDetourStrengthChange
+        onValueChange = onDetourStrengthChange,
+        onHelpClick = {
+            helpDialogTitle = detourLabel
+            helpDialogBody = detourHelp
+        }
     )
 
     ChallengeTuningSlider(
-        label = stringResource(R.string.challenge_route_waviness_label),
+        label = wavinessLabel,
         value = state.routeTuning.routeWaviness,
         onValueChange = onRouteWavinessChange,
+        onHelpClick = {
+            helpDialogTitle = wavinessLabel
+            helpDialogBody = wavinessHelp
+        },
         modifier = Modifier.padding(top = 8.dp)
     )
 
     ChallengeTuningSlider(
-        label = stringResource(R.string.challenge_step_distance_variance_label),
+        label = varianceLabel,
         value = state.routeTuning.stepDistanceVariance,
         onValueChange = onStepDistanceVarianceChange,
+        onHelpClick = {
+            helpDialogTitle = varianceLabel
+            helpDialogBody = varianceHelp
+        },
         modifier = Modifier.padding(top = 8.dp)
     )
 
     ChallengeTuningSlider(
-        label = stringResource(R.string.challenge_corridor_width_label),
+        label = corridorLabel,
         value = state.routeTuning.corridorWidth,
         onValueChange = onCorridorWidthChange,
+        onHelpClick = {
+            helpDialogTitle = corridorLabel
+            helpDialogBody = corridorHelp
+        },
         modifier = Modifier.padding(top = 8.dp)
     )
 
-    AppOutlinedButton(
-        onClick = onOpenChallengeCommonSettings,
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp)
+            .padding(top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.challenge_back_to_settings))
+        Column(modifier = Modifier.weight(1f)) {
+            SettingLabelWithHelp(
+                label = excludeLabel,
+                onHelpClick = {
+                    helpDialogTitle = excludeLabel
+                    helpDialogBody = excludeHelp
+                }
+            )
+        }
+
+        Switch(
+            checked = state.routeTuning.excludePreviouslyGeneratedHolds,
+            onCheckedChange = onExcludePreviouslyGeneratedHoldsChange
+        )
+    }
+
+    if (helpDialogTitle != null && helpDialogBody != null) {
+        AlertDialog(
+            onDismissRequest = {
+                helpDialogTitle = null
+                helpDialogBody = null
+            },
+            title = { Text(helpDialogTitle!!) },
+            text = { Text(helpDialogBody!!) },
+            confirmButton = {},
+            dismissButton = {
+                AppOutlinedButton(
+                    onClick = {
+                        helpDialogTitle = null
+                        helpDialogBody = null
+                    }
+                ) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        )
     }
 }
 
@@ -660,7 +731,12 @@ private fun ChallengeCanvasSection(
             .fillMaxWidth()
             .then(
                 if (bitmap != null && bitmap.height > 0) {
-                    Modifier.aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                    Modifier.aspectRatio(
+                        wallImageDisplayAspectRatio(
+                            imageWidth = bitmap.width,
+                            imageHeight = bitmap.height
+                        )
+                    )
                 } else {
                     Modifier.height(560.dp)
                 }
@@ -676,6 +752,7 @@ private fun ChallengeCanvasSection(
                 challengeHoldIndices = state.challengeHoldIndices,
                 challengeOrderedHoldIndices = uiModel.orderedChallengeIndices,
                 selectionCandidateIndices = uiModel.selectionCandidateIndices,
+                hasDrawTargetSelection = state.hasDrawTargetSelection,
                 startHoldIndex = state.startHoldIndex,
                 goalHoldIndex = state.goalHoldIndex,
                 coreChallengeHoldIndex = uiModel.coreChallengeHoldIndex,
@@ -811,6 +888,7 @@ private fun ChallengeTuningSlider(
     label: String,
     value: Float,
     onValueChange: (Float) -> Unit,
+    onHelpClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -819,10 +897,9 @@ private fun ChallengeTuningSlider(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = label,
-                color = AppTextColor,
-                style = MaterialTheme.typography.bodyMedium
+            SettingLabelWithHelp(
+                label = label,
+                onHelpClick = onHelpClick
             )
             Text(
                 text = stringResource(
@@ -840,5 +917,44 @@ private fun ChallengeTuningSlider(
             valueRange = 0f..1f,
             modifier = Modifier.padding(top = 4.dp)
         )
+    }
+}
+
+@Composable
+private fun SettingLabelWithHelp(
+    label: String,
+    onHelpClick: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = AppTextColor,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        if (onHelpClick != null) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .size(22.dp)
+                    .background(
+                        color = AppSubtleSurfaceColor,
+                        shape = RoundedCornerShape(999.dp)
+                    )
+                    .clickable(onClick = onHelpClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "?",
+                    color = AppSecondaryTextColor,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }

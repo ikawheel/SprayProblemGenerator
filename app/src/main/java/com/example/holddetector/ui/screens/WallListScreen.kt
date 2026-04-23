@@ -3,12 +3,16 @@ package com.example.holddetector.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -43,17 +47,22 @@ import com.example.holddetector.ui.selectors.formatWallTimestamp
 @Composable
 fun WallListScreen(
     savedWalls: List<SavedWallSummary>,
-    onNewWallClick: () -> Unit,
+    onTakePhoto: () -> Unit,
+    onPickPhoto: () -> Unit,
     onOpenSavedWallForReachCalibration: (String) -> Unit,
     onOpenSavedWallForHoldEditor: (String) -> Unit,
     onOpenSavedWallForHoldAttributeEditor: (String) -> Unit,
     onOpenSavedWallForHoldScoring: (String) -> Unit,
-    onOpenSavedWallForChallenge: (String) -> Unit,
+    onOpenSavedWallForManualStartGoalChallenge: (String) -> Unit,
+    onOpenSavedWallForRandomStartGoalChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var deletingWallId by remember { mutableStateOf<String?>(null) }
     var editingWallId by remember { mutableStateOf<String?>(null) }
+    var challengeWallId by remember { mutableStateOf<String?>(null) }
+    var isImageSourceDialogOpen by remember { mutableStateOf(false) }
+    val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column(modifier = modifier) {
         Text(
@@ -71,7 +80,7 @@ fun WallListScreen(
         )
 
         AppButton(
-            onClick = onNewWallClick,
+            onClick = { isImageSourceDialogOpen = true },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.new_wall_button))
@@ -93,13 +102,14 @@ fun WallListScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = navigationBarBottomPadding + 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(savedWalls, key = { it.id }) { wall ->
                     SavedWallCard(
                         wall = wall,
                         onEdit = { editingWallId = wall.id },
-                        onCreateChallenge = { onOpenSavedWallForChallenge(wall.id) },
+                        onCreateChallenge = { challengeWallId = wall.id },
                         onDelete = { deletingWallId = wall.id }
                     )
                 }
@@ -168,6 +178,95 @@ fun WallListScreen(
             confirmButton = {},
             dismissButton = {
                 AppOutlinedButton(onClick = { editingWallId = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    challengeWallId?.let { wallId ->
+        val wall = savedWalls.firstOrNull { it.id == wallId }
+        AlertDialog(
+            onDismissRequest = { challengeWallId = null },
+            title = { Text(stringResource(R.string.challenge_menu_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    wall?.let {
+                        Text(
+                            text = it.title,
+                            color = AppTextColor,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.challenge_menu_description),
+                        color = AppSecondaryTextColor,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    AppButton(
+                        onClick = {
+                            challengeWallId = null
+                            onOpenSavedWallForManualStartGoalChallenge(wallId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.challenge_method_manual_start_goal))
+                    }
+                    AppButton(
+                        onClick = {
+                            challengeWallId = null
+                            onOpenSavedWallForRandomStartGoalChallenge(wallId)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.challenge_method_random_start_goal))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                AppOutlinedButton(onClick = { challengeWallId = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (isImageSourceDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isImageSourceDialogOpen = false },
+            title = { Text(stringResource(R.string.camera_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.camera_subtitle),
+                        color = AppSecondaryTextColor,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    AppButton(
+                        onClick = {
+                            isImageSourceDialogOpen = false
+                            onTakePhoto()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.camera_take_photo))
+                    }
+                    AppButton(
+                        onClick = {
+                            isImageSourceDialogOpen = false
+                            onPickPhoto()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.camera_pick_photo))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                AppOutlinedButton(onClick = { isImageSourceDialogOpen = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             }

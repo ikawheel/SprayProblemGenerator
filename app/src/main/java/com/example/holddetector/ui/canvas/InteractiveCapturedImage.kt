@@ -239,6 +239,7 @@ fun ChallengeCanvasScreen(
     challengeHoldIndices: Set<Int>,
     challengeOrderedHoldIndices: List<Int>,
     selectionCandidateIndices: Set<Int>,
+    hasDrawTargetSelection: Boolean,
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     coreChallengeHoldIndex: Int?,
@@ -255,6 +256,7 @@ fun ChallengeCanvasScreen(
         challengeHoldIndices = challengeHoldIndices,
         challengeOrderedHoldIndices = challengeOrderedHoldIndices,
         selectionCandidateIndices = selectionCandidateIndices,
+        hasDrawTargetSelection = hasDrawTargetSelection,
         startHoldIndex = startHoldIndex,
         goalHoldIndex = goalHoldIndex,
         coreChallengeHoldIndex = coreChallengeHoldIndex,
@@ -314,6 +316,7 @@ private fun InteractiveCapturedImage(
     goalCandidateHoldIndices: Set<Int> = emptySet(),
     challengeOrderedHoldIndices: List<Int> = emptyList(),
     selectionCandidateIndices: Set<Int> = emptySet(),
+    hasDrawTargetSelection: Boolean = false,
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     coreChallengeHoldIndex: Int? = null,
@@ -385,9 +388,16 @@ private fun InteractiveCapturedImage(
             routeSelectionMode == RouteSelectionMode.NONE &&
             !isDrawTargetSelectionMode &&
             challengeHoldIndices.isNotEmpty()
+    val shouldShowDrawTargetSelectionMask =
+        mode == CanvasMode.CHALLENGE &&
+            hasDrawTargetSelection &&
+            !isDrawTargetSelectionMode &&
+            challengeHoldIndices.isEmpty() &&
+            selectionCandidateIndices.isNotEmpty()
     val highlightedHoldPath = remember(
         holds,
         challengeHoldIndices,
+        selectionCandidateIndices,
         baseLayout,
         mode,
         routeSelectionMode,
@@ -407,6 +417,16 @@ private fun InteractiveCapturedImage(
             shouldShowChallengeSelectionMask -> {
                 Path().apply {
                     challengeHoldIndices.sorted().forEach { index ->
+                        holds.getOrNull(index)?.let { hold ->
+                            addPath(hold.toLocalPolygon(baseLayout).toPath())
+                        }
+                    }
+                }
+            }
+
+            shouldShowDrawTargetSelectionMask -> {
+                Path().apply {
+                    selectionCandidateIndices.sorted().forEach { index ->
                         holds.getOrNull(index)?.let { hold ->
                             addPath(hold.toLocalPolygon(baseLayout).toPath())
                         }
@@ -878,6 +898,10 @@ private fun InteractiveCapturedImage(
                                 mode == CanvasMode.AUTO_EXTRACTION -> true
                             mode == CanvasMode.SCORING -> index == focusHoldIndex
                             mode == CanvasMode.REACH_CALIBRATION -> false
+                            shouldShowDrawTargetSelectionMask ->
+                                selectionCandidateIndices.contains(index) ||
+                                    index == startHoldIndex ||
+                                    index == goalHoldIndex
                             routeSelectionMode != RouteSelectionMode.NONE ->
                                 selectionCandidateIndices.contains(index) ||
                                     index == startHoldIndex ||

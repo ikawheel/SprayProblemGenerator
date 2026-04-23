@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +34,6 @@ import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.HoldScoringCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.BottomActionBar
 import com.example.holddetector.ui.selectors.deriveHoldScoringUiModel
 
 @Composable
@@ -51,60 +50,11 @@ fun HoldScoringScreen(
     val uiModel = deriveHoldScoringUiModel(state)
     val isEditingExistingWall = state.currentWallId != null
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = Color.Transparent,
-        bottomBar = {
-            BottomActionBar {
-                if (isEditingExistingWall) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        AppOutlinedButton(
-                            onClick = onExitWithoutSaving,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResource(R.string.exit_without_saving))
-                        }
-
-                        AppButton(
-                            onClick = onSaveAndExit,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResource(R.string.save_and_exit))
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        AppOutlinedButton(
-                            onClick = onBackToHoldEditor,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResourceByName("hold_scoring_back"))
-                        }
-
-                        AppButton(
-                            onClick = onOpenChallenge,
-                            enabled = uiModel.totalCount > 0,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResourceByName("hold_scoring_open_challenge"))
-                        }
-                    }
-                }
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-        ) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -141,7 +91,12 @@ fun HoldScoringScreen(
                         .fillMaxWidth()
                         .then(
                             if (bitmap != null && bitmap.height > 0) {
-                                Modifier.aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                                Modifier.aspectRatio(
+                                    wallImageDisplayAspectRatio(
+                                        imageWidth = bitmap.width,
+                                        imageHeight = bitmap.height
+                                    )
+                                )
                             } else {
                                 Modifier
                             }
@@ -228,7 +183,30 @@ fun HoldScoringScreen(
                         }
                     }
                 }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .navigationBarsPadding()
+                ) {
+                    if (isEditingExistingWall) {
+                        AppButton(
+                            onClick = onSaveAndExit,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.overwrite_save))
+                        }
+                    } else {
+                        AppButton(
+                            onClick = onOpenChallenge,
+                            enabled = uiModel.totalCount > 0,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResourceByName("hold_scoring_open_challenge"))
+                        }
+                    }
+                }
             }
-        }
     }
 }

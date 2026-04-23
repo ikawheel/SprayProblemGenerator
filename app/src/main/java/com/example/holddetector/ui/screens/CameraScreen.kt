@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +22,6 @@ import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppOutlinedButton
 
 // 壁画像の取得方法を選ぶ画面です。
 @Composable
@@ -78,7 +76,7 @@ fun CameraFullscreenScreen(
                 }
 
                 // 端末内の画像を選ぶボタンです。
-                AppOutlinedButton(
+                AppButton(
                     onClick = onPickPhoto,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -88,14 +86,6 @@ fun CameraFullscreenScreen(
 
             // 下側に少し余白を入れて窮屈さを減らします。
             Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        // 戻る操作は左上固定にします。
-        AppOutlinedButton(
-            onClick = onBackToList,
-            modifier = Modifier.align(Alignment.TopStart)
-        ) {
-            Text(stringResource(R.string.back_to_list))
         }
     }
 }

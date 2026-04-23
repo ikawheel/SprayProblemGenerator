@@ -73,6 +73,7 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
 
     val requestedDrawCount = state.drawCountInput.toIntOrNull()
     val hasValidRequestedDrawCount = state.drawCountInput.isBlank() ||
+        requestedDrawCount == 0 ||
         (requestedDrawCount ?: 0) >= 2
 
     val isReadyToGenerate = !state.isDrawTargetSelectionMode &&

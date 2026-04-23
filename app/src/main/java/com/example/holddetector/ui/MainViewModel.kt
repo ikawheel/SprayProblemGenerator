@@ -21,6 +21,7 @@ import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.ReachCalibrationReference
+import com.example.holddetector.model.SavedWallSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,23 +53,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val summaries = withContext(Dispatchers.IO) {
                 repository.loadAllSummaries()
             }
-            _uiState.value = MainUiState(
-                currentScreen = AppScreen.LIST,
-                savedWalls = summaries,
-                drawCountInput = _uiState.value.drawCountInput,
-                holdTapAreaSize = _uiState.value.holdTapAreaSize,
-                challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
-                challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
-                autoExtractionTuning = _uiState.value.autoExtractionTuning,
-                routeTuning = _uiState.value.routeTuning,
-                isBusy = false
-            )
+            _uiState.value = buildListState(
+                source = _uiState.value,
+                savedWalls = summaries
+            ).copy(isBusy = false)
         }
     }
 
     fun startNewWall() {
         _uiState.value = MainUiState(
             currentScreen = AppScreen.CAMERA,
+            screenBackStack = listOf(AppScreen.LIST),
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
             holdTapAreaSize = _uiState.value.holdTapAreaSize,
@@ -84,8 +79,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         capturedOrientation: CapturedOrientation,
         capturedRotationDegrees: Int
     ) {
-        _uiState.value = _uiState.value.copy(
+        val state = _uiState.value
+        _uiState.value = state.copy(
             currentScreen = AppScreen.HOLD_REGISTRATION_METHOD,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.HOLD_REGISTRATION_METHOD
+            ),
             currentWallId = null,
             wallTitle = defaultWallTitle(),
             capturedBitmap = bitmap,
@@ -121,6 +121,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         _uiState.value = state.copy(
             currentScreen = AppScreen.REACH_CALIBRATION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.REACH_CALIBRATION
+            ),
             holds = emptyList(),
             autoExtractedHolds = emptyList(),
             selectedHoldIndex = null,
@@ -145,6 +149,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.value = state.copy(
             currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.AUTO_HOLD_EXTRACTION
+            ),
             holds = emptyList(),
             selectedHoldIndex = null,
             autoExtractedHolds = emptyList(),
@@ -163,14 +171,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun backToHoldRegistrationMethodSelection() {
         val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_REGISTRATION_METHOD,
+        _uiState.value = popScreenState(
+            state = state.copy(
             holds = emptyList(),
             autoExtractedHolds = emptyList(),
             selectedHoldIndex = null,
             isAutoExtractionWallSamplingMode = false,
             isBusy = false,
             message = text(R.string.message_hold_registration_method_select)
+            )
         )
     }
 
@@ -198,6 +207,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isAutoExtractionWallSamplingMode = true,
             message = text(R.string.message_auto_hold_extraction_wall_sample_mode)
         )
+    }
+
+    fun estimateAutoExtractionWallSamplePoints() {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap ?: return
+        if (state.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) return
+
+        _uiState.value = state.copy(
+            isAutoExtractionWallSamplingMode = false,
+            isBusy = true,
+            message = null
+        )
+
+        viewModelScope.launch {
+            val estimatedPoints = withContext(Dispatchers.Default) {
+                BinaryHoldExtractor.estimateWallSamplePoints(bitmap)
+            }
+            val currentState = _uiState.value
+            if (currentState.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) {
+                _uiState.value = currentState.copy(isBusy = false)
+                return@launch
+            }
+            if (estimatedPoints.isEmpty()) {
+                _uiState.value = currentState.copy(
+                    isBusy = false,
+                    isAutoExtractionWallSamplingMode = false,
+                    message = text(R.string.message_auto_hold_extraction_wall_sample_estimation_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = currentState.copy(
+                autoExtractionWallSamplePoints = estimatedPoints,
+                isAutoExtractionWallSamplingMode = false
+            )
+            runAutoHoldExtraction(
+                bitmap = bitmap,
+                tuning = currentState.autoExtractionTuning,
+                wallSamplePoints = estimatedPoints
+            )
+        }
     }
 
     fun stopAutoExtractionWallSampling() {
@@ -260,6 +310,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.value = state.copy(
             currentScreen = AppScreen.REACH_CALIBRATION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.REACH_CALIBRATION
+            ),
             holds = state.autoExtractedHolds,
             selectedHoldIndex = null,
             holdScoringPosition = 0,
@@ -280,6 +334,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         _uiState.value = state.copy(
             currentScreen = AppScreen.REACH_CALIBRATION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.REACH_CALIBRATION
+            ),
             selectedHoldIndex = null,
             pendingReachCalibrationPoint = null,
             isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
@@ -311,6 +369,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.value = state.copy(
             currentScreen = AppScreen.HOLD_EDITOR,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.HOLD_EDITOR
+            ),
             selectedHoldIndex = null,
             holdScoringPosition = 0,
             pendingReachCalibrationPoint = null,
@@ -325,9 +387,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun backFromReachCalibration() {
         val state = _uiState.value
-        if (state.reachCalibrationReturnToHoldEditor) {
-            _uiState.value = state.copy(
-                currentScreen = AppScreen.HOLD_EDITOR,
+        _uiState.value = popScreenState(
+            state = state.copy(
                 selectedHoldIndex = null,
                 holdScoringPosition = 0,
                 pendingReachCalibrationPoint = null,
@@ -336,33 +397,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 reachCalibrationReturnToAutoExtraction = false,
                 message = null
             )
-        } else if (state.reachCalibrationReturnToAutoExtraction) {
-            _uiState.value = state.copy(
-                currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
-                selectedHoldIndex = state.autoExtractedHolds.indices.firstOrNull(),
-                pendingReachCalibrationPoint = null,
-                isReachCalibrationSelectionMode = false,
-                reachCalibrationReturnToHoldEditor = false,
-                reachCalibrationReturnToAutoExtraction = false,
-                message = null
-            )
-        } else {
-            val fallbackScreen = if (state.currentWallId != null) {
-                AppScreen.LIST
-            } else {
-                AppScreen.CAMERA
-            }
-            _uiState.value = MainUiState(
-                currentScreen = fallbackScreen,
-                savedWalls = state.savedWalls,
-                drawCountInput = state.drawCountInput,
-                holdTapAreaSize = state.holdTapAreaSize,
-                challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
-                challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
-                autoExtractionTuning = state.autoExtractionTuning,
-                routeTuning = state.routeTuning
-            )
-        }
+        )
     }
 
     fun openSavedWall(wallId: String) {
@@ -402,6 +437,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openSavedWallForChallenge(wallId: String) {
+        openSavedWallForChallenge(wallId, null)
+    }
+
+    fun openSavedWallForManualStartGoalChallenge(wallId: String) {
+        openSavedWallForChallenge(wallId, ChallengeGenerationMethod.MANUAL_START_GOAL)
+    }
+
+    fun openSavedWallForRandomStartGoalChallenge(wallId: String) {
+        openSavedWallForChallenge(wallId, ChallengeGenerationMethod.RANDOM_START_GOAL)
+    }
+
+    private fun openSavedWallForChallenge(
+        wallId: String,
+        initialMethod: ChallengeGenerationMethod?
+    ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isBusy = true)
             val detail = withContext(Dispatchers.IO) { repository.loadWall(wallId) }
@@ -421,8 +471,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            _uiState.value = _uiState.value.copy(
+            val currentState = _uiState.value
+            _uiState.value = currentState.copy(
                 currentScreen = AppScreen.CHALLENGE_CREATOR,
+                screenBackStack = pushedScreenBackStack(
+                    state = currentState,
+                    targetScreen = AppScreen.CHALLENGE_CREATOR
+                ),
                 currentWallId = detail.id,
                 wallTitle = detail.title,
                 capturedBitmap = detail.bitmap,
@@ -443,8 +498,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
                 lastGeneratedIntermediateHoldIndices = emptySet(),
-                challengeGenerationMethod = null,
-                challengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
+                challengeGenerationMethod = initialMethod,
+                challengeFlowStep = if (initialMethod == null) {
+                    ChallengeFlowStep.METHOD_SELECT
+                } else {
+                    ChallengeFlowStep.COMMON_SETTINGS
+                },
+                challengeFlowBackStack = emptyList(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -559,6 +619,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.value = state.copy(
             currentScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR
+            ),
             selectedHoldIndex = null,
             showDiscardDialog = false,
             message = null
@@ -567,10 +631,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun returnToHoldEditorFromAttributeEditor() {
         val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_EDITOR,
-            selectedHoldIndex = null,
-            message = null
+        _uiState.value = popScreenState(
+            state = state.copy(
+                selectedHoldIndex = null,
+                message = null
+            )
         )
     }
 
@@ -583,6 +648,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.value = state.copy(
             currentScreen = AppScreen.HOLD_SCORING,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.HOLD_SCORING
+            ),
             selectedHoldIndex = null,
             holdScoringPosition = 0,
             showDiscardDialog = false,
@@ -592,10 +661,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun returnToHoldAttributeEditorFromScoring() {
         val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR,
-            selectedHoldIndex = null,
-            message = null
+        _uiState.value = popScreenState(
+            state = state.copy(
+                selectedHoldIndex = null,
+                message = null
+            )
         )
     }
 
@@ -646,15 +716,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
             val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
-            _uiState.value = MainUiState(
-                currentScreen = AppScreen.LIST,
+            _uiState.value = state.copy(
                 savedWalls = refreshed,
-                drawCountInput = state.drawCountInput,
-                holdTapAreaSize = state.holdTapAreaSize,
-                challengeDifficultyScoreMin = state.challengeDifficultyScoreMin,
-                challengeDifficultyScoreMax = state.challengeDifficultyScoreMax,
-                autoExtractionTuning = state.autoExtractionTuning,
-                routeTuning = state.routeTuning,
+                currentWallId = savedSummary.id,
+                wallTitle = savedSummary.title,
+                reachCalibrationReference = normalizedReference,
+                isHoldEditorDirty = false,
+                showDiscardDialog = false,
+                isBusy = false,
                 message = text(R.string.message_saved_wall_title, savedSummary.title)
             )
         }
@@ -687,6 +756,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
             _uiState.value = state.copy(
                 currentScreen = AppScreen.CHALLENGE_CREATOR,
+                screenBackStack = pushedScreenBackStack(
+                    state = state,
+                    targetScreen = AppScreen.CHALLENGE_CREATOR
+                ),
                 savedWalls = refreshed,
                 currentWallId = savedSummary.id,
                 wallTitle = savedSummary.title,
@@ -696,6 +769,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 lastGeneratedIntermediateHoldIndices = emptySet(),
                 challengeGenerationMethod = null,
                 challengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
+                challengeFlowBackStack = emptyList(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -987,6 +1061,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         updateRouteTuning { copy(corridorWidth = value.coerceIn(0f, 1f)) }
     }
 
+    fun onExcludePreviouslyGeneratedHoldsChanged(value: Boolean) {
+        updateRouteTuning { copy(excludePreviouslyGeneratedHolds = value) }
+    }
+
     fun selectManualStartGoalChallengeMethod() {
         selectChallengeGenerationMethod(ChallengeGenerationMethod.MANUAL_START_GOAL)
     }
@@ -999,6 +1077,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         _uiState.value = state.copy(
             challengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
+            challengeFlowBackStack = pushedChallengeFlowBackStack(
+                state = state,
+                targetStep = ChallengeFlowStep.METHOD_SELECT
+            ),
             selectedHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
@@ -1010,6 +1092,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         _uiState.value = state.copy(
             challengeFlowStep = ChallengeFlowStep.COMMON_SETTINGS,
+            challengeFlowBackStack = pushedChallengeFlowBackStack(
+                state = state,
+                targetStep = ChallengeFlowStep.COMMON_SETTINGS
+            ),
             selectedHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
@@ -1025,6 +1111,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         _uiState.value = state.copy(
             challengeFlowStep = ChallengeFlowStep.GENERATION,
+            challengeFlowBackStack = pushedChallengeFlowBackStack(
+                state = state,
+                targetStep = ChallengeFlowStep.GENERATION
+            ),
             selectedHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
@@ -1036,6 +1126,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         _uiState.value = state.copy(
             challengeFlowStep = ChallengeFlowStep.TUNING,
+            challengeFlowBackStack = pushedChallengeFlowBackStack(
+                state = state,
+                targetStep = ChallengeFlowStep.TUNING
+            ),
             selectedHoldIndex = null,
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
@@ -1061,8 +1155,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val requestedCount = state.drawCountInput.toIntOrNull()
-        if (state.drawCountInput.isNotBlank() && (requestedCount == null || requestedCount < 2)) {
+        val requestedCountInput = state.drawCountInput.toIntOrNull()
+        val requestedCount = requestedCountInput?.takeIf { it >= 2 }
+        if (
+            state.drawCountInput.isNotBlank() &&
+            (requestedCountInput == null || requestedCountInput == 1)
+        ) {
             _uiState.value = state.copy(message = text(R.string.message_invalid_draw_count))
             return
         }
@@ -1081,7 +1179,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val drawSourceIndices = challengeSelectionCandidateIndices(state).toMutableSet().apply {
-            removeAll(state.lastGeneratedIntermediateHoldIndices)
+            if (state.routeTuning.excludePreviouslyGeneratedHolds) {
+                removeAll(state.lastGeneratedIntermediateHoldIndices)
+            }
             add(startIndex)
             add(goalIndex)
         }
@@ -1125,6 +1225,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 lastGeneratedIntermediateHoldIndices = selectedIndices
                     .filterNotTo(linkedSetOf()) { index -> index == startIndex || index == goalIndex },
                 challengeFlowStep = ChallengeFlowStep.RESULT,
+                challengeFlowBackStack = pushedChallengeFlowBackStack(
+                    state = state,
+                    targetStep = ChallengeFlowStep.RESULT
+                ),
                 selectedHoldIndex = null,
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
@@ -1144,8 +1248,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val requestedCount = state.drawCountInput.toIntOrNull()
-        if (state.drawCountInput.isNotBlank() && (requestedCount == null || requestedCount < 2)) {
+        val requestedCountInput = state.drawCountInput.toIntOrNull()
+        val requestedCount = requestedCountInput?.takeIf { it >= 2 }
+        if (
+            state.drawCountInput.isNotBlank() &&
+            (requestedCountInput == null || requestedCountInput == 1)
+        ) {
             _uiState.value = state.copy(message = text(R.string.message_invalid_draw_count))
             return
         }
@@ -1195,6 +1303,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         index == generatedRoute.startIndex || index == generatedRoute.goalIndex
                     },
                 challengeFlowStep = ChallengeFlowStep.RESULT,
+                challengeFlowBackStack = pushedChallengeFlowBackStack(
+                    state = state,
+                    targetStep = ChallengeFlowStep.RESULT
+                ),
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
                 message = text(R.string.message_draw_generated_random_start_goal)
@@ -1284,66 +1396,62 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onBackPressed() {
-        when (_uiState.value.currentScreen) {
-            AppScreen.LIST -> Unit
-            AppScreen.CAMERA -> _uiState.value = _uiState.value.copy(currentScreen = AppScreen.LIST)
-            AppScreen.HOLD_REGISTRATION_METHOD -> {
-                _uiState.value = _uiState.value.copy(currentScreen = AppScreen.CAMERA)
-            }
-            AppScreen.AUTO_HOLD_EXTRACTION -> {
-                backToHoldRegistrationMethodSelection()
-            }
-            AppScreen.REACH_CALIBRATION -> {
-                if (
-                    _uiState.value.currentWallId != null &&
-                    !_uiState.value.reachCalibrationReturnToHoldEditor &&
-                    !_uiState.value.reachCalibrationReturnToAutoExtraction
-                ) {
-                    requestBackToList()
-                } else {
-                    backFromReachCalibration()
-                }
-            }
-            AppScreen.HOLD_EDITOR -> requestBackToList()
-            AppScreen.HOLD_ATTRIBUTE_EDITOR -> {
-                if (_uiState.value.currentWallId != null) {
-                    requestBackToList()
-                } else {
-                    returnToHoldEditorFromAttributeEditor()
-                }
-            }
-            AppScreen.HOLD_SCORING -> {
-                if (_uiState.value.currentWallId != null) {
-                    requestBackToList()
-                } else {
-                    returnToHoldAttributeEditorFromScoring()
-                }
-            }
-            AppScreen.CHALLENGE_CREATOR -> returnToList()
+        val state = _uiState.value
+        if (state.showDiscardDialog) {
+            dismissDiscardDialog()
+            return
         }
+
+        if (state.currentScreen == AppScreen.LIST) {
+            return
+        }
+
+        if (
+            state.currentScreen in setOf(
+                AppScreen.REACH_CALIBRATION,
+                AppScreen.HOLD_EDITOR,
+                AppScreen.HOLD_ATTRIBUTE_EDITOR,
+                AppScreen.HOLD_SCORING
+            ) &&
+            state.currentWallId != null &&
+            state.isHoldEditorDirty
+        ) {
+            _uiState.value = state.copy(showDiscardDialog = true)
+            return
+        }
+
+        if (state.currentScreen == AppScreen.CHALLENGE_CREATOR) {
+            when {
+                state.isDrawTargetSelectionMode -> {
+                    _uiState.value = state.copy(
+                        isDrawTargetSelectionMode = false,
+                        message = null
+                    )
+                }
+
+                state.routeSelectionMode != RouteSelectionMode.NONE -> {
+                    _uiState.value = state.copy(
+                        routeSelectionMode = RouteSelectionMode.NONE,
+                        message = null
+                    )
+                }
+
+                state.challengeFlowBackStack.isNotEmpty() -> {
+                    _uiState.value = popChallengeFlowState(state)
+                }
+
+                else -> {
+                    _uiState.value = popScreenState(state)
+                }
+            }
+            return
+        }
+
+        _uiState.value = popScreenState(state)
     }
 
     fun requestBackToList() {
-        val state = _uiState.value
-        when (state.currentScreen) {
-            AppScreen.REACH_CALIBRATION,
-            AppScreen.HOLD_EDITOR,
-            AppScreen.HOLD_ATTRIBUTE_EDITOR,
-            AppScreen.HOLD_SCORING -> {
-                if (state.isHoldEditorDirty) {
-                    _uiState.value = state.copy(showDiscardDialog = true)
-                } else {
-                    discardEditorAndReturnToList()
-                }
-            }
-
-            AppScreen.CAMERA,
-            AppScreen.HOLD_REGISTRATION_METHOD,
-            AppScreen.AUTO_HOLD_EXTRACTION,
-            AppScreen.CHALLENGE_CREATOR -> returnToList()
-
-            AppScreen.LIST -> Unit
-        }
+        onBackPressed()
     }
 
     fun dismissDiscardDialog() {
@@ -1351,29 +1459,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun discardEditorAndReturnToList() {
-        _uiState.value = MainUiState(
-            currentScreen = AppScreen.LIST,
-            savedWalls = _uiState.value.savedWalls,
-            drawCountInput = _uiState.value.drawCountInput,
-            holdTapAreaSize = _uiState.value.holdTapAreaSize,
-            challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
-            challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
-            autoExtractionTuning = _uiState.value.autoExtractionTuning,
-            routeTuning = _uiState.value.routeTuning
+        _uiState.value = popScreenState(
+            state = _uiState.value.copy(showDiscardDialog = false)
         )
     }
 
     fun returnToList() {
-        _uiState.value = MainUiState(
-            currentScreen = AppScreen.LIST,
-            savedWalls = _uiState.value.savedWalls,
-            drawCountInput = _uiState.value.drawCountInput,
-            holdTapAreaSize = _uiState.value.holdTapAreaSize,
-            challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
-            challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
-            autoExtractionTuning = _uiState.value.autoExtractionTuning,
-            routeTuning = _uiState.value.routeTuning
-        )
+        _uiState.value = buildListState(_uiState.value)
     }
 
     fun clearMessage() {
@@ -1389,6 +1481,77 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun text(@StringRes resId: Int, vararg args: Any): String {
         return appContext.getString(resId, *args)
+    }
+
+    private fun buildListState(
+        source: MainUiState,
+        savedWalls: List<SavedWallSummary> = source.savedWalls,
+        message: String? = null
+    ): MainUiState {
+        return MainUiState(
+            currentScreen = AppScreen.LIST,
+            screenBackStack = emptyList(),
+            savedWalls = savedWalls,
+            drawCountInput = source.drawCountInput,
+            holdTapAreaSize = source.holdTapAreaSize,
+            challengeDifficultyScoreMin = source.challengeDifficultyScoreMin,
+            challengeDifficultyScoreMax = source.challengeDifficultyScoreMax,
+            autoExtractionTuning = source.autoExtractionTuning,
+            routeTuning = source.routeTuning,
+            message = message
+        )
+    }
+
+    private fun pushedScreenBackStack(
+        state: MainUiState,
+        targetScreen: AppScreen
+    ): List<AppScreen> {
+        return if (state.currentScreen == targetScreen) {
+            state.screenBackStack
+        } else {
+            state.screenBackStack + state.currentScreen
+        }
+    }
+
+    private fun pushedChallengeFlowBackStack(
+        state: MainUiState,
+        targetStep: ChallengeFlowStep
+    ): List<ChallengeFlowStep> {
+        return if (state.challengeFlowStep == targetStep) {
+            state.challengeFlowBackStack
+        } else {
+            state.challengeFlowBackStack + state.challengeFlowStep
+        }
+    }
+
+    private fun popScreenState(
+        state: MainUiState
+    ): MainUiState {
+        val previousScreen = state.screenBackStack.lastOrNull()
+        return if (previousScreen == null || previousScreen == AppScreen.LIST) {
+            buildListState(state)
+        } else {
+            state.copy(
+                currentScreen = previousScreen,
+                screenBackStack = state.screenBackStack.dropLast(1),
+                challengeFlowBackStack = emptyList(),
+                showDiscardDialog = false,
+                message = null
+            )
+        }
+    }
+
+    private fun popChallengeFlowState(
+        state: MainUiState
+    ): MainUiState {
+        val previousStep = state.challengeFlowBackStack.lastOrNull() ?: return state
+        return state.copy(
+            challengeFlowStep = previousStep,
+            challengeFlowBackStack = state.challengeFlowBackStack.dropLast(1),
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            message = null
+        )
     }
 
     private fun updateRouteTuning(
@@ -1408,22 +1571,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val detail = withContext(Dispatchers.IO) { repository.loadWall(wallId) }
             if (detail == null) {
                 val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
-                _uiState.value = MainUiState(
-                    currentScreen = AppScreen.LIST,
+                _uiState.value = buildListState(
+                    source = _uiState.value,
                     savedWalls = refreshed,
-                    drawCountInput = _uiState.value.drawCountInput,
-                    holdTapAreaSize = _uiState.value.holdTapAreaSize,
-                    challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
-                    challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
-                    autoExtractionTuning = _uiState.value.autoExtractionTuning,
-                    routeTuning = _uiState.value.routeTuning,
                     message = text(R.string.message_open_wall_failed)
                 )
                 return@launch
             }
 
-            _uiState.value = _uiState.value.copy(
+            val currentState = _uiState.value
+            _uiState.value = currentState.copy(
                 currentScreen = targetScreen,
+                screenBackStack = pushedScreenBackStack(
+                    state = currentState,
+                    targetScreen = targetScreen
+                ),
                 currentWallId = detail.id,
                 wallTitle = detail.title,
                 capturedBitmap = detail.bitmap,
@@ -1444,6 +1606,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
+                lastGeneratedIntermediateHoldIndices = emptySet(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
                 startHoldIndex = null,
@@ -1452,6 +1615,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isDrawTargetSelectionMode = false,
                 isHoldEditorDirty = false,
                 holdScoringPosition = 0,
+                challengeFlowBackStack = emptyList(),
                 showDiscardDialog = false,
                 isBusy = false,
                 message = when (targetScreen) {
@@ -1533,6 +1697,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(
             challengeGenerationMethod = method,
             challengeFlowStep = ChallengeFlowStep.COMMON_SETTINGS,
+            challengeFlowBackStack = pushedChallengeFlowBackStack(
+                state = state,
+                targetStep = ChallengeFlowStep.COMMON_SETTINGS
+            ),
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
@@ -1581,10 +1749,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         tuning: RouteGenerationTuning,
         reachCalibrationReference: ReachCalibrationReference?
     ): RandomStartGoalGenerationResult? {
-        val filteredSelectionCandidateIndices = selectionCandidateIndices
-            .filterNotTo(linkedSetOf()) { it in lastGeneratedIntermediateHoldIndices }
-            .takeIf { it.size >= 2 }
-            ?: selectionCandidateIndices
+        val filteredSelectionCandidateIndices = if (tuning.excludePreviouslyGeneratedHolds) {
+            selectionCandidateIndices
+                .filterNotTo(linkedSetOf()) { it in lastGeneratedIntermediateHoldIndices }
+                .takeIf { it.size >= 2 }
+                ?: selectionCandidateIndices
+        } else {
+            selectionCandidateIndices
+        }
 
         val preferredStartIndices = filteredSelectionCandidateIndices.filterTo(linkedSetOf()) { index ->
             holds.getOrNull(index)?.isStartCandidate == true
@@ -1611,7 +1783,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .take(64)
             .forEach { (startIndex, goalIndex) ->
                 val drawSourceIndices = selectionCandidateIndices.toMutableSet().apply {
-                    removeAll(lastGeneratedIntermediateHoldIndices)
+                    if (tuning.excludePreviouslyGeneratedHolds) {
+                        removeAll(lastGeneratedIntermediateHoldIndices)
+                    }
                     add(startIndex)
                     add(goalIndex)
                 }

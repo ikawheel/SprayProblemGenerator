@@ -29,12 +29,12 @@ import com.example.holddetector.ui.MainUiState
 fun HoldDetectorApp(
     state: MainUiState,
     isExternalBusy: Boolean,
-    onNewWallClick: () -> Unit,
     onOpenSavedWallForReachCalibration: (String) -> Unit,
     onOpenSavedWallForHoldEditor: (String) -> Unit,
     onOpenSavedWallForHoldAttributeEditor: (String) -> Unit,
     onOpenSavedWallForHoldScoring: (String) -> Unit,
-    onOpenSavedWallForChallenge: (String) -> Unit,
+    onOpenSavedWallForManualStartGoalChallenge: (String) -> Unit,
+    onOpenSavedWallForRandomStartGoalChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,
@@ -43,6 +43,7 @@ fun HoldDetectorApp(
     onBackToCameraFromHoldRegistrationMethod: () -> Unit,
     onBackToHoldRegistrationMethodSelection: () -> Unit,
     onAutoExtractedHoldTapped: (Int?) -> Unit,
+    onEstimateAutoExtractionWallSamplePoints: () -> Unit,
     onStartAutoExtractionWallSampling: () -> Unit,
     onStopAutoExtractionWallSampling: () -> Unit,
     onAutoExtractionWallSamplePointSelected: (HoldPoint) -> Unit,
@@ -74,7 +75,6 @@ fun HoldDetectorApp(
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     onSelectManualStartGoalChallengeMethod: () -> Unit,
     onSelectRandomStartGoalChallengeMethod: () -> Unit,
-    onOpenChallengeMethodSelection: () -> Unit,
     onOpenChallengeCommonSettings: () -> Unit,
     onOpenChallengeGeneration: () -> Unit,
     onOpenChallengeTuning: () -> Unit,
@@ -90,6 +90,7 @@ fun HoldDetectorApp(
     onRouteWavinessChange: (Float) -> Unit,
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
+    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     onClearChallenge: () -> Unit,
     onDismissDiscardDialog: () -> Unit,
     onDiscardChanges: () -> Unit
@@ -103,148 +104,149 @@ fun HoldDetectorApp(
             .background(backgroundColor)
     ) {
         when (state.currentScreen) {
-            AppScreen.LIST -> {
-                WallListScreen(
-                    savedWalls = state.savedWalls,
-                    onNewWallClick = onNewWallClick,
-                    onOpenSavedWallForReachCalibration = onOpenSavedWallForReachCalibration,
-                    onOpenSavedWallForHoldEditor = onOpenSavedWallForHoldEditor,
-                    onOpenSavedWallForHoldAttributeEditor = onOpenSavedWallForHoldAttributeEditor,
-                    onOpenSavedWallForHoldScoring = onOpenSavedWallForHoldScoring,
-                    onOpenSavedWallForChallenge = onOpenSavedWallForChallenge,
-                    onDeleteSavedWall = onDeleteSavedWall,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding)
-                )
-            }
+                AppScreen.LIST -> {
+                    WallListScreen(
+                        savedWalls = state.savedWalls,
+                        onTakePhoto = onTakePhoto,
+                        onPickPhoto = onPickPhoto,
+                        onOpenSavedWallForReachCalibration = onOpenSavedWallForReachCalibration,
+                        onOpenSavedWallForHoldEditor = onOpenSavedWallForHoldEditor,
+                        onOpenSavedWallForHoldAttributeEditor = onOpenSavedWallForHoldAttributeEditor,
+                        onOpenSavedWallForHoldScoring = onOpenSavedWallForHoldScoring,
+                        onOpenSavedWallForManualStartGoalChallenge = onOpenSavedWallForManualStartGoalChallenge,
+                        onOpenSavedWallForRandomStartGoalChallenge = onOpenSavedWallForRandomStartGoalChallenge,
+                        onDeleteSavedWall = onDeleteSavedWall,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding)
+                    )
+                }
 
-            AppScreen.CAMERA -> {
-                CameraFullscreenScreen(
-                    onTakePhoto = onTakePhoto,
-                    onPickPhoto = onPickPhoto,
-                    onBackToList = onBackToList,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding)
-                )
-            }
+                AppScreen.CAMERA -> {
+                    CameraFullscreenScreen(
+                        onTakePhoto = onTakePhoto,
+                        onPickPhoto = onPickPhoto,
+                        onBackToList = onBackToList,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding)
+                    )
+                }
 
-            AppScreen.HOLD_REGISTRATION_METHOD -> {
-                HoldRegistrationMethodScreen(
-                    bitmap = state.capturedBitmap,
-                    onBackToCamera = onBackToCameraFromHoldRegistrationMethod,
-                    onOpenManualRegistration = onOpenManualHoldRegistrationAfterCapture,
-                    onOpenAutoExtraction = onOpenAutoHoldExtractionAfterCapture,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                AppScreen.HOLD_REGISTRATION_METHOD -> {
+                    HoldRegistrationMethodScreen(
+                        bitmap = state.capturedBitmap,
+                        onBackToCamera = onBackToCameraFromHoldRegistrationMethod,
+                        onOpenManualRegistration = onOpenManualHoldRegistrationAfterCapture,
+                        onOpenAutoExtraction = onOpenAutoHoldExtractionAfterCapture,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
-            AppScreen.AUTO_HOLD_EXTRACTION -> {
-                AutoHoldExtractionScreen(
-                    bitmap = state.capturedBitmap,
-                    extractedHolds = state.autoExtractedHolds,
-                    tuning = state.autoExtractionTuning,
-                    selectedHoldIndex = state.selectedHoldIndex,
-                    wallSamplePoints = state.autoExtractionWallSamplePoints,
-                    isWallSamplingMode = state.isAutoExtractionWallSamplingMode,
-                    onHoldTapped = onAutoExtractedHoldTapped,
-                    onStartWallSampling = onStartAutoExtractionWallSampling,
-                    onStopWallSampling = onStopAutoExtractionWallSampling,
-                    onWallSamplePointSelected = onAutoExtractionWallSamplePointSelected,
-                    onClearWallSamplePoints = onClearAutoExtractionWallSamplePoints,
-                    onTuningChange = onAutoExtractionTuningChange,
-                    onBackToMethodSelection = onBackToHoldRegistrationMethodSelection,
-                    onApplyExtraction = onApplyAutoExtractedHoldsAndContinue,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                AppScreen.AUTO_HOLD_EXTRACTION -> {
+                    AutoHoldExtractionScreen(
+                        bitmap = state.capturedBitmap,
+                        extractedHolds = state.autoExtractedHolds,
+                        tuning = state.autoExtractionTuning,
+                        selectedHoldIndex = state.selectedHoldIndex,
+                        wallSamplePoints = state.autoExtractionWallSamplePoints,
+                        isWallSamplingMode = state.isAutoExtractionWallSamplingMode,
+                        onHoldTapped = onAutoExtractedHoldTapped,
+                        onEstimateWallSamplePoints = onEstimateAutoExtractionWallSamplePoints,
+                        onStartWallSampling = onStartAutoExtractionWallSampling,
+                        onStopWallSampling = onStopAutoExtractionWallSampling,
+                        onWallSamplePointSelected = onAutoExtractionWallSamplePointSelected,
+                        onClearWallSamplePoints = onClearAutoExtractionWallSamplePoints,
+                        onTuningChange = onAutoExtractionTuningChange,
+                        onBackToMethodSelection = onBackToHoldRegistrationMethodSelection,
+                        onApplyExtraction = onApplyAutoExtractedHoldsAndContinue,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
-            AppScreen.REACH_CALIBRATION -> {
-                ReachCalibrationScreen(
-                    state = state,
-                    onBack = onBackFromReachCalibration,
-                    onExitWithoutSaving = onBackToList,
-                    onSaveAndExit = onSaveWall,
-                    onStartReachCalibrationSelection = onStartReachCalibrationSelection,
-                    onReachCalibrationLengthInputChange = onReachCalibrationLengthInputChange,
-                    onClearReachCalibration = onClearReachCalibration,
-                    onReachCalibrationPointSelected = onReachCalibrationPointSelected,
-                    onContinue = onContinueToHoldEditorFromReachCalibration,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                AppScreen.REACH_CALIBRATION -> {
+                    ReachCalibrationScreen(
+                        state = state,
+                        onBack = onBackFromReachCalibration,
+                        onExitWithoutSaving = onBackToList,
+                        onSaveAndExit = onSaveWall,
+                        onStartReachCalibrationSelection = onStartReachCalibrationSelection,
+                        onReachCalibrationLengthInputChange = onReachCalibrationLengthInputChange,
+                        onClearReachCalibration = onClearReachCalibration,
+                        onReachCalibrationPointSelected = onReachCalibrationPointSelected,
+                        onContinue = onContinueToHoldEditorFromReachCalibration,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
-            AppScreen.HOLD_EDITOR -> {
-                HoldEditorScreen(
-                    state = state,
-                    onWallTitleChanged = onWallTitleChanged,
-                    onHoldTapAreaSizeChange = onHoldTapAreaSizeChange,
-                    onSaveWall = onSaveWall,
-                    onOpenHoldAttributeEditor = onOpenHoldAttributeEditor,
-                    onBackToList = onBackToList,
-                    onDeleteSelectedHold = onDeleteSelectedHold,
-                    onEditorHoldTapped = onEditorHoldTapped,
-                    onManualHoldCreated = onManualHoldCreated,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                AppScreen.HOLD_EDITOR -> {
+                    HoldEditorScreen(
+                        state = state,
+                        onWallTitleChanged = onWallTitleChanged,
+                        onHoldTapAreaSizeChange = onHoldTapAreaSizeChange,
+                        onSaveWall = onSaveWall,
+                        onOpenHoldAttributeEditor = onOpenHoldAttributeEditor,
+                        onBackToList = onBackToList,
+                        onDeleteSelectedHold = onDeleteSelectedHold,
+                        onEditorHoldTapped = onEditorHoldTapped,
+                        onManualHoldCreated = onManualHoldCreated,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
-            AppScreen.HOLD_ATTRIBUTE_EDITOR -> {
-                HoldAttributeEditorScreen(
-                    state = state,
-                    onBackToHoldEditor = onBackFromHoldAttributeEditor,
-                    onExitWithoutSaving = onBackToList,
-                    onSaveAndExit = onSaveWall,
-                    onOpenHoldScoring = onOpenHoldScoring,
-                    onAssignHoldAsStartCandidate = onAssignHoldAsStartCandidate,
-                    onAssignHoldAsGoalCandidate = onAssignHoldAsGoalCandidate,
-                    onClearHoldAttributes = onClearHoldAttributes,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                AppScreen.HOLD_ATTRIBUTE_EDITOR -> {
+                    HoldAttributeEditorScreen(
+                        state = state,
+                        onBackToHoldEditor = onBackFromHoldAttributeEditor,
+                        onExitWithoutSaving = onBackToList,
+                        onSaveAndExit = onSaveWall,
+                        onOpenHoldScoring = onOpenHoldScoring,
+                        onAssignHoldAsStartCandidate = onAssignHoldAsStartCandidate,
+                        onAssignHoldAsGoalCandidate = onAssignHoldAsGoalCandidate,
+                        onClearHoldAttributes = onClearHoldAttributes,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
-            AppScreen.HOLD_SCORING -> {
-                HoldScoringScreen(
-                    state = state,
-                    onBackToHoldEditor = onBackFromHoldScoring,
-                    onExitWithoutSaving = onBackToList,
-                    onSaveAndExit = onSaveWall,
-                    onDifficultyScoreSelected = onDifficultyScoreSelected,
-                    onOpenChallenge = onSaveWallAndOpenChallenge,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                AppScreen.HOLD_SCORING -> {
+                    HoldScoringScreen(
+                        state = state,
+                        onBackToHoldEditor = onBackFromHoldScoring,
+                        onExitWithoutSaving = onBackToList,
+                        onSaveAndExit = onSaveWall,
+                        onDifficultyScoreSelected = onDifficultyScoreSelected,
+                        onOpenChallenge = onSaveWallAndOpenChallenge,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
-            AppScreen.CHALLENGE_CREATOR -> {
-                ChallengeCreatorScreen(
-                    state = state,
-                    onBackToList = onBackToList,
-                    onSelectManualStartGoalChallengeMethod = onSelectManualStartGoalChallengeMethod,
-                    onSelectRandomStartGoalChallengeMethod = onSelectRandomStartGoalChallengeMethod,
-                    onOpenChallengeMethodSelection = onOpenChallengeMethodSelection,
-                    onOpenChallengeCommonSettings = onOpenChallengeCommonSettings,
-                    onOpenChallengeGeneration = onOpenChallengeGeneration,
-                    onOpenChallengeTuning = onOpenChallengeTuning,
-                    onChallengeHoldTapped = onChallengeHoldTapped,
-                    onStartGoalSelection = onStartGoalSelection,
-                    onDrawWithRandomStartGoal = onDrawWithRandomStartGoal,
-                    onStartDrawTargetSelection = onStartDrawTargetSelection,
-                    onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
-                    onDrawClick = onDrawClick,
-                    onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration,
-                    onDrawCountChange = onDrawCountChange,
-                    onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
-                    onDetourStrengthChange = onDetourStrengthChange,
-                    onRouteWavinessChange = onRouteWavinessChange,
-                    onStepDistanceVarianceChange = onStepDistanceVarianceChange,
-                    onCorridorWidthChange = onCorridorWidthChange,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding)
-                )
+                AppScreen.CHALLENGE_CREATOR -> {
+                    ChallengeCreatorScreen(
+                        state = state,
+                        onSelectManualStartGoalChallengeMethod = onSelectManualStartGoalChallengeMethod,
+                        onSelectRandomStartGoalChallengeMethod = onSelectRandomStartGoalChallengeMethod,
+                        onOpenChallengeCommonSettings = onOpenChallengeCommonSettings,
+                        onOpenChallengeGeneration = onOpenChallengeGeneration,
+                        onChallengeHoldTapped = onChallengeHoldTapped,
+                        onStartGoalSelection = onStartGoalSelection,
+                        onDrawWithRandomStartGoal = onDrawWithRandomStartGoal,
+                        onStartDrawTargetSelection = onStartDrawTargetSelection,
+                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        onDrawClick = onDrawClick,
+                        onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration,
+                        onDrawCountChange = onDrawCountChange,
+                        onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
+                        onDetourStrengthChange = onDetourStrengthChange,
+                        onRouteWavinessChange = onRouteWavinessChange,
+                        onStepDistanceVarianceChange = onStepDistanceVarianceChange,
+                        onCorridorWidthChange = onCorridorWidthChange,
+                        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding)
+                    )
+                }
             }
-        }
 
         if (state.isBusy || isExternalBusy) {
             Box(

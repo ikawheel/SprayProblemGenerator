@@ -8,10 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,8 +29,6 @@ import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.BottomActionBar
 
 @Composable
 fun HoldRegistrationMethodScreen(
@@ -39,43 +38,9 @@ fun HoldRegistrationMethodScreen(
     onOpenAutoExtraction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Scaffold(
-        modifier = modifier,
-        containerColor = Color.Transparent,
-        bottomBar = {
-            BottomActionBar {
-                AppOutlinedButton(
-                    onClick = onBackToCamera,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.registration_method_back_to_camera))
-                }
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    AppOutlinedButton(
-                        onClick = onOpenManualRegistration,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.registration_method_manual))
-                    }
-
-                    AppButton(
-                        onClick = onOpenAutoExtraction,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 12.dp)
-                    ) {
-                        Text(stringResource(R.string.registration_method_auto))
-                    }
-                }
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -104,9 +69,20 @@ fun HoldRegistrationMethodScreen(
 
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
                     .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp)
+                    .then(
+                        if (bitmap != null && bitmap.height > 0) {
+                            Modifier.aspectRatio(
+                                wallImageDisplayAspectRatio(
+                                    imageWidth = bitmap.width,
+                                    imageHeight = bitmap.height
+                                )
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
                     .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
                     .clipToBounds()
             ) {
@@ -118,6 +94,28 @@ fun HoldRegistrationMethodScreen(
                     )
                 }
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 20.dp)
+                    .navigationBarsPadding()
+            ) {
+                AppButton(
+                    onClick = onOpenManualRegistration,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.registration_method_manual))
+                }
+
+                AppButton(
+                    onClick = onOpenAutoExtraction,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp)
+                ) {
+                    Text(stringResource(R.string.registration_method_auto))
+                }
+            }
         }
-    }
 }

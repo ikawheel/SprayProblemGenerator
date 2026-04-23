@@ -52,6 +52,7 @@ enum class ChallengeFlowStep {
 
 data class MainUiState(
     val currentScreen: AppScreen = AppScreen.LIST,
+    val screenBackStack: List<AppScreen> = emptyList(),
     val savedWalls: List<SavedWallSummary> = emptyList(),
     val isBusy: Boolean = false,
     val currentWallId: String? = null,
@@ -76,13 +77,14 @@ data class MainUiState(
     val lastGeneratedIntermediateHoldIndices: Set<Int> = emptySet(),
     val challengeGenerationMethod: ChallengeGenerationMethod? = null,
     val challengeFlowStep: ChallengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
+    val challengeFlowBackStack: List<ChallengeFlowStep> = emptyList(),
     val drawTargetHoldIndices: Set<Int> = emptySet(),
     val hasDrawTargetSelection: Boolean = false,
     val startHoldIndex: Int? = null,
     val goalHoldIndex: Int? = null,
     val routeSelectionMode: RouteSelectionMode = RouteSelectionMode.NONE,
     val isDrawTargetSelectionMode: Boolean = false,
-    val drawCountInput: String = "",
+    val drawCountInput: String = "10",
     val holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     val challengeDifficultyScoreMin: Int = MIN_HOLD_DIFFICULTY_SCORE,
     val challengeDifficultyScoreMax: Int = DEFAULT_HOLD_DIFFICULTY_SCORE.coerceAtMost(MAX_HOLD_DIFFICULTY_SCORE),

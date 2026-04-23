@@ -5,6 +5,7 @@
     <string name="discard_dialog_message">未保存のホールド編集内容があります。保存せずに一覧へ戻りますか？</string>
     <string name="discard_dialog_confirm">保存せず戻る</string>
     <string name="cancel">キャンセル</string>
+    <string name="close">閉じる</string>
     <string name="exit_without_saving">保存せず終了</string>
     <string name="save_and_exit">保存して終了</string>
     <string name="wall_list_title">壁一覧</string>
@@ -16,6 +17,8 @@
     <string name="edit_menu_hold_editor">ホールド追加・削除</string>
     <string name="edit_menu_hold_attribute_editor">ホールド属性設定</string>
     <string name="edit_menu_hold_scoring">ホールド点数</string>
+    <string name="challenge_menu_title">課題作成の方法を選択</string>
+    <string name="challenge_menu_description">作り方を選んで課題作成を始めてください。選んだ方法でそのまま設定画面へ進みます。</string>
     <string name="open_wall">続きから</string>
     <string name="empty_saved_walls">保存済みの壁はまだありません</string>
     <string name="delete_wall_title">壁を削除</string>
@@ -42,8 +45,9 @@
     <string name="auto_hold_extraction_count">抽出候補: %1$d件</string>
     <string name="auto_hold_extraction_empty">抽出候補が見つかりませんでした</string>
     <string name="auto_hold_extraction_wall_sample_count">壁色サンプル: %1$d点</string>
-    <string name="auto_hold_extraction_wall_sample_hint">壁の色を3〜10点くらいタップすると、その色との差を使って抽出しやすくなります。</string>
+    <string name="auto_hold_extraction_wall_sample_hint">「壁色を自動判定」で壁色サンプルを作るか、壁の色を3〜10点くらいタップすると、その色との差を使って抽出しやすくなります。</string>
     <string name="auto_hold_extraction_wall_sample_mode_active">壁の色をタップして追加してください。3〜10点くらいがおすすめです。</string>
+    <string name="auto_hold_extraction_wall_sample_estimate">壁色を自動判定</string>
     <string name="auto_hold_extraction_wall_sample_start">壁色サンプルを追加</string>
     <string name="auto_hold_extraction_wall_sample_stop">サンプル追加を終了</string>
     <string name="auto_hold_extraction_wall_sample_clear">サンプルをクリア</string>
@@ -105,8 +109,8 @@
     <string name="challenge_selection_summary">選択ホールド数: %1$d / スタート: %2$s / ゴール: %3$s</string>
     <string name="status_set">設定済み</string>
     <string name="status_unset">未設定</string>
-    <string name="draw_count_label">ホールド数上限</string>
-    <string name="draw_count_placeholder_auto">空欄でおまかせ</string>
+    <string name="draw_count_label">ホールド数上限（0の場合は上限無し）</string>
+    <string name="draw_count_placeholder_auto">0</string>
     <string name="draw">生成</string>
     <string name="draw_random_start_goal">スタート/ゴールおまかせ生成</string>
     <string name="challenge_change_method">作り方を変更</string>
@@ -148,6 +152,13 @@
     <string name="challenge_route_waviness_label">ルートのうねり</string>
     <string name="challenge_step_distance_variance_label">途中ホールドのばらつき</string>
     <string name="challenge_corridor_width_label">ルート帯の太さ</string>
+    <string name="challenge_exclude_previous_holds_label">前回使ったホールドを除外</string>
+    <string name="challenge_exclude_previous_holds_description">ON にすると、前回の自動生成で使った中間ホールドを次回候補から外します。</string>
+    <string name="challenge_detour_strength_help">ルートが直線からどれだけ大きく外れて回り込むかを調整します。高いほど、大きな迂回やL字っぽいルートが出やすくなります。</string>
+    <string name="challenge_route_waviness_help">ルートの曲がりやS字っぽさを調整します。高いほど、途中で向きを変えるルートが増えます。</string>
+    <string name="challenge_step_distance_variance_help">途中ホールドの並びの素直さを調整します。高いほど、歩幅や選ばれるホールドに変化が出やすくなります。</string>
+    <string name="challenge_corridor_width_help">ルートの中心線の周りをどれだけ広く候補として拾うかを調整します。高いほど、ルートから少し外れたホールドも使いやすくなります。</string>
+    <string name="challenge_exclude_previous_holds_help">ON にすると、前回の自動生成で使った中間ホールドを次回候補から外します。似た課題が続きにくくなります。</string>
     <string name="reach_calibration_title">リーチの目安設定</string>
     <string name="reach_calibration_description">課題作成に使う、届き方の目安を設定します。</string>
     <string name="reach_calibration_recommendation">身長や、両手を広げた長さを参考に、壁上で同じくらいの長さになる2点を選んでください。</string>
@@ -190,6 +201,7 @@
     <string name="message_auto_hold_extraction_wall_sample_mode">壁の色を3〜10点くらいタップしてください</string>
     <string name="message_auto_hold_extraction_wall_sample_added">壁色サンプルを %1$d 点追加しました</string>
     <string name="message_auto_hold_extraction_wall_sample_cleared">壁色サンプルをクリアしました</string>
+    <string name="message_auto_hold_extraction_wall_sample_estimation_failed">壁色を自動判定できませんでした</string>
     <string name="message_reach_first_point">リーチの目安の1点目を選んでください</string>
     <string name="message_reach_confirm">リーチの目安を確認してください</string>
     <string name="message_reach_input_length">参考にした長さ(cm)を入力してください</string>
@@ -207,7 +219,7 @@
     <string name="message_challenge_hold_added">課題にホールドを追加しました</string>
     <string name="message_challenge_hold_removed">課題からホールドを外しました</string>
     <string name="message_no_holds">ホールドがありません</string>
-    <string name="message_invalid_draw_count">ホールド数の上限を2個以上で入力してください</string>
+    <string name="message_invalid_draw_count">ホールド数の上限は0または2個以上で入力してください</string>
     <string name="message_select_challenge_generation_method">課題の作り方を選んでください</string>
     <string name="message_set_start">スタートを設定してください</string>
     <string name="message_set_goal">ゴールを設定してください</string>

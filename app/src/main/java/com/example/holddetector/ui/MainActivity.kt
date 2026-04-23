@@ -17,8 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.example.holddetector.model.CapturedOrientation
@@ -78,9 +76,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // アプリ全体を没入表示寄りにします。
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        hideSystemBars()
+        // システムの戻る操作を常に使える通常表示にします。
+        WindowCompat.setDecorFitsSystemWindows(window, true)
 
         setContent {
             MaterialTheme {
@@ -96,20 +93,21 @@ class MainActivity : ComponentActivity() {
                     HoldDetectorApp(
                         state = uiState,
                         isExternalBusy = isCaptureProcessing.value,
-                        onNewWallClick = viewModel::startNewWall,
                         onOpenSavedWallForReachCalibration = viewModel::openSavedWallForReachCalibration,
                         onOpenSavedWallForHoldEditor = viewModel::openSavedWallForHoldEditor,
                         onOpenSavedWallForHoldAttributeEditor = viewModel::openSavedWallForHoldAttributeEditor,
                         onOpenSavedWallForHoldScoring = viewModel::openSavedWallForHoldScoring,
-                        onOpenSavedWallForChallenge = viewModel::openSavedWallForChallenge,
+                        onOpenSavedWallForManualStartGoalChallenge = viewModel::openSavedWallForManualStartGoalChallenge,
+                        onOpenSavedWallForRandomStartGoalChallenge = viewModel::openSavedWallForRandomStartGoalChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
                         onTakePhoto = ::launchSystemCamera,
                         onPickPhoto = ::launchPhotoPicker,
                         onOpenManualHoldRegistrationAfterCapture = viewModel::openManualHoldRegistrationAfterCapture,
                         onOpenAutoHoldExtractionAfterCapture = viewModel::openAutoHoldExtractionAfterCapture,
-                        onBackToCameraFromHoldRegistrationMethod = { viewModel.startNewWall() },
+                        onBackToCameraFromHoldRegistrationMethod = viewModel::requestBackToList,
                         onBackToHoldRegistrationMethodSelection = viewModel::backToHoldRegistrationMethodSelection,
                         onAutoExtractedHoldTapped = viewModel::onAutoExtractedHoldTapped,
+                        onEstimateAutoExtractionWallSamplePoints = viewModel::estimateAutoExtractionWallSamplePoints,
                         onStartAutoExtractionWallSampling = viewModel::startAutoExtractionWallSampling,
                         onStopAutoExtractionWallSampling = viewModel::stopAutoExtractionWallSampling,
                         onAutoExtractionWallSamplePointSelected = viewModel::onAutoExtractionWallSamplePointSelected,
@@ -141,7 +139,6 @@ class MainActivity : ComponentActivity() {
                         onReachCalibrationPointSelected = viewModel::onReachCalibrationPointSelected,
                         onSelectManualStartGoalChallengeMethod = viewModel::selectManualStartGoalChallengeMethod,
                         onSelectRandomStartGoalChallengeMethod = viewModel::selectRandomStartGoalChallengeMethod,
-                        onOpenChallengeMethodSelection = viewModel::openChallengeMethodSelection,
                         onOpenChallengeCommonSettings = viewModel::openChallengeCommonSettings,
                         onOpenChallengeGeneration = viewModel::openChallengeGeneration,
                         onOpenChallengeTuning = viewModel::openChallengeTuning,
@@ -157,6 +154,7 @@ class MainActivity : ComponentActivity() {
                         onRouteWavinessChange = viewModel::onRouteWavinessChanged,
                         onStepDistanceVarianceChange = viewModel::onStepDistanceVarianceChanged,
                         onCorridorWidthChange = viewModel::onCorridorWidthChanged,
+                        onExcludePreviouslyGeneratedHoldsChange = viewModel::onExcludePreviouslyGeneratedHoldsChanged,
                         onClearChallenge = viewModel::clearChallengeSelection,
                         onDismissDiscardDialog = viewModel::dismissDiscardDialog,
                         onDiscardChanges = viewModel::discardEditorAndReturnToList
@@ -164,21 +162,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            hideSystemBars()
-        }
-    }
-
-    // システムバーを自動で隠して、必要時だけスワイプで出せるようにします。
-    private fun hideSystemBars() {
-        val controller = WindowCompat.getInsetsController(window, window.decorView) ?: return
-        controller.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        controller.hide(WindowInsetsCompat.Type.systemBars())
     }
 
     // 標準カメラアプリを起動します。
