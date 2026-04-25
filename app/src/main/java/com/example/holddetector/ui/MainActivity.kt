@@ -11,12 +11,15 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.example.holddetector.model.CapturedOrientation
@@ -76,11 +79,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // システムの戻る操作を常に使える通常表示にします。
-        WindowCompat.setDecorFitsSystemWindows(window, true)
+        // ステータスバー領域の色付けと余白制御は Compose 側で統一します。
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             MaterialTheme {
+                val primaryColor = MaterialTheme.colorScheme.primary
+
+                SideEffect {
+                    window.statusBarColor = primaryColor.toArgb()
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+                }
+
                 Surface(modifier = Modifier.fillMaxSize()) {
                     // ViewModel の状態を Compose 側へ接続します。
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

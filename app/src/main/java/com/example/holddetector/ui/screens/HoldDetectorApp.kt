@@ -2,28 +2,33 @@ package com.example.holddetector.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.domain.hold.AutoExtractionTuning
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.AppScreen
 import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppBusyOverlayColor
 import com.example.holddetector.ui.HoldTapAreaSize
-import com.example.holddetector.ui.AppScreen
 import com.example.holddetector.ui.MainUiState
+import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 
 @Composable
 fun HoldDetectorApp(
@@ -97,13 +102,28 @@ fun HoldDetectorApp(
 ) {
     val contentPadding = 16.dp
     val backgroundColor = AppBackgroundColor
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
     ) {
-        when (state.currentScreen) {
+        // ステータスバーの背面は常にアプリ基調の紫で塗ります。
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(statusBarTopPadding)
+                .background(primaryColor)
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = statusBarTopPadding)
+        ) {
+            when (state.currentScreen) {
                 AppScreen.LIST -> {
                     WallListScreen(
                         savedWalls = state.savedWalls,
@@ -254,14 +274,15 @@ fun HoldDetectorApp(
                 }
             }
 
-        if (state.isBusy || isExternalBusy) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(AppBusyOverlayColor),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+            if (state.isBusy || isExternalBusy) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppBusyOverlayColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }
