@@ -6,7 +6,6 @@ import androidx.annotation.StringRes
 import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
 import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.domain.hold.AutoExtractionTuning
-import com.example.holddetector.domain.hold.HoldColorCategory
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
 import com.example.holddetector.domain.hold.BinaryHoldExtractor
 import com.example.holddetector.domain.hold.buildHoldScoringOrder
@@ -68,7 +67,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             autoExtractionTuning = _uiState.value.autoExtractionTuning,
-            selectedAutoExtractionColors = _uiState.value.selectedAutoExtractionColors,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -206,8 +204,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         runAutoHoldExtraction(
             bitmap = bitmap,
             tuning = state.autoExtractionTuning,
-            wallSamplePoints = state.autoExtractionWallSamplePoints,
-            selectedColors = state.selectedAutoExtractionColors
+            wallSamplePoints = state.autoExtractionWallSamplePoints
         )
     }
 
@@ -238,29 +235,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             runAutoHoldExtraction(
                 bitmap = bitmap,
                 tuning = tuning,
-                wallSamplePoints = state.autoExtractionWallSamplePoints,
-                selectedColors = state.selectedAutoExtractionColors
-            )
-        }
-    }
-
-    fun onAutoExtractionColorToggled(colorCategory: HoldColorCategory) {
-        val state = _uiState.value
-        val bitmap = state.capturedBitmap
-        val updatedSelectedColors = state.selectedAutoExtractionColors.toMutableSet().apply {
-            if (contains(colorCategory)) {
-                remove(colorCategory)
-            } else {
-                add(colorCategory)
-            }
-        }
-        _uiState.value = state.copy(selectedAutoExtractionColors = updatedSelectedColors)
-        if (state.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && bitmap != null) {
-            runAutoHoldExtraction(
-                bitmap = bitmap,
-                tuning = state.autoExtractionTuning,
-                wallSamplePoints = state.autoExtractionWallSamplePoints,
-                selectedColors = updatedSelectedColors
+                wallSamplePoints = state.autoExtractionWallSamplePoints
             )
         }
     }
@@ -271,48 +246,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isAutoExtractionWallSamplingMode = true,
             message = text(R.string.message_auto_hold_extraction_wall_sample_mode)
         )
-    }
-
-    fun estimateAutoExtractionWallSamplePoints() {
-        val state = _uiState.value
-        val bitmap = state.capturedBitmap ?: return
-        if (state.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) return
-
-        _uiState.value = state.copy(
-            isAutoExtractionWallSamplingMode = false,
-            isBusy = true,
-            message = null
-        )
-
-        viewModelScope.launch {
-            val estimatedPoints = withContext(Dispatchers.Default) {
-                BinaryHoldExtractor.estimateWallSamplePoints(bitmap)
-            }
-            val currentState = _uiState.value
-            if (currentState.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) {
-                _uiState.value = currentState.copy(isBusy = false)
-                return@launch
-            }
-            if (estimatedPoints.isEmpty()) {
-                _uiState.value = currentState.copy(
-                    isBusy = false,
-                    isAutoExtractionWallSamplingMode = false,
-                    message = text(R.string.message_auto_hold_extraction_wall_sample_estimation_failed)
-                )
-                return@launch
-            }
-
-            _uiState.value = currentState.copy(
-                autoExtractionWallSamplePoints = estimatedPoints,
-                isAutoExtractionWallSamplingMode = false
-            )
-            runAutoHoldExtraction(
-                bitmap = bitmap,
-                tuning = currentState.autoExtractionTuning,
-                wallSamplePoints = estimatedPoints,
-                selectedColors = currentState.selectedAutoExtractionColors
-            )
-        }
     }
 
     fun stopAutoExtractionWallSampling() {
@@ -345,8 +278,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         runAutoHoldExtraction(
             bitmap = bitmap,
             tuning = state.autoExtractionTuning,
-            wallSamplePoints = updatedPoints,
-            selectedColors = state.selectedAutoExtractionColors
+            wallSamplePoints = updatedPoints
         )
     }
 
@@ -362,8 +294,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             runAutoHoldExtraction(
                 bitmap = bitmap,
                 tuning = state.autoExtractionTuning,
-                wallSamplePoints = emptyList(),
-                selectedColors = state.selectedAutoExtractionColors
+                wallSamplePoints = emptyList()
             )
         }
     }
@@ -468,8 +399,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         runAutoHoldExtraction(
             bitmap = bitmap,
             tuning = state.autoExtractionTuning,
-            wallSamplePoints = state.autoExtractionWallSamplePoints,
-            selectedColors = state.selectedAutoExtractionColors
+            wallSamplePoints = state.autoExtractionWallSamplePoints
         )
     }
 
@@ -553,7 +483,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                     challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                     autoExtractionTuning = _uiState.value.autoExtractionTuning,
-                    selectedAutoExtractionColors = _uiState.value.selectedAutoExtractionColors,
                     routeTuning = _uiState.value.routeTuning,
                     message = text(R.string.message_open_wall_failed)
                 )
@@ -1569,7 +1498,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             challengeDifficultyScoreMin = source.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = source.challengeDifficultyScoreMax,
             autoExtractionTuning = source.autoExtractionTuning,
-            selectedAutoExtractionColors = source.selectedAutoExtractionColors,
             routeTuning = source.routeTuning,
             message = message
         )
@@ -1992,8 +1920,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun runAutoHoldExtraction(
         bitmap: Bitmap,
         tuning: AutoExtractionTuning,
-        wallSamplePoints: List<HoldPoint>,
-        selectedColors: Set<HoldColorCategory>
+        wallSamplePoints: List<HoldPoint>
     ) {
         autoExtractionRequestId += 1
         val requestId = autoExtractionRequestId
@@ -2007,8 +1934,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 BinaryHoldExtractor.extract(
                     bitmap = bitmap,
                     tuning = tuning,
-                    wallSamplePoints = wallSamplePoints,
-                    selectedColors = selectedColors
+                    wallSamplePoints = wallSamplePoints
                 )
             }
             val currentState = _uiState.value

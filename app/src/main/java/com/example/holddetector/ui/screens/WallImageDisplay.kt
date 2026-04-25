@@ -8,7 +8,7 @@ internal fun wallImageDisplayAspectRatio(
 
     val baseAspectRatio = imageWidth.toFloat() / imageHeight.toFloat()
     return if (imageWidth > imageHeight) {
-        baseAspectRatio / 2f
+        baseAspectRatio / 1.25f
     } else {
         baseAspectRatio
     }

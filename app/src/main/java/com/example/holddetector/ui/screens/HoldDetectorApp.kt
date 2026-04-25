@@ -15,7 +15,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.domain.hold.AutoExtractionTuning
-import com.example.holddetector.domain.hold.HoldColorCategory
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.ui.components.AppButton
@@ -45,13 +44,11 @@ fun HoldDetectorApp(
     onBackToCameraFromHoldRegistrationMethod: () -> Unit,
     onBackToHoldRegistrationMethodSelection: () -> Unit,
     onAutoExtractedHoldTapped: (Int?) -> Unit,
-    onEstimateAutoExtractionWallSamplePoints: () -> Unit,
     onStartAutoExtractionWallSampling: () -> Unit,
     onStopAutoExtractionWallSampling: () -> Unit,
     onAutoExtractionWallSamplePointSelected: (HoldPoint) -> Unit,
     onClearAutoExtractionWallSamplePoints: () -> Unit,
     onAutoExtractionTuningChange: (AutoExtractionTuning) -> Unit,
-    onToggleAutoExtractionColor: (HoldColorCategory) -> Unit,
     onApplyAutoExtractedHoldsAndContinue: () -> Unit,
     onBackToList: () -> Unit,
     onSaveWall: () -> Unit,
@@ -160,18 +157,15 @@ fun HoldDetectorApp(
                         bitmap = state.capturedBitmap,
                         extractedHolds = state.autoExtractedHolds,
                         tuning = state.autoExtractionTuning,
-                        selectedColors = state.selectedAutoExtractionColors,
                         selectedHoldIndex = state.selectedHoldIndex,
                         wallSamplePoints = state.autoExtractionWallSamplePoints,
                         isWallSamplingMode = state.isAutoExtractionWallSamplingMode,
                         onHoldTapped = onAutoExtractedHoldTapped,
-                        onEstimateWallSamplePoints = onEstimateAutoExtractionWallSamplePoints,
                         onStartWallSampling = onStartAutoExtractionWallSampling,
                         onStopWallSampling = onStopAutoExtractionWallSampling,
                         onWallSamplePointSelected = onAutoExtractionWallSamplePointSelected,
                         onClearWallSamplePoints = onClearAutoExtractionWallSamplePoints,
                         onTuningChange = onAutoExtractionTuningChange,
-                        onToggleColor = onToggleAutoExtractionColor,
                         onApplyExtraction = onApplyAutoExtractedHoldsAndContinue,
                         modifier = Modifier.fillMaxSize()
                     )

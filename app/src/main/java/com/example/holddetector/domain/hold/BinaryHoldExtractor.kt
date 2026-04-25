@@ -16,118 +16,6 @@ import kotlin.math.sqrt
 
 object BinaryHoldExtractor {
 
-    fun estimateWallSamplePoints(
-        bitmap: Bitmap,
-        maxSampleCount: Int = 8
-    ): List<HoldPoint> {
-        if (bitmap.width < 24 || bitmap.height < 24 || maxSampleCount <= 0) return emptyList()
-
-        val maxSide = 320
-        val scale = max(bitmap.width, bitmap.height).toFloat() / maxSide.toFloat()
-        val workingBitmap = if (scale > 1f) {
-            val scaledWidth = (bitmap.width / scale).roundToInt().coerceAtLeast(1)
-            val scaledHeight = (bitmap.height / scale).roundToInt().coerceAtLeast(1)
-            Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
-        } else {
-            bitmap
-        }
-
-        val workingWidth = workingBitmap.width
-        val workingHeight = workingBitmap.height
-        val pixels = IntArray(workingWidth * workingHeight)
-        workingBitmap.getPixels(
-            pixels,
-            0,
-            workingWidth,
-            0,
-            0,
-            workingWidth,
-            workingHeight
-        )
-
-        val borderMarginX = max(4, workingWidth / 10)
-        val borderMarginY = max(4, workingHeight / 10)
-        val clusters = mutableMapOf<Int, WallColorClusterStats>()
-
-        for (y in 0 until workingHeight) {
-            for (x in 0 until workingWidth) {
-                val pixel = pixels[y * workingWidth + x]
-                val lab = rgbToLab(
-                    red = pixel shr 16 and 0xFF,
-                    green = pixel shr 8 and 0xFF,
-                    blue = pixel and 0xFF
-                )
-                val clusterKey = quantizeLab(lab)
-                val touchesBorder = x < borderMarginX ||
-                    x >= workingWidth - borderMarginX ||
-                    y < borderMarginY ||
-                    y >= workingHeight - borderMarginY
-                val cluster = clusters.getOrPut(clusterKey) { WallColorClusterStats() }
-                cluster.weightedScore += if (touchesBorder) 3.5 else 1.0
-                cluster.pixelCount += 1
-                if (touchesBorder) {
-                    cluster.borderCount += 1
-                }
-                cluster.sumL += lab.l
-                cluster.sumA += lab.a
-                cluster.sumB += lab.b
-            }
-        }
-
-        val dominantCluster = clusters.values
-            .filter { it.borderCount > 0 }
-            .maxByOrNull { cluster ->
-                cluster.weightedScore + cluster.borderCount * 1.8 + cluster.pixelCount * 0.15
-            }
-            ?: clusters.values.maxByOrNull { cluster ->
-                cluster.weightedScore + cluster.pixelCount * 0.15
-            }
-            ?: return emptyList()
-
-        val dominantMeanLab = dominantCluster.meanLab()
-        val dominantKey = quantizeLab(dominantMeanLab)
-        val gridColumns = 4
-        val gridRows = 3
-        val representativeCells = mutableMapOf<Int, RepresentativeCellStats>()
-
-        for (y in 0 until workingHeight) {
-            for (x in 0 until workingWidth) {
-                val pixel = pixels[y * workingWidth + x]
-                val lab = rgbToLab(
-                    red = pixel shr 16 and 0xFF,
-                    green = pixel shr 8 and 0xFF,
-                    blue = pixel and 0xFF
-                )
-                val isDominantColor = quantizeLab(lab) == dominantKey ||
-                    deltaE(lab, dominantMeanLab) <= 12.0
-                if (!isDominantColor) continue
-
-                val cellX = (x * gridColumns / workingWidth).coerceIn(0, gridColumns - 1)
-                val cellY = (y * gridRows / workingHeight).coerceIn(0, gridRows - 1)
-                val cellKey = cellY * gridColumns + cellX
-                val cell = representativeCells.getOrPut(cellKey) { RepresentativeCellStats() }
-                cell.count += 1
-                cell.sumX += x.toDouble()
-                cell.sumY += y.toDouble()
-            }
-        }
-
-        return representativeCells.entries
-            .sortedByDescending { it.value.count }
-            .take(maxSampleCount)
-            .map { (_, cell) ->
-                HoldPoint(
-                    x = ((cell.sumX / cell.count.toDouble()) / workingWidth.toFloat() * bitmap.width.toFloat())
-                        .roundToInt()
-                        .coerceIn(0, bitmap.width - 1),
-                    y = ((cell.sumY / cell.count.toDouble()) / workingHeight.toFloat() * bitmap.height.toFloat())
-                        .roundToInt()
-                        .coerceIn(0, bitmap.height - 1)
-                )
-            }
-            .distinct()
-    }
-
     fun extract(
         bitmap: Bitmap,
         tuning: AutoExtractionTuning = AutoExtractionTuning(),
@@ -171,17 +59,23 @@ object BinaryHoldExtractor {
             originalHeight = bitmap.height,
             wallSamplePoints = wallSamplePoints
         )
-        val initialMask = BooleanArray(hsvPixels.size) { index ->
+        val holdColorScores = FloatArray(hsvPixels.size)
+        val backgroundDistanceScores = FloatArray(hsvPixels.size)
+        for (index in hsvPixels.indices) {
             val hsv = hsvPixels[index]
-            val holdColorScore = calculateHoldColorScore(
+            holdColorScores[index] = calculateHoldColorScore(
                 color = hsv,
                 selectedColors = selectedColors,
                 tuning = tuning
             )
-            val backgroundDistanceScore = calculateBackgroundDistanceScore(
+            backgroundDistanceScores[index] = calculateBackgroundDistanceScore(
                 color = hsv,
                 backgroundModel = backgroundModel
             )
+        }
+        val initialMask = BooleanArray(hsvPixels.size) { index ->
+            val holdColorScore = holdColorScores[index]
+            val backgroundDistanceScore = backgroundDistanceScores[index]
             val finalScore = holdColorScore * 0.72f + backgroundDistanceScore * 0.28f
             backgroundDistanceScore >= tuning.backgroundDistanceThreshold &&
                 holdColorScore >= 0.24f &&
@@ -361,30 +255,6 @@ object BinaryHoldExtractor {
         val grayStats: BorderStats,
         val meanLab: LabColor,
         val colorStdDev: Double
-    )
-
-    private data class WallColorClusterStats(
-        var weightedScore: Double = 0.0,
-        var borderCount: Int = 0,
-        var pixelCount: Int = 0,
-        var sumL: Double = 0.0,
-        var sumA: Double = 0.0,
-        var sumB: Double = 0.0
-    ) {
-        fun meanLab(): LabColor {
-            val divisor = pixelCount.coerceAtLeast(1).toDouble()
-            return LabColor(
-                l = sumL / divisor,
-                a = sumA / divisor,
-                b = sumB / divisor
-            )
-        }
-    }
-
-    private data class RepresentativeCellStats(
-        var count: Int = 0,
-        var sumX: Double = 0.0,
-        var sumY: Double = 0.0
     )
 
     private data class HsvColor(
@@ -585,6 +455,7 @@ object BinaryHoldExtractor {
         return when (category) {
             HoldColorCategory.WHITE -> calculateWhiteCategoryScore(color, tuning)
             HoldColorCategory.BLACK -> calculateBlackCategoryScore(color, tuning)
+            HoldColorCategory.GRAY -> calculateGrayCategoryScore(color, tuning)
             else -> calculateChromaticCategoryScore(color, category, tuning)
         }
     }
@@ -626,6 +497,19 @@ object BinaryHoldExtractor {
         val darknessScore = ((maxValue - color.v) / maxValue.coerceAtLeast(0.08f)).coerceIn(0f, 1f)
         val lowSaturationScore = (1f - color.s / saturationCeiling).coerceIn(0f, 1f)
         return (darknessScore * 0.75f + lowSaturationScore * 0.25f).coerceIn(0f, 1f)
+    }
+
+    private fun calculateGrayCategoryScore(
+        color: HsvColor,
+        tuning: AutoExtractionTuning
+    ): Float {
+        val valueTolerance = (tuning.valueTolerance * 1.15f).coerceIn(0.08f, 1f)
+        val saturationCeiling = (tuning.saturationMin + 0.22f).coerceIn(0.08f, 0.65f)
+        val valueScore = (
+            1f - abs(color.v - HoldColorCategory.GRAY.referenceValue) / valueTolerance
+            ).coerceIn(0f, 1f)
+        val lowSaturationScore = (1f - color.s / saturationCeiling).coerceIn(0f, 1f)
+        return (valueScore * 0.65f + lowSaturationScore * 0.35f).coerceIn(0f, 1f)
     }
 
     private fun hueDistanceDegrees(first: Float, second: Float): Float {

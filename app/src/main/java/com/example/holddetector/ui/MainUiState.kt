@@ -2,9 +2,7 @@ package com.example.holddetector.ui
 
 import android.graphics.Bitmap
 import com.example.holddetector.domain.hold.AutoExtractionTuning
-import com.example.holddetector.domain.hold.HoldColorCategory
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
-import com.example.holddetector.domain.hold.defaultSelectedAutoExtractionColors
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
@@ -65,7 +63,6 @@ data class MainUiState(
     val holds: List<Hold> = emptyList(),
     val autoExtractedHolds: List<Hold> = emptyList(),
     val autoExtractionTuning: AutoExtractionTuning = AutoExtractionTuning(),
-    val selectedAutoExtractionColors: Set<HoldColorCategory> = defaultSelectedAutoExtractionColors(),
     val autoExtractionWallSamplePoints: List<HoldPoint> = emptyList(),
     val isAutoExtractionWallSamplingMode: Boolean = false,
     val reachCalibrationReference: ReachCalibrationReference? = null,

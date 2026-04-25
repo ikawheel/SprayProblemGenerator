@@ -2,12 +2,8 @@ package com.example.holddetector.ui.screens
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -23,17 +20,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.domain.hold.AutoExtractionTuning
-import com.example.holddetector.domain.hold.HoldColorCategory
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.ui.AppSecondaryTextColor
@@ -50,18 +46,15 @@ fun AutoHoldExtractionScreen(
     bitmap: Bitmap?,
     extractedHolds: List<Hold>,
     tuning: AutoExtractionTuning,
-    selectedColors: Set<HoldColorCategory>,
     selectedHoldIndex: Int?,
     wallSamplePoints: List<HoldPoint>,
     isWallSamplingMode: Boolean,
     onHoldTapped: (Int?) -> Unit,
-    onEstimateWallSamplePoints: () -> Unit,
     onStartWallSampling: () -> Unit,
     onStopWallSampling: () -> Unit,
     onWallSamplePointSelected: (HoldPoint) -> Unit,
     onClearWallSamplePoints: () -> Unit,
     onTuningChange: (AutoExtractionTuning) -> Unit,
-    onToggleColor: (HoldColorCategory) -> Unit,
     onApplyExtraction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -77,6 +70,7 @@ fun AutoHoldExtractionScreen(
     var localBackgroundDistanceThreshold by rememberSaveable(tuning.backgroundDistanceThreshold) {
         mutableFloatStateOf(tuning.backgroundDistanceThreshold)
     }
+    var isTuningDialogOpen by rememberSaveable { mutableStateOf(false) }
 
     fun currentLocalTuning(): AutoExtractionTuning {
         return AutoExtractionTuning(
@@ -84,6 +78,45 @@ fun AutoHoldExtractionScreen(
             valueTolerance = localValueTolerance,
             saturationMin = localSaturationMin,
             backgroundDistanceThreshold = localBackgroundDistanceThreshold
+        )
+    }
+
+    if (isTuningDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isTuningDialogOpen = false },
+            title = {
+                Text(stringResource(R.string.auto_hold_extraction_tuning_title))
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.auto_hold_extraction_tuning_description),
+                        color = AppSecondaryTextColor,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    AutoExtractionTuningControls(
+                        localHueTolerance = localHueTolerance,
+                        onHueToleranceChange = { localHueTolerance = it },
+                        localValueTolerance = localValueTolerance,
+                        onValueToleranceChange = { localValueTolerance = it },
+                        localSaturationMin = localSaturationMin,
+                        onSaturationMinChange = { localSaturationMin = it },
+                        localBackgroundDistanceThreshold = localBackgroundDistanceThreshold,
+                        onBackgroundDistanceThresholdChange = { localBackgroundDistanceThreshold = it },
+                        onTuningChange = {
+                            onTuningChange(currentLocalTuning())
+                        }
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                AppOutlinedButton(onClick = { isTuningDialogOpen = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
         )
     }
 
@@ -126,61 +159,6 @@ fun AutoHoldExtractionScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 12.dp)
                 )
-
-                Text(
-                    text = stringResource(
-                        R.string.auto_hold_extraction_wall_sample_count,
-                        wallSamplePoints.size
-                    ),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                Text(
-                    text = if (isWallSamplingMode) {
-                        stringResource(R.string.auto_hold_extraction_wall_sample_mode_active)
-                    } else {
-                        stringResource(R.string.auto_hold_extraction_wall_sample_hint)
-                    },
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                AppButton(
-                    onClick = onEstimateWallSamplePoints,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp)
-                ) {
-                    Text(stringResource(R.string.auto_hold_extraction_wall_sample_estimate))
-                }
-
-                AppButton(
-                    onClick = if (isWallSamplingMode) onStopWallSampling else onStartWallSampling,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp)
-                ) {
-                    Text(
-                        if (isWallSamplingMode) {
-                            stringResource(R.string.auto_hold_extraction_wall_sample_stop)
-                        } else {
-                            stringResource(R.string.auto_hold_extraction_wall_sample_start)
-                        }
-                    )
-                }
-
-                AppOutlinedButton(
-                    onClick = onClearWallSamplePoints,
-                    enabled = wallSamplePoints.isNotEmpty(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp)
-                ) {
-                    Text(stringResource(R.string.auto_hold_extraction_wall_sample_clear))
-                }
             }
         }
 
@@ -228,140 +206,58 @@ fun AutoHoldExtractionScreen(
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.auto_hold_extraction_target_colors_title),
+                    text = stringResource(
+                        R.string.auto_hold_extraction_wall_sample_count,
+                        wallSamplePoints.size
+                    ),
                     color = AppTextColor,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.bodyMedium
                 )
 
                 Text(
-                    text = stringResource(R.string.auto_hold_extraction_target_colors_description),
+                    text = if (isWallSamplingMode) {
+                        stringResource(R.string.auto_hold_extraction_wall_sample_mode_active)
+                    } else {
+                        stringResource(R.string.auto_hold_extraction_wall_sample_hint)
+                    },
                     color = AppSecondaryTextColor,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
-                HoldColorCategory.values().toList().chunked(5).forEachIndexed { rowIndex, rowCategories ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = if (rowIndex == 0) 12.dp else 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        rowCategories.forEach { category ->
-                            HoldColorToggleChip(
-                                category = category,
-                                isSelected = category in selectedColors,
-                                onClick = { onToggleColor(category) },
-                                modifier = Modifier.weight(1f)
-                            )
+                AppButton(
+                    onClick = if (isWallSamplingMode) onStopWallSampling else onStartWallSampling,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                ) {
+                    Text(
+                        if (isWallSamplingMode) {
+                            stringResource(R.string.auto_hold_extraction_wall_sample_stop)
+                        } else {
+                            stringResource(R.string.auto_hold_extraction_wall_sample_start)
                         }
-                    }
+                    )
                 }
 
-                Text(
-                    text = stringResource(
-                        R.string.auto_hold_extraction_hue_tolerance_value,
-                        localHueTolerance.roundToInt()
-                    ),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 20.dp)
-                )
+                AppOutlinedButton(
+                    onClick = onClearWallSamplePoints,
+                    enabled = wallSamplePoints.isNotEmpty(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                ) {
+                    Text(stringResource(R.string.auto_hold_extraction_wall_sample_clear))
+                }
 
-                Slider(
-                    value = localHueTolerance,
-                    valueRange = 8f..180f,
-                    onValueChange = { localHueTolerance = it },
-                    onValueChangeFinished = {
-                        onTuningChange(currentLocalTuning())
-                    },
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Text(
-                    text = stringResource(R.string.auto_hold_extraction_hue_tolerance_label),
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                Text(
-                    text = stringResource(
-                        R.string.auto_hold_extraction_value_tolerance_value,
-                        (localValueTolerance * 100f).roundToInt()
-                    ),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-
-                Slider(
-                    value = localValueTolerance,
-                    valueRange = 0.08f..1f,
-                    onValueChange = { localValueTolerance = it },
-                    onValueChangeFinished = {
-                        onTuningChange(currentLocalTuning())
-                    },
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Text(
-                    text = stringResource(R.string.auto_hold_extraction_value_tolerance_label),
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                Text(
-                    text = stringResource(
-                        R.string.auto_hold_extraction_saturation_min_value,
-                        (localSaturationMin * 100f).roundToInt()
-                    ),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-
-                Slider(
-                    value = localSaturationMin,
-                    valueRange = 0f..1f,
-                    onValueChange = { localSaturationMin = it },
-                    onValueChangeFinished = {
-                        onTuningChange(currentLocalTuning())
-                    },
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Text(
-                    text = stringResource(R.string.auto_hold_extraction_saturation_min_label),
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                Text(
-                    text = stringResource(
-                        R.string.auto_hold_extraction_background_distance_value,
-                        (localBackgroundDistanceThreshold * 100f).roundToInt()
-                    ),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-
-                Slider(
-                    value = localBackgroundDistanceThreshold,
-                    valueRange = 0f..1f,
-                    onValueChange = { localBackgroundDistanceThreshold = it },
-                    onValueChangeFinished = {
-                        onTuningChange(currentLocalTuning())
-                    },
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Text(
-                    text = stringResource(R.string.auto_hold_extraction_background_distance_label),
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                AppButton(
+                    onClick = { isTuningDialogOpen = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                ) {
+                    Text(stringResource(R.string.auto_hold_extraction_tuning_open))
+                }
 
                 AppButton(
                     onClick = onApplyExtraction,
@@ -379,78 +275,110 @@ fun AutoHoldExtractionScreen(
 }
 
 @Composable
-private fun HoldColorToggleChip(
-    category: HoldColorCategory,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+private fun AutoExtractionTuningControls(
+    localHueTolerance: Float,
+    onHueToleranceChange: (Float) -> Unit,
+    localValueTolerance: Float,
+    onValueToleranceChange: (Float) -> Unit,
+    localSaturationMin: Float,
+    onSaturationMinChange: (Float) -> Unit,
+    localBackgroundDistanceThreshold: Float,
+    onBackgroundDistanceThresholdChange: (Float) -> Unit,
+    onTuningChange: () -> Unit
 ) {
-    val chipColor = holdColorChipColor(category)
-    val containerColor = if (isSelected) chipColor else Color.Transparent
-    val borderColor = if (isSelected) chipColor else chipColor.copy(alpha = 0.75f)
-    val textColor = if (isSelected) holdColorChipTextColor(category) else AppTextColor
+    Text(
+        text = stringResource(
+            R.string.auto_hold_extraction_hue_tolerance_value,
+            localHueTolerance.roundToInt()
+        ),
+        color = AppTextColor,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(top = 12.dp)
+    )
 
-    Surface(
-        modifier = modifier
-            .border(
-                width = 1.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .clickable(onClick = onClick),
-        color = containerColor,
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 10.dp)
-        ) {
-            Text(
-                text = stringResource(holdColorCategoryLabelRes(category)),
-                color = textColor,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
+    Slider(
+        value = localHueTolerance,
+        valueRange = 8f..180f,
+        onValueChange = onHueToleranceChange,
+        onValueChangeFinished = onTuningChange,
+        modifier = Modifier.padding(top = 4.dp)
+    )
 
-private fun holdColorCategoryLabelRes(category: HoldColorCategory): Int {
-    return when (category) {
-        HoldColorCategory.WHITE -> R.string.auto_hold_color_white
-        HoldColorCategory.BLACK -> R.string.auto_hold_color_black
-        HoldColorCategory.ORANGE -> R.string.auto_hold_color_orange
-        HoldColorCategory.RED -> R.string.auto_hold_color_red
-        HoldColorCategory.PURPLE -> R.string.auto_hold_color_purple
-        HoldColorCategory.BLUE -> R.string.auto_hold_color_blue
-        HoldColorCategory.CYAN -> R.string.auto_hold_color_cyan
-        HoldColorCategory.YELLOW -> R.string.auto_hold_color_yellow
-        HoldColorCategory.GREEN -> R.string.auto_hold_color_green
-        HoldColorCategory.LIME -> R.string.auto_hold_color_lime
-    }
-}
+    Text(
+        text = stringResource(R.string.auto_hold_extraction_hue_tolerance_label),
+        color = AppSecondaryTextColor,
+        style = MaterialTheme.typography.bodySmall
+    )
 
-private fun holdColorChipColor(category: HoldColorCategory): Color {
-    return when (category) {
-        HoldColorCategory.WHITE -> Color(0xFFF3F4F6)
-        HoldColorCategory.BLACK -> Color(0xFF111827)
-        HoldColorCategory.ORANGE -> Color(0xFFF97316)
-        HoldColorCategory.RED -> Color(0xFFDC2626)
-        HoldColorCategory.PURPLE -> Color(0xFF7C3AED)
-        HoldColorCategory.BLUE -> Color(0xFF2563EB)
-        HoldColorCategory.CYAN -> Color(0xFF06B6D4)
-        HoldColorCategory.YELLOW -> Color(0xFFFACC15)
-        HoldColorCategory.GREEN -> Color(0xFF16A34A)
-        HoldColorCategory.LIME -> Color(0xFF84CC16)
-    }
-}
+    Text(
+        text = stringResource(
+            R.string.auto_hold_extraction_value_tolerance_value,
+            (localValueTolerance * 100f).roundToInt()
+        ),
+        color = AppTextColor,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(top = 16.dp)
+    )
 
-private fun holdColorChipTextColor(category: HoldColorCategory): Color {
-    return when (category) {
-        HoldColorCategory.WHITE,
-        HoldColorCategory.YELLOW,
-        HoldColorCategory.LIME -> AppTextColor
-        else -> Color.White
-    }
+    Slider(
+        value = localValueTolerance,
+        valueRange = 0.08f..1f,
+        onValueChange = onValueToleranceChange,
+        onValueChangeFinished = onTuningChange,
+        modifier = Modifier.padding(top = 4.dp)
+    )
+
+    Text(
+        text = stringResource(R.string.auto_hold_extraction_value_tolerance_label),
+        color = AppSecondaryTextColor,
+        style = MaterialTheme.typography.bodySmall
+    )
+
+    Text(
+        text = stringResource(
+            R.string.auto_hold_extraction_saturation_min_value,
+            (localSaturationMin * 100f).roundToInt()
+        ),
+        color = AppTextColor,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(top = 16.dp)
+    )
+
+    Slider(
+        value = localSaturationMin,
+        valueRange = 0f..1f,
+        onValueChange = onSaturationMinChange,
+        onValueChangeFinished = onTuningChange,
+        modifier = Modifier.padding(top = 4.dp)
+    )
+
+    Text(
+        text = stringResource(R.string.auto_hold_extraction_saturation_min_label),
+        color = AppSecondaryTextColor,
+        style = MaterialTheme.typography.bodySmall
+    )
+
+    Text(
+        text = stringResource(
+            R.string.auto_hold_extraction_background_distance_value,
+            (localBackgroundDistanceThreshold * 100f).roundToInt()
+        ),
+        color = AppTextColor,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(top = 16.dp)
+    )
+
+    Slider(
+        value = localBackgroundDistanceThreshold,
+        valueRange = 0f..1f,
+        onValueChange = onBackgroundDistanceThresholdChange,
+        onValueChangeFinished = onTuningChange,
+        modifier = Modifier.padding(top = 4.dp)
+    )
+
+    Text(
+        text = stringResource(R.string.auto_hold_extraction_background_distance_label),
+        color = AppSecondaryTextColor,
+        style = MaterialTheme.typography.bodySmall
+    )
 }

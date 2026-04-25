@@ -590,6 +590,7 @@ private fun InteractiveCapturedImage(
                 reachCalibrationReference,
                 pendingReachCalibrationPoint,
                 isReachCalibrationSelectionMode,
+                isWallColorSamplingMode,
                 isDrawTargetSelectionMode,
                 mode
             ) {
