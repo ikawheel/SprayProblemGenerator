@@ -8,7 +8,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -39,6 +38,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -519,29 +519,57 @@ private fun InteractiveCapturedImage(
             .clipToBounds()
             .onSizeChanged { containerSize = it }
             .pointerInput(baseLayout, containerSize) {
-                detectTransformGestures { centroid, pan, zoom, _ ->
-                    if (!baseLayout.isValid) return@detectTransformGestures
+                awaitEachGesture {
+                    if (!baseLayout.isValid) return@awaitEachGesture
 
-                    val previousScale = zoomScale
-                    val updatedScale = (previousScale * zoom).coerceIn(1f, 5f)
-                    val zoomFactor = updatedScale / previousScale
-                    val contentOrigin = Offset(baseLayout.left, baseLayout.top)
+                    awaitFirstDown(requireUnconsumed = false)
 
-                    val candidatePanOffset = if (activePointerCount >= 2) {
-                        (panOffset * zoomFactor) +
-                            pan +
-                            ((centroid - contentOrigin) * (1f - zoomFactor))
-                    } else {
-                        panOffset
+                    var previousCentroid: Offset? = null
+                    var previousSpan: Float? = null
+
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val pressedChanges = event.changes.filter { it.pressed }
+
+                        if (pressedChanges.isEmpty()) {
+                            break
+                        }
+
+                        if (pressedChanges.size < 2) {
+                            previousCentroid = null
+                            previousSpan = null
+                            continue
+                        }
+
+                        val currentCentroid = calculatePointerCentroid(pressedChanges)
+                        val currentSpan = calculatePointerSpan(pressedChanges, currentCentroid)
+                        val lastCentroid = previousCentroid
+                        val lastSpan = previousSpan
+
+                        if (lastCentroid != null && lastSpan != null && lastSpan > 0f) {
+                            val pan = currentCentroid - lastCentroid
+                            val zoom = (currentSpan / lastSpan).coerceIn(0.5f, 2f)
+                            val previousScale = zoomScale
+                            val updatedScale = (previousScale * zoom).coerceIn(1f, 5f)
+                            val zoomFactor = updatedScale / previousScale
+                            val contentOrigin = Offset(baseLayout.left, baseLayout.top)
+                            val candidatePanOffset = (panOffset * zoomFactor) +
+                                pan +
+                                ((currentCentroid - contentOrigin) * (1f - zoomFactor))
+
+                            zoomScale = updatedScale
+                            panOffset = clampPanOffset(
+                                candidate = candidatePanOffset,
+                                containerSize = containerSize,
+                                baseLayout = baseLayout,
+                                zoomScale = updatedScale
+                            )
+                            pressedChanges.forEach { it.consume() }
+                        }
+
+                        previousCentroid = currentCentroid
+                        previousSpan = currentSpan.coerceAtLeast(1f)
                     }
-
-                    zoomScale = updatedScale
-                    panOffset = clampPanOffset(
-                        candidate = candidatePanOffset,
-                        containerSize = containerSize,
-                        baseLayout = baseLayout,
-                        zoomScale = updatedScale
-                    )
                 }
             }
             .pointerInput(Unit) {
@@ -1014,4 +1042,25 @@ private fun InteractiveCapturedImage(
             }
         }
     }
+}
+
+private fun calculatePointerCentroid(changes: List<PointerInputChange>): Offset {
+    if (changes.isEmpty()) return Offset.Zero
+
+    val sum = changes.fold(Offset.Zero) { acc, change -> acc + change.position }
+    return sum / changes.size.toFloat()
+}
+
+private fun calculatePointerSpan(
+    changes: List<PointerInputChange>,
+    centroid: Offset
+): Float {
+    if (changes.isEmpty()) return 0f
+
+    val totalDistance = changes.sumOf { change ->
+        val dx = (change.position.x - centroid.x).toDouble()
+        val dy = (change.position.y - centroid.y).toDouble()
+        kotlin.math.sqrt(dx * dx + dy * dy)
+    }
+    return (totalDistance / changes.size).toFloat()
 }

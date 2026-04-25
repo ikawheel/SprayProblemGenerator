@@ -88,7 +88,6 @@ class WallStorageRepository(context: Context) {
 
         return SavedWallDetail(
             id = json.optString(KEY_ID),
-            title = json.optString(KEY_TITLE),
             imageFilePath = imageFile.absolutePath,
             bitmap = bitmap,
             holds = holds,
@@ -113,7 +112,6 @@ class WallStorageRepository(context: Context) {
 
     fun saveWall(
         wallId: String?,
-        title: String,
         bitmap: Bitmap,
         holds: List<Hold>,
         reachCalibrationReference: ReachCalibrationReference?,
@@ -126,7 +124,6 @@ class WallStorageRepository(context: Context) {
             ?.let { runCatching { JSONObject(it.readText()) }.getOrNull() }
 
         val createdAt = existingJson?.optLong(KEY_CREATED_AT)?.takeIf { it > 0L } ?: now
-        val safeTitle = title.ifBlank { "壁_$now" }
         val imageFile = existingJson
             ?.optString(KEY_IMAGE_PATH)
             ?.takeIf { it.isNotBlank() }
@@ -137,7 +134,6 @@ class WallStorageRepository(context: Context) {
 
         val metadataJson = JSONObject().apply {
             put(KEY_ID, resolvedId)
-            put(KEY_TITLE, safeTitle)
             put(KEY_IMAGE_PATH, imageFile.absolutePath)
             put(KEY_CAPTURED_ORIENTATION, capturedOrientation.name)
             put(KEY_CAPTURED_ROTATION_DEGREES, normalizeRotationDegrees(capturedRotationDegrees))
@@ -174,7 +170,6 @@ class WallStorageRepository(context: Context) {
 
         return SavedWallSummary(
             id = resolvedId,
-            title = safeTitle,
             imageFilePath = imageFile.absolutePath,
             holdCount = holds.size,
             createdAt = createdAt,
@@ -207,7 +202,6 @@ class WallStorageRepository(context: Context) {
         val json = JSONObject(rawJson)
         return SavedWallSummary(
             id = json.optString(KEY_ID),
-            title = json.optString(KEY_TITLE),
             imageFilePath = json.optString(KEY_IMAGE_PATH),
             holdCount = json.optJSONArray(KEY_HOLDS)?.length() ?: 0,
             createdAt = json.optLong(KEY_CREATED_AT),
@@ -287,7 +281,6 @@ class WallStorageRepository(context: Context) {
 
     companion object {
         private const val KEY_ID = "id"
-        private const val KEY_TITLE = "title"
         private const val KEY_IMAGE_PATH = "imageFilePath"
         private const val KEY_CAPTURED_ORIENTATION = "capturedOrientation"
         private const val KEY_CAPTURED_ROTATION_DEGREES = "capturedRotationDegrees"

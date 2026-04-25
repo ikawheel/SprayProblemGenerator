@@ -37,13 +37,6 @@ fun EditMenuScreen(
         )
 
         Text(
-            text = state.wallTitle,
-            color = AppSecondaryTextColor,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 2.dp)
-        )
-
-        Text(
             text = stringResource(R.string.edit_menu_description),
             color = AppSecondaryTextColor,
             style = MaterialTheme.typography.bodyMedium,

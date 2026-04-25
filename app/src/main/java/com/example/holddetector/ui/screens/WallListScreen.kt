@@ -31,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.model.SavedWallSummary
@@ -41,7 +40,6 @@ import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.WallThumbnail
-import com.example.holddetector.ui.selectors.findWallPendingDeletion
 import com.example.holddetector.ui.selectors.formatWallTimestamp
 
 @Composable
@@ -118,20 +116,11 @@ fun WallListScreen(
     }
 
     editingWallId?.let { wallId ->
-        val wall = savedWalls.firstOrNull { it.id == wallId }
         AlertDialog(
             onDismissRequest = { editingWallId = null },
             title = { Text(stringResource(R.string.edit_menu_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    wall?.let {
-                        Text(
-                            text = it.title,
-                            color = AppTextColor,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
                     Text(
                         text = stringResource(R.string.edit_menu_description),
                         color = AppSecondaryTextColor,
@@ -185,20 +174,11 @@ fun WallListScreen(
     }
 
     challengeWallId?.let { wallId ->
-        val wall = savedWalls.firstOrNull { it.id == wallId }
         AlertDialog(
             onDismissRequest = { challengeWallId = null },
             title = { Text(stringResource(R.string.challenge_menu_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    wall?.let {
-                        Text(
-                            text = it.title,
-                            color = AppTextColor,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
                     Text(
                         text = stringResource(R.string.challenge_menu_description),
                         color = AppSecondaryTextColor,
@@ -274,11 +254,10 @@ fun WallListScreen(
     }
 
     deletingWallId?.let { wallId ->
-        val wall = findWallPendingDeletion(savedWalls, wallId)
         AlertDialog(
             onDismissRequest = { deletingWallId = null },
             title = { Text(stringResource(R.string.delete_wall_title)) },
-            text = { Text(stringResource(R.string.delete_wall_message, wall?.title ?: "")) },
+            text = { Text(stringResource(R.string.delete_wall_message)) },
             confirmButton = {
                 AppButton(
                     onClick = {
@@ -327,13 +306,6 @@ private fun SavedWallCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = wall.title,
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
                 Text(
                     text = stringResource(
                         R.string.updated_at_label,

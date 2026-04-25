@@ -43,7 +43,6 @@ fun HoldScoringScreen(
     onExitWithoutSaving: () -> Unit,
     onSaveAndExit: () -> Unit,
     onDifficultyScoreSelected: (Int) -> Unit,
-    onOpenChallenge: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
@@ -190,21 +189,18 @@ fun HoldScoringScreen(
                         .padding(top = 12.dp)
                         .navigationBarsPadding()
                 ) {
-                    if (isEditingExistingWall) {
-                        AppButton(
-                            onClick = onSaveAndExit,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(R.string.overwrite_save))
-                        }
-                    } else {
-                        AppButton(
-                            onClick = onOpenChallenge,
-                            enabled = uiModel.totalCount > 0,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResourceByName("hold_scoring_open_challenge"))
-                        }
+                    AppButton(
+                        onClick = onSaveAndExit,
+                        enabled = uiModel.totalCount > 0,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            if (isEditingExistingWall) {
+                                stringResource(R.string.overwrite_save)
+                            } else {
+                                stringResource(R.string.save_and_exit)
+                            }
+                        )
                     }
                 }
             }

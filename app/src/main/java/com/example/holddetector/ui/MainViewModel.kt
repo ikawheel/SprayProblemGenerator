@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
 import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.domain.hold.AutoExtractionTuning
+import com.example.holddetector.domain.hold.HoldColorCategory
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
 import com.example.holddetector.domain.hold.BinaryHoldExtractor
 import com.example.holddetector.domain.hold.buildHoldScoringOrder
@@ -28,9 +29,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -70,6 +68,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             autoExtractionTuning = _uiState.value.autoExtractionTuning,
+            selectedAutoExtractionColors = _uiState.value.selectedAutoExtractionColors,
             routeTuning = _uiState.value.routeTuning
         )
     }
@@ -81,13 +80,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         val state = _uiState.value
         _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_REGISTRATION_METHOD,
+            currentScreen = AppScreen.IMAGE_CROP,
             screenBackStack = pushedScreenBackStack(
                 state = state,
-                targetScreen = AppScreen.HOLD_REGISTRATION_METHOD
+                targetScreen = AppScreen.IMAGE_CROP
             ),
             currentWallId = null,
-            wallTitle = defaultWallTitle(),
             capturedBitmap = bitmap,
             capturedOrientation = capturedOrientation,
             capturedRotationDegrees = capturedRotationDegrees,
@@ -98,7 +96,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             reachCalibrationReference = null,
             reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
             pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
+            isReachCalibrationSelectionMode = true,
             reachCalibrationReturnToHoldEditor = false,
             reachCalibrationReturnToAutoExtraction = false,
             selectedHoldIndex = null,
@@ -113,8 +111,51 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isDrawTargetSelectionMode = false,
             isHoldEditorDirty = true,
             showDiscardDialog = false,
-            message = text(R.string.message_hold_registration_method_select)
+            message = null
         )
+    }
+
+    fun applyCapturedImageCrop(
+        leftFraction: Float,
+        topFraction: Float,
+        rightFraction: Float,
+        bottomFraction: Float
+    ) {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap ?: return
+
+        viewModelScope.launch {
+            _uiState.value = state.copy(
+                isBusy = true,
+                message = null
+            )
+
+            val croppedBitmap = withContext(Dispatchers.Default) {
+                cropBitmap(
+                    bitmap = bitmap,
+                    leftFraction = leftFraction,
+                    topFraction = topFraction,
+                    rightFraction = rightFraction,
+                    bottomFraction = bottomFraction
+                )
+            }
+
+            val currentState = _uiState.value
+            if (croppedBitmap == null) {
+                _uiState.value = currentState.copy(
+                    isBusy = false,
+                    message = text(R.string.message_image_crop_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = buildReachCalibrationState(
+                state = currentState,
+                bitmap = croppedBitmap,
+                capturedOrientation = orientationForBitmap(croppedBitmap),
+                capturedRotationDegrees = 0
+            )
+        }
     }
 
     fun openManualHoldRegistrationAfterCapture() {
@@ -165,7 +206,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         runAutoHoldExtraction(
             bitmap = bitmap,
             tuning = state.autoExtractionTuning,
-            wallSamplePoints = state.autoExtractionWallSamplePoints
+            wallSamplePoints = state.autoExtractionWallSamplePoints,
+            selectedColors = state.selectedAutoExtractionColors
         )
     }
 
@@ -196,7 +238,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             runAutoHoldExtraction(
                 bitmap = bitmap,
                 tuning = tuning,
-                wallSamplePoints = state.autoExtractionWallSamplePoints
+                wallSamplePoints = state.autoExtractionWallSamplePoints,
+                selectedColors = state.selectedAutoExtractionColors
+            )
+        }
+    }
+
+    fun onAutoExtractionColorToggled(colorCategory: HoldColorCategory) {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap
+        val updatedSelectedColors = state.selectedAutoExtractionColors.toMutableSet().apply {
+            if (contains(colorCategory)) {
+                remove(colorCategory)
+            } else {
+                add(colorCategory)
+            }
+        }
+        _uiState.value = state.copy(selectedAutoExtractionColors = updatedSelectedColors)
+        if (state.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && bitmap != null) {
+            runAutoHoldExtraction(
+                bitmap = bitmap,
+                tuning = state.autoExtractionTuning,
+                wallSamplePoints = state.autoExtractionWallSamplePoints,
+                selectedColors = updatedSelectedColors
             )
         }
     }
@@ -245,7 +309,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             runAutoHoldExtraction(
                 bitmap = bitmap,
                 tuning = currentState.autoExtractionTuning,
-                wallSamplePoints = estimatedPoints
+                wallSamplePoints = estimatedPoints,
+                selectedColors = currentState.selectedAutoExtractionColors
             )
         }
     }
@@ -280,7 +345,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         runAutoHoldExtraction(
             bitmap = bitmap,
             tuning = state.autoExtractionTuning,
-            wallSamplePoints = updatedPoints
+            wallSamplePoints = updatedPoints,
+            selectedColors = state.selectedAutoExtractionColors
         )
     }
 
@@ -296,7 +362,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             runAutoHoldExtraction(
                 bitmap = bitmap,
                 tuning = state.autoExtractionTuning,
-                wallSamplePoints = emptyList()
+                wallSamplePoints = emptyList(),
+                selectedColors = state.selectedAutoExtractionColors
             )
         }
     }
@@ -309,24 +376,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         _uiState.value = state.copy(
-            currentScreen = AppScreen.REACH_CALIBRATION,
+            currentScreen = AppScreen.HOLD_EDITOR,
             screenBackStack = pushedScreenBackStack(
                 state = state,
-                targetScreen = AppScreen.REACH_CALIBRATION
+                targetScreen = AppScreen.HOLD_EDITOR
             ),
             holds = state.autoExtractedHolds,
             selectedHoldIndex = null,
             holdScoringPosition = 0,
             pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
+            isReachCalibrationSelectionMode = false,
             reachCalibrationReturnToHoldEditor = false,
-            reachCalibrationReturnToAutoExtraction = true,
+            reachCalibrationReturnToAutoExtraction = false,
             isHoldEditorDirty = true,
-            message = if (state.reachCalibrationReference == null) {
-                text(R.string.message_auto_hold_extraction_applied)
-            } else {
-                text(R.string.message_reach_confirm)
-            }
+            message = text(R.string.message_auto_hold_extraction_applied)
         )
     }
 
@@ -358,14 +421,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun continueToHoldEditorFromReachCalibration() {
         val state = _uiState.value
         if (state.capturedBitmap == null) return
-        if (parseReachCalibrationLengthCentimeters(state) == null) {
-            _uiState.value = state.copy(message = text(R.string.message_reach_input_length))
-            return
-        }
-        if (state.reachCalibrationReference == null) {
-            _uiState.value = state.copy(message = text(R.string.message_reach_set_required))
-            return
-        }
+        val normalizedReference = requireConfiguredReachReference(state) ?: return
 
         _uiState.value = state.copy(
             currentScreen = AppScreen.HOLD_EDITOR,
@@ -380,8 +436,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             reachCalibrationReturnToHoldEditor = false,
             reachCalibrationReturnToAutoExtraction = false,
             autoExtractedHolds = emptyList(),
-            reachCalibrationReference = state.reachCalibrationReference.withCurrentLength(state),
+            reachCalibrationReference = normalizedReference,
             message = text(R.string.message_reach_go_hold_editor)
+        )
+    }
+
+    fun continueToAutoHoldExtractionFromReachCalibration() {
+        val state = _uiState.value
+        val bitmap = state.capturedBitmap ?: return
+        val normalizedReference = requireConfiguredReachReference(state) ?: return
+
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.AUTO_HOLD_EXTRACTION
+            ),
+            holds = emptyList(),
+            selectedHoldIndex = null,
+            holdScoringPosition = 0,
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = false,
+            reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
+            autoExtractedHolds = emptyList(),
+            reachCalibrationReference = normalizedReference,
+            isAutoExtractionWallSamplingMode = false,
+            isBusy = true,
+            message = null
+        )
+        runAutoHoldExtraction(
+            bitmap = bitmap,
+            tuning = state.autoExtractionTuning,
+            wallSamplePoints = state.autoExtractionWallSamplePoints,
+            selectedColors = state.selectedAutoExtractionColors
         )
     }
 
@@ -465,6 +553,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
                     challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
                     autoExtractionTuning = _uiState.value.autoExtractionTuning,
+                    selectedAutoExtractionColors = _uiState.value.selectedAutoExtractionColors,
                     routeTuning = _uiState.value.routeTuning,
                     message = text(R.string.message_open_wall_failed)
                 )
@@ -479,7 +568,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     targetScreen = AppScreen.CHALLENGE_CREATOR
                 ),
                 currentWallId = detail.id,
-                wallTitle = detail.title,
                 capturedBitmap = detail.bitmap,
                 capturedOrientation = detail.capturedOrientation,
                 capturedRotationDegrees = detail.capturedRotationDegrees,
@@ -517,13 +605,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 message = text(R.string.message_open_challenge_creator)
             )
         }
-    }
-
-    fun onWallTitleChanged(value: String) {
-        _uiState.value = _uiState.value.copy(
-            wallTitle = value,
-            isHoldEditorDirty = true
-        )
     }
 
     fun onHoldTapAreaSizeChanged(size: HoldTapAreaSize) {
@@ -707,7 +788,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val savedSummary = withContext(Dispatchers.IO) {
                 repository.saveWall(
                     wallId = state.currentWallId,
-                    title = state.wallTitle.ifBlank { defaultWallTitle() },
                     bitmap = bitmap,
                     holds = state.holds,
                     reachCalibrationReference = normalizedReference,
@@ -716,15 +796,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
             val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
-            _uiState.value = state.copy(
+            _uiState.value = buildListState(
+                source = state.copy(
+                    currentWallId = savedSummary.id,
+                    reachCalibrationReference = normalizedReference,
+                    isHoldEditorDirty = false,
+                    showDiscardDialog = false,
+                    isBusy = false
+                ),
                 savedWalls = refreshed,
-                currentWallId = savedSummary.id,
-                wallTitle = savedSummary.title,
-                reachCalibrationReference = normalizedReference,
-                isHoldEditorDirty = false,
-                showDiscardDialog = false,
-                isBusy = false,
-                message = text(R.string.message_saved_wall_title, savedSummary.title)
+                message = text(R.string.message_saved_wall)
             )
         }
     }
@@ -745,7 +826,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val savedSummary = withContext(Dispatchers.IO) {
                 repository.saveWall(
                     wallId = state.currentWallId,
-                    title = state.wallTitle.ifBlank { defaultWallTitle() },
                     bitmap = bitmap,
                     holds = state.holds,
                     reachCalibrationReference = normalizedReference,
@@ -762,7 +842,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ),
                 savedWalls = refreshed,
                 currentWallId = savedSummary.id,
-                wallTitle = savedSummary.title,
                 selectedHoldIndex = null,
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
@@ -1472,13 +1551,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(message = null)
     }
 
-    private fun defaultWallTitle(): String {
-        return text(
-            R.string.default_wall_title,
-            SimpleDateFormat(text(R.string.wall_timestamp_format), Locale.JAPAN).format(Date())
-        )
-    }
-
     private fun text(@StringRes resId: Int, vararg args: Any): String {
         return appContext.getString(resId, *args)
     }
@@ -1497,6 +1569,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             challengeDifficultyScoreMin = source.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = source.challengeDifficultyScoreMax,
             autoExtractionTuning = source.autoExtractionTuning,
+            selectedAutoExtractionColors = source.selectedAutoExtractionColors,
             routeTuning = source.routeTuning,
             message = message
         )
@@ -1562,6 +1635,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    private fun buildReachCalibrationState(
+        state: MainUiState,
+        bitmap: Bitmap,
+        capturedOrientation: CapturedOrientation,
+        capturedRotationDegrees: Int
+    ): MainUiState {
+        return state.copy(
+            currentScreen = AppScreen.REACH_CALIBRATION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.REACH_CALIBRATION
+            ),
+            currentWallId = null,
+            capturedBitmap = bitmap,
+            capturedOrientation = capturedOrientation,
+            capturedRotationDegrees = capturedRotationDegrees,
+            holds = emptyList(),
+            autoExtractedHolds = emptyList(),
+            autoExtractionWallSamplePoints = emptyList(),
+            isAutoExtractionWallSamplingMode = false,
+            reachCalibrationReference = null,
+            reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = true,
+            reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
+            selectedHoldIndex = null,
+            challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
+            drawTargetHoldIndices = emptySet(),
+            hasDrawTargetSelection = false,
+            startHoldIndex = null,
+            goalHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            isHoldEditorDirty = true,
+            showDiscardDialog = false,
+            isBusy = false,
+            message = text(R.string.message_reach_first_point)
+        )
+    }
+
     private fun openSavedWallIntoScreen(
         wallId: String,
         targetScreen: AppScreen
@@ -1587,7 +1703,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     targetScreen = targetScreen
                 ),
                 currentWallId = detail.id,
-                wallTitle = detail.title,
                 capturedBitmap = detail.bitmap,
                 capturedOrientation = detail.capturedOrientation,
                 capturedRotationDegrees = detail.capturedRotationDegrees,
@@ -1664,6 +1779,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun ReachCalibrationReference?.withCurrentLength(state: MainUiState): ReachCalibrationReference? {
         val parsedLength = parseReachCalibrationLengthCentimeters(state) ?: return this
         return this?.copy(referenceLengthCm = parsedLength)
+    }
+
+    private fun requireConfiguredReachReference(state: MainUiState): ReachCalibrationReference? {
+        if (parseReachCalibrationLengthCentimeters(state) == null) {
+            _uiState.value = state.copy(message = text(R.string.message_reach_input_length))
+            return null
+        }
+        val normalizedReference = state.reachCalibrationReference.withCurrentLength(state)
+        if (normalizedReference == null) {
+            _uiState.value = state.copy(message = text(R.string.message_reach_set_required))
+            return null
+        }
+        return normalizedReference
+    }
+
+    private fun orientationForBitmap(bitmap: Bitmap): CapturedOrientation {
+        return if (bitmap.width > bitmap.height) {
+            CapturedOrientation.LANDSCAPE
+        } else {
+            CapturedOrientation.PORTRAIT
+        }
+    }
+
+    private fun cropBitmap(
+        bitmap: Bitmap,
+        leftFraction: Float,
+        topFraction: Float,
+        rightFraction: Float,
+        bottomFraction: Float
+    ): Bitmap? {
+        val normalizedLeft = leftFraction.coerceIn(0f, 1f)
+        val normalizedTop = topFraction.coerceIn(0f, 1f)
+        val normalizedRight = rightFraction.coerceIn(0f, 1f)
+        val normalizedBottom = bottomFraction.coerceIn(0f, 1f)
+        if (normalizedRight <= normalizedLeft || normalizedBottom <= normalizedTop) {
+            return null
+        }
+
+        val cropLeft = (bitmap.width * normalizedLeft).roundToInt().coerceIn(0, bitmap.width - 1)
+        val cropTop = (bitmap.height * normalizedTop).roundToInt().coerceIn(0, bitmap.height - 1)
+        val cropRight = (bitmap.width * normalizedRight).roundToInt().coerceIn(cropLeft + 1, bitmap.width)
+        val cropBottom = (bitmap.height * normalizedBottom).roundToInt().coerceIn(cropTop + 1, bitmap.height)
+        val cropWidth = cropRight - cropLeft
+        val cropHeight = cropBottom - cropTop
+        if (cropWidth <= 0 || cropHeight <= 0) {
+            return null
+        }
+
+        return Bitmap.createBitmap(bitmap, cropLeft, cropTop, cropWidth, cropHeight)
     }
 
     private fun challengeSelectionCandidateIndices(state: MainUiState): Set<Int> {
@@ -1828,7 +1992,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun runAutoHoldExtraction(
         bitmap: Bitmap,
         tuning: AutoExtractionTuning,
-        wallSamplePoints: List<HoldPoint>
+        wallSamplePoints: List<HoldPoint>,
+        selectedColors: Set<HoldColorCategory>
     ) {
         autoExtractionRequestId += 1
         val requestId = autoExtractionRequestId
@@ -1842,7 +2007,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 BinaryHoldExtractor.extract(
                     bitmap = bitmap,
                     tuning = tuning,
-                    wallSamplePoints = wallSamplePoints
+                    wallSamplePoints = wallSamplePoints,
+                    selectedColors = selectedColors
                 )
             }
             val currentState = _uiState.value

@@ -98,13 +98,6 @@ fun ChallengeCreatorScreen(
             fontWeight = FontWeight.Bold
         )
 
-        Text(
-            text = state.wallTitle,
-            color = AppSecondaryTextColor,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
-        )
-
         when (state.challengeFlowStep) {
             ChallengeFlowStep.METHOD_SELECT -> {
                 ChallengeMethodSelectionContent(

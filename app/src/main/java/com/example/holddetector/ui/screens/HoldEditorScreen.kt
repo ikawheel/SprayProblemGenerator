@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,7 +42,6 @@ import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
 @Composable
 fun HoldEditorScreen(
     state: MainUiState,
-    onWallTitleChanged: (String) -> Unit,
     onHoldTapAreaSizeChange: (HoldTapAreaSize) -> Unit,
     onSaveWall: () -> Unit,
     onOpenHoldAttributeEditor: () -> Unit,
@@ -85,16 +83,6 @@ fun HoldEditorScreen(
                         color = AppTextColor,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
-                    )
-
-                    OutlinedTextField(
-                        value = state.wallTitle,
-                        onValueChange = onWallTitleChanged,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp),
-                        singleLine = true,
-                        label = { Text(stringResource(R.string.wall_title_label)) }
                     )
                 }
             }
@@ -236,14 +224,8 @@ fun HoldEditorScreen(
                         }
                     } else {
                         AppButton(
-                            onClick = onSaveWall,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(uiModel.saveButtonTextResId))
-                        }
-
-                        AppButton(
                             onClick = onOpenHoldAttributeEditor,
+                            enabled = state.holds.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(stringResourceByName("open_hold_attribute_editor"))

@@ -6,19 +6,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,38 +40,44 @@ fun HoldRegistrationMethodScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                color = AppSurfaceColor,
-                shadowElevation = 12.dp
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            color = AppSurfaceColor,
+            shadowElevation = 12.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.registration_method_title),
-                        color = AppTextColor,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                Text(
+                    text = stringResource(R.string.registration_method_title),
+                    color = AppTextColor,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
 
-                    Text(
-                        text = stringResource(R.string.registration_method_description),
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.registration_method_description),
+                    color = AppSecondaryTextColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
+        }
 
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp)
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp)
                     .then(
                         if (bitmap != null && bitmap.height > 0) {
                             Modifier.aspectRatio(
@@ -98,7 +105,7 @@ fun HoldRegistrationMethodScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 20.dp)
+                    .padding(top = 12.dp)
                     .navigationBarsPadding()
             ) {
                 AppButton(
@@ -118,4 +125,5 @@ fun HoldRegistrationMethodScreen(
                 }
             }
         }
+    }
 }

@@ -1,12 +1,17 @@
 package com.example.holddetector.domain.hold
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 object BinaryHoldExtractor {
@@ -126,9 +131,11 @@ object BinaryHoldExtractor {
     fun extract(
         bitmap: Bitmap,
         tuning: AutoExtractionTuning = AutoExtractionTuning(),
-        wallSamplePoints: List<HoldPoint> = emptyList()
+        wallSamplePoints: List<HoldPoint> = emptyList(),
+        selectedColors: Set<HoldColorCategory> = defaultSelectedAutoExtractionColors()
     ): List<Hold> {
         if (bitmap.width < 24 || bitmap.height < 24) return emptyList()
+        if (selectedColors.isEmpty()) return emptyList()
 
         val maxSide = 960
         val scale = max(bitmap.width, bitmap.height).toFloat() / maxSide.toFloat()
@@ -153,63 +160,38 @@ object BinaryHoldExtractor {
             workingHeight
         )
 
-        val grayscale = IntArray(pixels.size)
-        for (index in pixels.indices) {
-            val pixel = pixels[index]
-            val red = pixel shr 16 and 0xFF
-            val green = pixel shr 8 and 0xFF
-            val blue = pixel and 0xFF
-            grayscale[index] = (0.299 * red + 0.587 * green + 0.114 * blue).roundToInt()
+        val hsvPixels = Array(pixels.size) { index ->
+            rgbToHsv(pixels[index])
         }
-
-        val borderStats = sampleBorderStats(
-            grayscale = grayscale,
-            width = workingWidth,
-            height = workingHeight
-        )
-        val wallReferenceStats = sampleWallReferenceStats(
-            pixels = pixels,
-            grayscale = grayscale,
+        val backgroundModel = sampleBackgroundHsvModel(
+            hsvPixels = hsvPixels,
             width = workingWidth,
             height = workingHeight,
             originalWidth = bitmap.width,
             originalHeight = bitmap.height,
             wallSamplePoints = wallSamplePoints
         )
-        val grayStats = wallReferenceStats?.grayStats ?: borderStats
-        val threshold = max(
-            tuning.minimumThreshold.toDouble().coerceAtLeast(0.0),
-            grayStats.stdDev * tuning.standardDeviationMultiplier.toDouble().coerceAtLeast(0.0)
-        )
-        val colorThreshold = wallReferenceStats?.let { referenceStats ->
-            max(
-                8.0,
-                referenceStats.colorStdDev * tuning.standardDeviationMultiplier.toDouble().coerceAtLeast(0.0)
+        val initialMask = BooleanArray(hsvPixels.size) { index ->
+            val hsv = hsvPixels[index]
+            val holdColorScore = calculateHoldColorScore(
+                color = hsv,
+                selectedColors = selectedColors,
+                tuning = tuning
             )
-        }
-        val initialMask = BooleanArray(grayscale.size) { index ->
-            val brightnessDifference = abs(grayscale[index] - grayStats.mean)
-            if (wallReferenceStats != null && colorThreshold != null) {
-                val pixel = pixels[index]
-                val colorDistance = deltaE(
-                    first = rgbToLab(
-                        red = pixel shr 16 and 0xFF,
-                        green = pixel shr 8 and 0xFF,
-                        blue = pixel and 0xFF
-                    ),
-                    second = wallReferenceStats.meanLab
-                )
-                colorDistance >= colorThreshold ||
-                    (brightnessDifference >= threshold && colorDistance >= colorThreshold * 0.35)
-            } else {
-                brightnessDifference >= threshold
-            }
+            val backgroundDistanceScore = calculateBackgroundDistanceScore(
+                color = hsv,
+                backgroundModel = backgroundModel
+            )
+            val finalScore = holdColorScore * 0.72f + backgroundDistanceScore * 0.28f
+            backgroundDistanceScore >= tuning.backgroundDistanceThreshold &&
+                holdColorScore >= 0.24f &&
+                finalScore >= 0.34f
         }
         val smoothedMask = smoothMask(
             mask = initialMask,
             width = workingWidth,
             height = workingHeight,
-            smoothingStrength = tuning.smoothingStrength
+            smoothingStrength = 0.38f
         )
         val components = collectComponents(
             mask = smoothedMask,
@@ -217,10 +199,9 @@ object BinaryHoldExtractor {
             height = workingHeight
         )
 
-        val areaStrength = tuning.areaFilterStrength.coerceAtLeast(0.1f)
         val minArea = max(
-            32,
-            (workingWidth * workingHeight * 0.00022 * areaStrength).roundToInt()
+            24,
+            (workingWidth * workingHeight * 0.00018f).roundToInt()
         )
         val maxArea = max(minArea + 1, (workingWidth * workingHeight * 0.08).roundToInt())
         val scaleX = bitmap.width.toFloat() / workingWidth.toFloat()
@@ -405,6 +386,260 @@ object BinaryHoldExtractor {
         var sumX: Double = 0.0,
         var sumY: Double = 0.0
     )
+
+    private data class HsvColor(
+        val h: Float,
+        val s: Float,
+        val v: Float
+    )
+
+    private data class HsvBackgroundModel(
+        val meanHue: Float,
+        val meanSaturation: Float,
+        val meanValue: Float
+    )
+
+    private data class HsvAccumulator(
+        var count: Int = 0,
+        var sinSum: Double = 0.0,
+        var cosSum: Double = 0.0,
+        var saturationSum: Double = 0.0,
+        var valueSum: Double = 0.0
+    ) {
+        fun add(color: HsvColor) {
+            val radians = color.h.toDouble() * PI / 180.0
+            sinSum += sin(radians)
+            cosSum += cos(radians)
+            saturationSum += color.s.toDouble()
+            valueSum += color.v.toDouble()
+            count += 1
+        }
+
+        fun meanColor(): HsvColor {
+            if (count == 0) return HsvColor(h = 0f, s = 0f, v = 0f)
+            val meanHue = normalizeHueDegrees(
+                Math.toDegrees(atan2(sinSum / count.toDouble(), cosSum / count.toDouble())).toFloat()
+            )
+            return HsvColor(
+                h = meanHue,
+                s = (saturationSum / count.toDouble()).toFloat(),
+                v = (valueSum / count.toDouble()).toFloat()
+            )
+        }
+    }
+
+    private fun sampleBackgroundHsvModel(
+        hsvPixels: Array<HsvColor>,
+        width: Int,
+        height: Int,
+        originalWidth: Int,
+        originalHeight: Int,
+        wallSamplePoints: List<HoldPoint>
+    ): HsvBackgroundModel {
+        val sampledColors = if (wallSamplePoints.isEmpty()) {
+            sampleBorderHsvColors(
+                hsvPixels = hsvPixels,
+                width = width,
+                height = height
+            )
+        } else {
+            wallSamplePoints.mapNotNull { point ->
+                val localX = ((point.x.toFloat() / originalWidth.toFloat()) * width.toFloat()).roundToInt()
+                val localY = ((point.y.toFloat() / originalHeight.toFloat()) * height.toFloat()).roundToInt()
+                sampleHsvPatch(
+                    hsvPixels = hsvPixels,
+                    width = width,
+                    height = height,
+                    centerX = localX,
+                    centerY = localY
+                )
+            }
+        }
+        if (sampledColors.isEmpty()) {
+            val fallback = sampleBorderHsvColors(
+                hsvPixels = hsvPixels,
+                width = width,
+                height = height
+            )
+            if (fallback.isEmpty()) {
+                return HsvBackgroundModel(meanHue = 0f, meanSaturation = 0f, meanValue = 0.5f)
+            }
+            val fallbackMean = averageHsvColors(fallback)
+            return HsvBackgroundModel(
+                meanHue = fallbackMean.h,
+                meanSaturation = fallbackMean.s,
+                meanValue = fallbackMean.v
+            )
+        }
+        val meanColor = averageHsvColors(sampledColors)
+        return HsvBackgroundModel(
+            meanHue = meanColor.h,
+            meanSaturation = meanColor.s,
+            meanValue = meanColor.v
+        )
+    }
+
+    private fun sampleBorderHsvColors(
+        hsvPixels: Array<HsvColor>,
+        width: Int,
+        height: Int
+    ): List<HsvColor> {
+        val marginX = max(4, width / 18)
+        val marginY = max(4, height / 18)
+        val colors = ArrayList<HsvColor>()
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (x < marginX || x >= width - marginX || y < marginY || y >= height - marginY) {
+                    colors += hsvPixels[y * width + x]
+                }
+            }
+        }
+        return colors
+    }
+
+    private fun sampleHsvPatch(
+        hsvPixels: Array<HsvColor>,
+        width: Int,
+        height: Int,
+        centerX: Int,
+        centerY: Int
+    ): HsvColor? {
+        val radius = 4
+        val startX = (centerX - radius).coerceIn(0, width - 1)
+        val endX = (centerX + radius).coerceIn(0, width - 1)
+        val startY = (centerY - radius).coerceIn(0, height - 1)
+        val endY = (centerY + radius).coerceIn(0, height - 1)
+        val accumulator = HsvAccumulator()
+        for (y in startY..endY) {
+            for (x in startX..endX) {
+                accumulator.add(hsvPixels[y * width + x])
+            }
+        }
+        return if (accumulator.count == 0) null else accumulator.meanColor()
+    }
+
+    private fun averageHsvColors(colors: List<HsvColor>): HsvColor {
+        val accumulator = HsvAccumulator()
+        colors.forEach(accumulator::add)
+        return accumulator.meanColor()
+    }
+
+    private fun rgbToHsv(pixel: Int): HsvColor {
+        val hsv = FloatArray(3)
+        Color.RGBToHSV(
+            pixel shr 16 and 0xFF,
+            pixel shr 8 and 0xFF,
+            pixel and 0xFF,
+            hsv
+        )
+        return HsvColor(
+            h = hsv[0],
+            s = hsv[1],
+            v = hsv[2]
+        )
+    }
+
+    private fun calculateBackgroundDistanceScore(
+        color: HsvColor,
+        backgroundModel: HsvBackgroundModel
+    ): Float {
+        val hueComponentWeight = if (
+            backgroundModel.meanSaturation < 0.12f &&
+            color.s < 0.2f
+        ) {
+            0.18f
+        } else {
+            0.5f
+        }
+        val saturationComponentWeight = 0.25f
+        val valueComponentWeight = 1f - hueComponentWeight - saturationComponentWeight
+        val hueScore = (hueDistanceDegrees(color.h, backgroundModel.meanHue) / 180f).coerceIn(0f, 1f)
+        val saturationScore = abs(color.s - backgroundModel.meanSaturation).coerceIn(0f, 1f)
+        val valueScore = abs(color.v - backgroundModel.meanValue).coerceIn(0f, 1f)
+        return (
+            hueScore * hueComponentWeight +
+                saturationScore * saturationComponentWeight +
+                valueScore * valueComponentWeight
+            ).coerceIn(0f, 1f)
+    }
+
+    private fun calculateHoldColorScore(
+        color: HsvColor,
+        selectedColors: Set<HoldColorCategory>,
+        tuning: AutoExtractionTuning
+    ): Float {
+        return selectedColors.maxOfOrNull { category ->
+            calculateCategoryScore(
+                color = color,
+                category = category,
+                tuning = tuning
+            )
+        } ?: 0f
+    }
+
+    private fun calculateCategoryScore(
+        color: HsvColor,
+        category: HoldColorCategory,
+        tuning: AutoExtractionTuning
+    ): Float {
+        return when (category) {
+            HoldColorCategory.WHITE -> calculateWhiteCategoryScore(color, tuning)
+            HoldColorCategory.BLACK -> calculateBlackCategoryScore(color, tuning)
+            else -> calculateChromaticCategoryScore(color, category, tuning)
+        }
+    }
+
+    private fun calculateChromaticCategoryScore(
+        color: HsvColor,
+        category: HoldColorCategory,
+        tuning: AutoExtractionTuning
+    ): Float {
+        val hueCenter = category.hueCenter ?: return 0f
+        val hueTolerance = tuning.hueTolerance.coerceIn(8f, 180f)
+        val valueTolerance = tuning.valueTolerance.coerceIn(0.05f, 1f)
+        val hueScore = (1f - hueDistanceDegrees(color.h, hueCenter) / hueTolerance).coerceIn(0f, 1f)
+        val valueScore = (1f - abs(color.v - category.referenceValue) / valueTolerance).coerceIn(0f, 1f)
+        val saturationFloor = tuning.saturationMin.coerceIn(0f, 1f)
+        val saturationDenominator = (1f - saturationFloor).coerceAtLeast(0.1f)
+        val saturationScore = ((color.s - saturationFloor) / saturationDenominator).coerceIn(0f, 1f)
+        return ((hueScore * 0.7f + valueScore * 0.3f) * (0.35f + saturationScore * 0.65f)).coerceIn(0f, 1f)
+    }
+
+    private fun calculateWhiteCategoryScore(
+        color: HsvColor,
+        tuning: AutoExtractionTuning
+    ): Float {
+        val saturationCeiling = (tuning.saturationMin + 0.24f).coerceIn(0.12f, 1f)
+        val valueFloor = (HoldColorCategory.WHITE.referenceValue - tuning.valueTolerance * 1.2f)
+            .coerceIn(0.05f, 0.96f)
+        val saturationScore = (1f - color.s / saturationCeiling).coerceIn(0f, 1f)
+        val valueScore = ((color.v - valueFloor) / (1f - valueFloor).coerceAtLeast(0.08f)).coerceIn(0f, 1f)
+        return (saturationScore * 0.45f + valueScore * 0.55f).coerceIn(0f, 1f)
+    }
+
+    private fun calculateBlackCategoryScore(
+        color: HsvColor,
+        tuning: AutoExtractionTuning
+    ): Float {
+        val maxValue = (HoldColorCategory.BLACK.referenceValue + tuning.valueTolerance).coerceIn(0.08f, 1f)
+        val saturationCeiling = (tuning.saturationMin + 0.35f).coerceAtLeast(0.2f)
+        val darknessScore = ((maxValue - color.v) / maxValue.coerceAtLeast(0.08f)).coerceIn(0f, 1f)
+        val lowSaturationScore = (1f - color.s / saturationCeiling).coerceIn(0f, 1f)
+        return (darknessScore * 0.75f + lowSaturationScore * 0.25f).coerceIn(0f, 1f)
+    }
+
+    private fun hueDistanceDegrees(first: Float, second: Float): Float {
+        val rawDistance = abs(normalizeHueDegrees(first) - normalizeHueDegrees(second))
+        return min(rawDistance, 360f - rawDistance)
+    }
+
+    private fun normalizeHueDegrees(hue: Float): Float {
+        var normalizedHue = hue % 360f
+        if (normalizedHue < 0f) {
+            normalizedHue += 360f
+        }
+        return normalizedHue
+    }
 
     private fun sampleBorderStats(
         grayscale: IntArray,

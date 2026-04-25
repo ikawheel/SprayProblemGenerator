@@ -8,7 +8,6 @@ enum class CapturedOrientation {
 
 data class SavedWallSummary(
     val id: String,
-    val title: String,
     val imageFilePath: String,
     val holdCount: Int,
     val createdAt: Long,
@@ -25,7 +24,6 @@ data class ReachCalibrationReference(
 
 data class SavedWallDetail(
     val id: String,
-    val title: String,
     val imageFilePath: String,
     val bitmap: Bitmap,
     val holds: List<Hold>,
