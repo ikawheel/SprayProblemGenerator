@@ -21,6 +21,7 @@ enum class AppScreen {
     AUTO_HOLD_EXTRACTION,
     REACH_CALIBRATION,
     HOLD_EDITOR,
+    HOLD_EDIT_OPERATION,
     HOLD_ATTRIBUTE_EDITOR,
     HOLD_SCORING,
     CHALLENGE_CREATOR
@@ -36,6 +37,13 @@ enum class HoldTapAreaSize {
     SMALL,
     MEDIUM,
     LARGE
+}
+
+enum class HoldEditorTool {
+    ADD,
+    EXTEND,
+    ERASE,
+    DELETE
 }
 
 enum class ChallengeGenerationMethod {
@@ -86,11 +94,13 @@ data class MainUiState(
     val isDrawTargetSelectionMode: Boolean = false,
     val drawCountInput: String = "10",
     val holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
+    val holdEditorTool: HoldEditorTool = HoldEditorTool.ADD,
     val challengeDifficultyScoreMin: Int = MIN_HOLD_DIFFICULTY_SCORE,
     val challengeDifficultyScoreMax: Int = DEFAULT_HOLD_DIFFICULTY_SCORE.coerceAtMost(MAX_HOLD_DIFFICULTY_SCORE),
     val routeTuning: RouteGenerationTuning = RouteGenerationTuning(),
     val isHoldEditorDirty: Boolean = false,
     val holdScoringPosition: Int = 0,
     val showDiscardDialog: Boolean = false,
+    val discardReturnToList: Boolean = false,
     val message: String? = null
 )

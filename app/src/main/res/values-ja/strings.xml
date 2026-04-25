@@ -92,7 +92,7 @@
     <string name="capture">撮影</string>
     <string name="hold_editor_title_create">ホールド追加・削除</string>
     <string name="hold_editor_title_edit">ホールド追加・削除</string>
-    <string name="hold_editor_help">タップで小さく追加、ドラッグで塗った範囲を追加できます。既存ホールドをタップすると削除対象として選択できます。2本指で拡大・移動できます。</string>
+    <string name="hold_editor_help">ホールドをタップすると削除対象として選択できます。追加・追記・消しゴムは下のボタンから開いてください。2本指で拡大・移動できます。</string>
     <string name="hold_tap_size_label">タップ範囲</string>
     <string name="hold_tap_size_small">小</string>
     <string name="hold_tap_size_medium">中</string>
@@ -197,9 +197,10 @@
     <string name="reach_calibration_back">戻る</string>
     <string name="reach_calibration_back_to_list">一覧へ戻る</string>
     <string name="reach_calibration_clear">クリア</string>
-    <string name="reach_calibration_continue">ホールド登録へ</string>
+    <string name="reach_calibration_continue">属性設定へ</string>
     <string name="hold_editor_reach_status_configured">リーチの目安: %1$dcm</string>
     <string name="hold_editor_reach_status_unset">リーチの目安: 未設定</string>
+    <string name="open_reach_calibration">リーチ設定へ</string>
     <string name="open_hold_scoring">点数付けへ</string>
     <string name="hold_scoring_title">ホールド点数</string>
     <string name="hold_scoring_description">左上から順に、1〜5点で採点します</string>
@@ -231,7 +232,7 @@
     <string name="message_reach_confirm">リーチの目安を確認してください</string>
     <string name="message_reach_input_length">参考にした長さ(cm)を入力してください</string>
     <string name="message_reach_set_required">リーチの目安を設定してください</string>
-    <string name="message_reach_go_hold_editor">ホールド登録へ進みます</string>
+    <string name="message_reach_go_hold_editor">属性設定へ進みます</string>
     <string name="message_reach_cleared">リーチの目安をクリアしました</string>
     <string name="message_reach_second_point">リーチの目安の2点目を選んでください</string>
     <string name="message_reach_select_different_second_point">1点目と別の位置をタップしてください</string>
@@ -262,4 +263,17 @@
     <string name="message_select_start_prompt">抽選対象のホールドをタップしてスタートを選択してください</string>
     <string name="message_challenge_cleared">課題の選択をクリアしました</string>
     <string name="selected_hold_debug">選択中 #%1$d 中心(%2$d, %3$d) 頂点数:%4$d</string>
+    <string name="hold_editor_tool_label">編集ツール</string>
+    <string name="hold_editor_tool_add">追加</string>
+    <string name="hold_editor_tool_extend">追記</string>
+    <string name="hold_editor_tool_erase">消しゴム</string>
+    <string name="hold_editor_tool_delete">選択を削除</string>
+    <string name="hold_editor_dialog_title_add">ホールドを追加</string>
+    <string name="hold_editor_dialog_title_extend">ホールドに追記</string>
+    <string name="hold_editor_dialog_title_erase">ホールドを消しゴム</string>
+    <string name="hold_editor_dialog_title_delete">ホールドを削除</string>
+    <string name="undo">やりなおす</string>
+    <string name="ok">OK</string>
+    <string name="message_hold_updated">ホールドを更新しました</string>
+    <string name="message_hold_split">ホールドを%1$d個に分割しました</string>
 </resources>

@@ -8,13 +8,16 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +44,7 @@ import com.example.holddetector.R
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppOutlinedButton
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -68,13 +72,15 @@ private data class NormalizedCropRect(
 fun ImageCropScreen(
     bitmap: Bitmap?,
     message: String?,
-    onApplyCrop: (Float, Float, Float, Float) -> Unit,
+    onApplyCropManual: (Float, Float, Float, Float) -> Unit,
+    onApplyCropAuto: (Float, Float, Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var cropLeft by rememberSaveable { mutableStateOf(0.08f) }
     var cropTop by rememberSaveable { mutableStateOf(0.08f) }
     var cropRight by rememberSaveable { mutableStateOf(0.92f) }
     var cropBottom by rememberSaveable { mutableStateOf(0.92f) }
+    var showRegistrationMethodDialog by rememberSaveable { mutableStateOf(false) }
     var displayedImageSize by remember { mutableStateOf(IntSize.Zero) }
     val imageBitmap = remember(bitmap) { bitmap?.asImageBitmap() }
 
@@ -98,80 +104,98 @@ fun ImageCropScreen(
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .align(Alignment.Center)
-                    .then(
-                        if (bitmap != null && bitmap.height > 0) {
-                            Modifier.aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
-                    .clipToBounds()
             ) {
-                if (bitmap != null && imageBitmap != null) {
-                    Image(
-                        bitmap = imageBitmap,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .onSizeChanged { displayedImageSize = it }
-                            .pointerInput(bitmap, displayedImageSize) {
-                                awaitEachGesture {
-                                    var down = awaitPointerEvent().changes.firstOrNull { it.pressed }
-                                    while (down == null) {
-                                        down = awaitPointerEvent().changes.firstOrNull { it.pressed }
-                                    }
-                                    if (displayedImageSize.width <= 0 || displayedImageSize.height <= 0) {
-                                        return@awaitEachGesture
-                                    }
+                val imageAspectRatio = if (bitmap != null && bitmap.height > 0) {
+                    bitmap.width.toFloat() / bitmap.height.toFloat()
+                } else {
+                    1f
+                }
+                val containerAspectRatio = if (maxHeight.value > 0f) {
+                    maxWidth.value / maxHeight.value
+                } else {
+                    imageAspectRatio
+                }
+                val imageModifier = if (imageAspectRatio >= containerAspectRatio) {
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(imageAspectRatio)
+                } else {
+                    Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(imageAspectRatio)
+                }
 
-                                    val activeDragTarget = resolveCropDragTarget(
-                                        touchOffset = down.position,
-                                        imageSize = displayedImageSize,
-                                        cropRect = currentCropRect()
-                                    )
-
-                                    if (activeDragTarget == CropDragTarget.NONE) {
-                                        return@awaitEachGesture
-                                    }
-
-                                    down.consume()
-                                    drag(down.id) { change ->
-                                        val dragAmount = change.positionChange()
-                                        if (dragAmount == Offset.Zero) {
-                                            return@drag
+                Box(
+                    modifier = imageModifier
+                        .align(Alignment.Center)
+                        .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
+                        .clipToBounds()
+                ) {
+                    if (bitmap != null && imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .onSizeChanged { displayedImageSize = it }
+                                .pointerInput(bitmap, displayedImageSize) {
+                                    awaitEachGesture {
+                                        var down = awaitPointerEvent().changes.firstOrNull { it.pressed }
+                                        while (down == null) {
+                                            down = awaitPointerEvent().changes.firstOrNull { it.pressed }
+                                        }
+                                        if (displayedImageSize.width <= 0 || displayedImageSize.height <= 0) {
+                                            return@awaitEachGesture
                                         }
 
-                                        val updatedCropRect = applyCropDrag(
-                                            cropRect = currentCropRect(),
-                                            dragTarget = activeDragTarget,
-                                            deltaX = dragAmount.x / displayedImageSize.width.toFloat(),
-                                            deltaY = dragAmount.y / displayedImageSize.height.toFloat()
+                                        val activeDragTarget = resolveCropDragTarget(
+                                            touchOffset = down.position,
+                                            imageSize = displayedImageSize,
+                                            cropRect = currentCropRect()
                                         )
 
-                                        cropLeft = updatedCropRect.left
-                                        cropTop = updatedCropRect.top
-                                        cropRight = updatedCropRect.right
-                                        cropBottom = updatedCropRect.bottom
-                                        change.consume()
+                                        if (activeDragTarget == CropDragTarget.NONE) {
+                                            return@awaitEachGesture
+                                        }
+
+                                        down.consume()
+                                        drag(down.id) { change ->
+                                            val dragAmount = change.positionChange()
+                                            if (dragAmount == Offset.Zero) {
+                                                return@drag
+                                            }
+
+                                            val updatedCropRect = applyCropDrag(
+                                                cropRect = currentCropRect(),
+                                                dragTarget = activeDragTarget,
+                                                deltaX = dragAmount.x / displayedImageSize.width.toFloat(),
+                                                deltaY = dragAmount.y / displayedImageSize.height.toFloat()
+                                            )
+
+                                            cropLeft = updatedCropRect.left
+                                            cropTop = updatedCropRect.top
+                                            cropRight = updatedCropRect.right
+                                            cropBottom = updatedCropRect.bottom
+                                            change.consume()
+                                        }
                                     }
                                 }
-                            }
-                    )
+                        )
 
-                    CropOverlay(
-                        cropRect = NormalizedCropRect(
-                            left = cropLeft,
-                            top = cropTop,
-                            right = cropRight,
-                            bottom = cropBottom
-                        ),
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        CropOverlay(
+                            cropRect = NormalizedCropRect(
+                                left = cropLeft,
+                                top = cropTop,
+                                right = cropRight,
+                                bottom = cropBottom
+                            ),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
         }
@@ -186,12 +210,7 @@ fun ImageCropScreen(
 
         AppButton(
             onClick = {
-                onApplyCrop(
-                    cropLeft,
-                    cropTop,
-                    cropRight,
-                    cropBottom
-                )
+                showRegistrationMethodDialog = true
             },
             enabled = bitmap != null,
             modifier = Modifier
@@ -204,6 +223,50 @@ fun ImageCropScreen(
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+
+    if (showRegistrationMethodDialog) {
+        AlertDialog(
+            onDismissRequest = { showRegistrationMethodDialog = false },
+            title = {
+                Text(text = stringResource(R.string.registration_method_title))
+            },
+            text = {
+                Column {
+                    Text(text = stringResource(R.string.registration_method_description))
+
+                    AppButton(
+                        onClick = {
+                            showRegistrationMethodDialog = false
+                            onApplyCropManual(cropLeft, cropTop, cropRight, cropBottom)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    ) {
+                        Text(stringResource(R.string.registration_method_manual))
+                    }
+
+                    AppButton(
+                        onClick = {
+                            showRegistrationMethodDialog = false
+                            onApplyCropAuto(cropLeft, cropTop, cropRight, cropBottom)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    ) {
+                        Text(stringResource(R.string.registration_method_auto))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                AppOutlinedButton(onClick = { showRegistrationMethodDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
 

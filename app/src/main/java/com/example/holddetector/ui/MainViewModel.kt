@@ -31,6 +31,11 @@ import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
+private enum class PostCropDestination {
+    MANUAL,
+    AUTO
+}
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = WallStorageRepository(application.applicationContext)
@@ -98,6 +103,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             reachCalibrationReturnToHoldEditor = false,
             reachCalibrationReturnToAutoExtraction = false,
             selectedHoldIndex = null,
+            holdEditorTool = HoldEditorTool.ADD,
             challengeHoldIndices = emptySet(),
             challengeOrderedHoldIndices = emptyList(),
             lastGeneratedIntermediateHoldIndices = emptySet(),
@@ -113,11 +119,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun applyCapturedImageCrop(
+    fun applyCapturedImageCropAndOpenManual(
         leftFraction: Float,
         topFraction: Float,
         rightFraction: Float,
         bottomFraction: Float
+    ) {
+        applyCapturedImageCropInternal(
+            leftFraction = leftFraction,
+            topFraction = topFraction,
+            rightFraction = rightFraction,
+            bottomFraction = bottomFraction,
+            destination = PostCropDestination.MANUAL
+        )
+    }
+
+    fun applyCapturedImageCropAndOpenAuto(
+        leftFraction: Float,
+        topFraction: Float,
+        rightFraction: Float,
+        bottomFraction: Float
+    ) {
+        applyCapturedImageCropInternal(
+            leftFraction = leftFraction,
+            topFraction = topFraction,
+            rightFraction = rightFraction,
+            bottomFraction = bottomFraction,
+            destination = PostCropDestination.AUTO
+        )
+    }
+
+    private fun applyCapturedImageCropInternal(
+        leftFraction: Float,
+        topFraction: Float,
+        rightFraction: Float,
+        bottomFraction: Float,
+        destination: PostCropDestination
     ) {
         val state = _uiState.value
         val bitmap = state.capturedBitmap ?: return
@@ -147,35 +184,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            _uiState.value = buildReachCalibrationState(
-                state = currentState,
-                bitmap = croppedBitmap,
-                capturedOrientation = orientationForBitmap(croppedBitmap),
-                capturedRotationDegrees = 0
-            )
+            val croppedOrientation = orientationForBitmap(croppedBitmap)
+            when (destination) {
+                PostCropDestination.MANUAL -> {
+                    _uiState.value = buildManualHoldEditorState(
+                        state = currentState,
+                        bitmap = croppedBitmap,
+                        capturedOrientation = croppedOrientation,
+                        capturedRotationDegrees = 0
+                    )
+                }
+                PostCropDestination.AUTO -> {
+                    _uiState.value = buildAutoExtractionState(
+                        state = currentState,
+                        bitmap = croppedBitmap,
+                        capturedOrientation = croppedOrientation,
+                        capturedRotationDegrees = 0
+                    )
+                    runAutoHoldExtraction(
+                        bitmap = croppedBitmap,
+                        tuning = currentState.autoExtractionTuning,
+                        wallSamplePoints = emptyList()
+                    )
+                }
+            }
         }
     }
 
     fun openManualHoldRegistrationAfterCapture() {
         val state = _uiState.value
         _uiState.value = state.copy(
-            currentScreen = AppScreen.REACH_CALIBRATION,
+            currentScreen = AppScreen.HOLD_EDITOR,
             screenBackStack = pushedScreenBackStack(
                 state = state,
-                targetScreen = AppScreen.REACH_CALIBRATION
+                targetScreen = AppScreen.HOLD_EDITOR
             ),
             holds = emptyList(),
             autoExtractedHolds = emptyList(),
             selectedHoldIndex = null,
+            holdEditorTool = HoldEditorTool.ADD,
             pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
+            isReachCalibrationSelectionMode = false,
             reachCalibrationReturnToHoldEditor = false,
             reachCalibrationReturnToAutoExtraction = false,
-            message = if (state.reachCalibrationReference == null) {
-                text(R.string.message_reach_first_point)
-            } else {
-                text(R.string.message_reach_confirm)
-            }
+            message = null
         )
     }
 
@@ -355,10 +407,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val normalizedReference = requireConfiguredReachReference(state) ?: return
 
         _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_EDITOR,
+            currentScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR,
             screenBackStack = pushedScreenBackStack(
                 state = state,
-                targetScreen = AppScreen.HOLD_EDITOR
+                targetScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR
             ),
             selectedHoldIndex = null,
             holdScoringPosition = 0,
@@ -542,6 +594,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun onHoldEditorToolChanged(tool: HoldEditorTool) {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            holdEditorTool = tool,
+            message = null
+        )
+    }
+
+    fun openHoldEditOperation(tool: HoldEditorTool) {
+        val state = _uiState.value
+        if (state.currentScreen != AppScreen.HOLD_EDITOR) return
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.HOLD_EDIT_OPERATION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.HOLD_EDIT_OPERATION
+            ),
+            holdEditorTool = tool,
+            message = null
+        )
+    }
+
     fun addManualHold(hold: Hold) {
         val state = _uiState.value
         val updatedHolds = state.holds + hold
@@ -551,6 +625,59 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isHoldEditorDirty = true,
             holdScoringPosition = 0,
             message = text(R.string.message_hold_added, updatedHolds.size)
+        )
+    }
+
+    fun replaceHoldWithEditedHolds(targetIndex: Int, replacementHolds: List<Hold>) {
+        val state = _uiState.value
+        if (targetIndex !in state.holds.indices) return
+
+        val updatedHolds = buildList {
+            addAll(state.holds.take(targetIndex))
+            addAll(replacementHolds)
+            addAll(state.holds.drop(targetIndex + 1))
+        }
+
+        val message = when {
+            replacementHolds.isEmpty() -> text(R.string.message_hold_deleted)
+            replacementHolds.size == 1 -> text(R.string.message_hold_updated)
+            else -> text(R.string.message_hold_split, replacementHolds.size)
+        }
+
+        _uiState.value = state.copy(
+            holds = updatedHolds,
+            selectedHoldIndex = replacementHolds.firstOrNull()?.let { targetIndex },
+            isHoldEditorDirty = true,
+            holdScoringPosition = 0,
+            message = message
+        )
+    }
+
+    fun replaceAllHolds(updatedHolds: List<Hold>, selectedIndex: Int?) {
+        val state = _uiState.value
+        val normalizedSelectedIndex = selectedIndex?.takeIf { it in updatedHolds.indices }
+        _uiState.value = state.copy(
+            holds = updatedHolds,
+            selectedHoldIndex = normalizedSelectedIndex,
+            isHoldEditorDirty = state.isHoldEditorDirty || updatedHolds != state.holds,
+            holdScoringPosition = 0,
+            message = null
+        )
+    }
+
+    fun applyEditedHoldsAndReturnToHoldEditor(updatedHolds: List<Hold>, selectedIndex: Int?) {
+        val state = _uiState.value
+        if (state.currentScreen != AppScreen.HOLD_EDIT_OPERATION) return
+
+        val normalizedSelectedIndex = selectedIndex?.takeIf { it in updatedHolds.indices }
+        _uiState.value = popScreenState(
+            state = state.copy(
+                holds = updatedHolds,
+                selectedHoldIndex = normalizedSelectedIndex,
+                isHoldEditorDirty = state.isHoldEditorDirty || updatedHolds != state.holds,
+                holdScoringPosition = 0,
+                message = null
+            )
         )
     }
 
@@ -1424,7 +1551,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             state.currentWallId != null &&
             state.isHoldEditorDirty
         ) {
-            _uiState.value = state.copy(showDiscardDialog = true)
+            _uiState.value = state.copy(
+                showDiscardDialog = true,
+                discardReturnToList = false
+            )
             return
         }
 
@@ -1462,14 +1592,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         onBackPressed()
     }
 
+    fun requestReturnToList() {
+        val state = _uiState.value
+        if (
+            state.currentScreen in setOf(
+                AppScreen.REACH_CALIBRATION,
+                AppScreen.HOLD_EDITOR,
+                AppScreen.HOLD_ATTRIBUTE_EDITOR,
+                AppScreen.HOLD_SCORING
+            ) &&
+            state.currentWallId != null &&
+            state.isHoldEditorDirty
+        ) {
+            _uiState.value = state.copy(
+                showDiscardDialog = true,
+                discardReturnToList = true
+            )
+            return
+        }
+
+        _uiState.value = buildListState(state)
+    }
+
     fun dismissDiscardDialog() {
-        _uiState.value = _uiState.value.copy(showDiscardDialog = false)
+        _uiState.value = _uiState.value.copy(
+            showDiscardDialog = false,
+            discardReturnToList = false
+        )
     }
 
     fun discardEditorAndReturnToList() {
-        _uiState.value = popScreenState(
-            state = _uiState.value.copy(showDiscardDialog = false)
+        val currentState = _uiState.value
+        val state = currentState.copy(
+            showDiscardDialog = false,
+            discardReturnToList = false
         )
+        _uiState.value = if (currentState.discardReturnToList) {
+            buildListState(state)
+        } else {
+            popScreenState(state = state)
+        }
     }
 
     fun returnToList() {
@@ -1563,17 +1725,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    private fun buildReachCalibrationState(
+    private fun buildHoldRegistrationMethodState(
         state: MainUiState,
         bitmap: Bitmap,
         capturedOrientation: CapturedOrientation,
         capturedRotationDegrees: Int
     ): MainUiState {
         return state.copy(
-            currentScreen = AppScreen.REACH_CALIBRATION,
+            currentScreen = AppScreen.HOLD_REGISTRATION_METHOD,
             screenBackStack = pushedScreenBackStack(
                 state = state,
-                targetScreen = AppScreen.REACH_CALIBRATION
+                targetScreen = AppScreen.HOLD_REGISTRATION_METHOD
             ),
             currentWallId = null,
             capturedBitmap = bitmap,
@@ -1586,7 +1748,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             reachCalibrationReference = null,
             reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
             pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = true,
+            isReachCalibrationSelectionMode = false,
             reachCalibrationReturnToHoldEditor = false,
             reachCalibrationReturnToAutoExtraction = false,
             selectedHoldIndex = null,
@@ -1602,7 +1764,93 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isHoldEditorDirty = true,
             showDiscardDialog = false,
             isBusy = false,
-            message = text(R.string.message_reach_first_point)
+            message = text(R.string.message_hold_registration_method_select)
+        )
+    }
+
+    private fun buildManualHoldEditorState(
+        state: MainUiState,
+        bitmap: Bitmap,
+        capturedOrientation: CapturedOrientation,
+        capturedRotationDegrees: Int
+    ): MainUiState {
+        return state.copy(
+            currentScreen = AppScreen.HOLD_EDITOR,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.HOLD_EDITOR
+            ),
+            currentWallId = null,
+            capturedBitmap = bitmap,
+            capturedOrientation = capturedOrientation,
+            capturedRotationDegrees = capturedRotationDegrees,
+            holds = emptyList(),
+            autoExtractedHolds = emptyList(),
+            autoExtractionWallSamplePoints = emptyList(),
+            isAutoExtractionWallSamplingMode = false,
+            reachCalibrationReference = null,
+            reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = false,
+            reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
+            selectedHoldIndex = null,
+            challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
+            drawTargetHoldIndices = emptySet(),
+            hasDrawTargetSelection = false,
+            startHoldIndex = null,
+            goalHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            isHoldEditorDirty = true,
+            showDiscardDialog = false,
+            isBusy = false,
+            message = null
+        )
+    }
+
+    private fun buildAutoExtractionState(
+        state: MainUiState,
+        bitmap: Bitmap,
+        capturedOrientation: CapturedOrientation,
+        capturedRotationDegrees: Int
+    ): MainUiState {
+        return state.copy(
+            currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.AUTO_HOLD_EXTRACTION
+            ),
+            currentWallId = null,
+            capturedBitmap = bitmap,
+            capturedOrientation = capturedOrientation,
+            capturedRotationDegrees = capturedRotationDegrees,
+            holds = emptyList(),
+            autoExtractedHolds = emptyList(),
+            autoExtractionWallSamplePoints = emptyList(),
+            isAutoExtractionWallSamplingMode = false,
+            reachCalibrationReference = null,
+            reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
+            pendingReachCalibrationPoint = null,
+            isReachCalibrationSelectionMode = false,
+            reachCalibrationReturnToHoldEditor = false,
+            reachCalibrationReturnToAutoExtraction = false,
+            selectedHoldIndex = null,
+            challengeHoldIndices = emptySet(),
+            challengeOrderedHoldIndices = emptyList(),
+            lastGeneratedIntermediateHoldIndices = emptySet(),
+            drawTargetHoldIndices = emptySet(),
+            hasDrawTargetSelection = false,
+            startHoldIndex = null,
+            goalHoldIndex = null,
+            routeSelectionMode = RouteSelectionMode.NONE,
+            isDrawTargetSelectionMode = false,
+            isHoldEditorDirty = true,
+            showDiscardDialog = false,
+            isBusy = true,
+            message = null
         )
     }
 
@@ -1647,6 +1895,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 reachCalibrationReturnToHoldEditor = false,
                 reachCalibrationReturnToAutoExtraction = false,
                 selectedHoldIndex = null,
+                holdEditorTool = if (targetScreen == AppScreen.HOLD_EDITOR) {
+                    HoldEditorTool.ADD
+                } else {
+                    currentState.holdEditorTool
+                },
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
                 lastGeneratedIntermediateHoldIndices = emptySet(),

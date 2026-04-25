@@ -5,7 +5,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.IntSize
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
+import com.example.holddetector.ui.HoldEditorTool
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 internal data class BaseImageLayout(
@@ -330,6 +333,211 @@ private fun fillEllipseOnMask(
     }
 }
 
+private fun buildEditedHoldMask(
+    hold: Hold,
+    editTool: HoldEditorTool,
+    brushPoints: List<Offset>,
+    brushRadiusX: Float,
+    brushRadiusY: Float,
+    imageWidth: Int,
+    imageHeight: Int
+): StrokeMask {
+    val safeBrushRadiusX = brushRadiusX.coerceAtLeast(1f)
+    val safeBrushRadiusY = brushRadiusY.coerceAtLeast(1f)
+    val minBrushX = brushPoints.minOf { it.x }
+    val maxBrushX = brushPoints.maxOf { it.x }
+    val minBrushY = brushPoints.minOf { it.y }
+    val maxBrushY = brushPoints.maxOf { it.y }
+
+    val localLeft = floor(
+        minOf(
+            hold.minX.toFloat(),
+            minBrushX - safeBrushRadiusX - 2f
+        ).coerceAtLeast(0f)
+    )
+    val localTop = floor(
+        minOf(
+            hold.minY.toFloat(),
+            minBrushY - safeBrushRadiusY - 2f
+        ).coerceAtLeast(0f)
+    )
+    val localRight = ceil(
+        maxOf(
+            hold.maxX.toFloat(),
+            maxBrushX + safeBrushRadiusX + 2f
+        ).coerceAtMost(imageWidth.toFloat())
+    )
+    val localBottom = ceil(
+        maxOf(
+            hold.maxY.toFloat(),
+            maxBrushY + safeBrushRadiusY + 2f
+        ).coerceAtMost(imageHeight.toFloat())
+    )
+
+    val usableWidth = (localRight - localLeft).toInt().coerceAtLeast(1)
+    val usableHeight = (localBottom - localTop).toInt().coerceAtLeast(1)
+    val maskWidth = usableWidth + 2
+    val maskHeight = usableHeight + 2
+
+    val holdMask = StrokeMask(
+        width = maskWidth,
+        height = maskHeight,
+        localLeft = localLeft,
+        localTop = localTop,
+        pixels = BooleanArray(maskWidth * maskHeight)
+    )
+    val brushMask = StrokeMask(
+        width = maskWidth,
+        height = maskHeight,
+        localLeft = localLeft,
+        localTop = localTop,
+        pixels = BooleanArray(maskWidth * maskHeight)
+    )
+
+    fillHoldPolygonOnMask(
+        mask = holdMask,
+        hold = hold
+    )
+    fillBrushStrokeOnMask(
+        mask = brushMask,
+        points = brushPoints,
+        radiusX = safeBrushRadiusX,
+        radiusY = safeBrushRadiusY
+    )
+
+    val editedPixels = BooleanArray(maskWidth * maskHeight) { index ->
+        when (editTool) {
+            HoldEditorTool.ADD -> holdMask.pixels[index]
+            HoldEditorTool.EXTEND -> holdMask.pixels[index] || brushMask.pixels[index]
+            HoldEditorTool.ERASE -> holdMask.pixels[index] && !brushMask.pixels[index]
+            HoldEditorTool.DELETE -> holdMask.pixels[index] && !brushMask.pixels[index]
+        }
+    }
+
+    return StrokeMask(
+        width = maskWidth,
+        height = maskHeight,
+        localLeft = localLeft,
+        localTop = localTop,
+        pixels = editedPixels
+    )
+}
+
+private fun fillHoldPolygonOnMask(
+    mask: StrokeMask,
+    hold: Hold
+) {
+    val polygon = hold.points.map { point ->
+        Offset(
+            x = point.x - mask.localLeft + 1f,
+            y = point.y - mask.localTop + 1f
+        )
+    }
+
+    for (y in 1 until mask.height - 1) {
+        for (x in 1 until mask.width - 1) {
+            if (isPointInsidePolygon(Offset(x + 0.5f, y + 0.5f), polygon)) {
+                mask.setFilled(x, y)
+            }
+        }
+    }
+}
+
+private fun fillBrushStrokeOnMask(
+    mask: StrokeMask,
+    points: List<Offset>,
+    radiusX: Float,
+    radiusY: Float
+) {
+    val densePoints = densifyStrokePoints(
+        points = points,
+        step = (minOf(radiusX, radiusY) * 0.45f).coerceAtLeast(2f)
+    )
+
+    densePoints.forEach { point ->
+        fillEllipseOnMask(
+            mask = mask,
+            centerX = point.x - mask.localLeft + 1f,
+            centerY = point.y - mask.localTop + 1f,
+            radiusX = radiusX,
+            radiusY = radiusY
+        )
+    }
+}
+
+private fun splitMaskIntoConnectedComponents(mask: StrokeMask): List<StrokeMask> {
+    val visited = BooleanArray(mask.width * mask.height)
+    val neighbors = listOf(
+        RasterPixel(-1, -1),
+        RasterPixel(0, -1),
+        RasterPixel(1, -1),
+        RasterPixel(-1, 0),
+        RasterPixel(1, 0),
+        RasterPixel(-1, 1),
+        RasterPixel(0, 1),
+        RasterPixel(1, 1)
+    )
+    val components = mutableListOf<StrokeMask>()
+
+    fun rawIndex(x: Int, y: Int): Int = y * mask.width + x
+
+    for (y in 1 until mask.height - 1) {
+        for (x in 1 until mask.width - 1) {
+            if (!mask.isFilled(x, y) || visited[rawIndex(x, y)]) continue
+
+            val queue = ArrayDeque<RasterPixel>()
+            val pixels = mutableListOf<RasterPixel>()
+            queue.add(RasterPixel(x, y))
+            visited[rawIndex(x, y)] = true
+
+            while (queue.isNotEmpty()) {
+                val current = queue.removeFirst()
+                pixels += current
+
+                neighbors.forEach { neighbor ->
+                    val nextX = current.x + neighbor.x
+                    val nextY = current.y + neighbor.y
+                    if (nextX !in 1 until mask.width - 1 || nextY !in 1 until mask.height - 1) {
+                        return@forEach
+                    }
+
+                    val nextIndex = rawIndex(nextX, nextY)
+                    if (!mask.isFilled(nextX, nextY) || visited[nextIndex]) return@forEach
+                    visited[nextIndex] = true
+                    queue.add(RasterPixel(nextX, nextY))
+                }
+            }
+
+            if (pixels.size < 4) continue
+
+            val minX = pixels.minOf { it.x }
+            val maxX = pixels.maxOf { it.x }
+            val minY = pixels.minOf { it.y }
+            val maxY = pixels.maxOf { it.y }
+            val componentWidth = (maxX - minX + 1) + 2
+            val componentHeight = (maxY - minY + 1) + 2
+            val componentMask = StrokeMask(
+                width = componentWidth,
+                height = componentHeight,
+                localLeft = mask.localLeft + (minX - 1),
+                localTop = mask.localTop + (minY - 1),
+                pixels = BooleanArray(componentWidth * componentHeight)
+            )
+
+            pixels.forEach { pixel ->
+                componentMask.setFilled(
+                    x = pixel.x - minX + 1,
+                    y = pixel.y - minY + 1
+                )
+            }
+
+            components += componentMask
+        }
+    }
+
+    return components
+}
+
 private fun traceBoundaryPixels(mask: StrokeMask): List<RasterPixel>? {
     val start = findFirstBoundaryPixel(mask) ?: return null
     val directions = listOf(
@@ -481,6 +689,74 @@ internal fun createManualHoldFromBrushPoints(
             imageHeight = imageHeight
         )
     )
+}
+
+internal fun editExistingHoldWithBrushPoints(
+    hold: Hold,
+    editTool: HoldEditorTool,
+    points: List<Offset>,
+    brushRadiusXLocal: Float,
+    brushRadiusYLocal: Float,
+    baseLayout: BaseImageLayout,
+    imageWidth: Int,
+    imageHeight: Int
+): List<Hold> {
+    if (!baseLayout.isValid || points.isEmpty()) return listOf(hold)
+
+    val brushPointsInImageSpace = points.map { point ->
+        Offset(
+            x = (point.x / baseLayout.fitScale).coerceIn(0f, imageWidth.toFloat()),
+            y = (point.y / baseLayout.fitScale).coerceIn(0f, imageHeight.toFloat())
+        )
+    }
+    val brushRadiusXImage = (brushRadiusXLocal / baseLayout.fitScale).coerceAtLeast(1f)
+    val brushRadiusYImage = (brushRadiusYLocal / baseLayout.fitScale).coerceAtLeast(1f)
+    val editedMask = buildEditedHoldMask(
+        hold = hold,
+        editTool = editTool,
+        brushPoints = brushPointsInImageSpace,
+        brushRadiusX = brushRadiusXImage,
+        brushRadiusY = brushRadiusYImage,
+        imageWidth = imageWidth,
+        imageHeight = imageHeight
+    )
+    val imageSpaceLayout = BaseImageLayout(
+        left = 0f,
+        top = 0f,
+        drawWidth = imageWidth.toFloat(),
+        drawHeight = imageHeight.toFloat(),
+        fitScale = 1f
+    )
+
+    return splitMaskIntoConnectedComponents(editedMask)
+        .sortedWith(compareBy<StrokeMask> { it.localTop }.thenBy { it.localLeft })
+        .mapNotNull { componentMask ->
+            val boundaryPixels = traceBoundaryPixels(componentMask) ?: return@mapNotNull null
+            val contourPoints = boundaryPixels.map { pixel ->
+                Offset(
+                    x = componentMask.localLeft + (pixel.x - 1) + 0.5f,
+                    y = componentMask.localTop + (pixel.y - 1) + 0.5f
+                )
+            }
+            val thinnedPoints = thinBoundaryPoints(
+                points = contourPoints,
+                minDistance = 1.5f
+            )
+            if (thinnedPoints.size < 3) {
+                null
+            } else {
+                localPolygonToHold(
+                    polygon = LocalHoldPolygon(thinnedPoints),
+                    baseLayout = imageSpaceLayout,
+                    imageWidth = imageWidth,
+                    imageHeight = imageHeight
+                ).copy(
+                    difficultyScore = hold.difficultyScore,
+                    isStartCandidate = hold.isStartCandidate,
+                    isGoalCandidate = hold.isGoalCandidate
+                )
+            }
+        }
 }
 
 internal fun localPolygonToHold(

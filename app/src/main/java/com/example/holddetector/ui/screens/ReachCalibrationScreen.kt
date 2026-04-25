@@ -14,16 +14,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -42,7 +37,6 @@ import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.ReachCalibrationCanvasScreen
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.model.HoldPoint
 
 @Composable
@@ -56,10 +50,8 @@ fun ReachCalibrationScreen(
     onClearReachCalibration: () -> Unit,
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     onContinueToHoldEditor: () -> Unit,
-    onContinueToAutoExtraction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showRegistrationMethodDialog by rememberSaveable { mutableStateOf(false) }
     val bitmap = state.capturedBitmap
     val isEditingExistingWall = state.currentWallId != null
     val referenceLengthText = state.reachCalibrationLengthInput
@@ -220,7 +212,7 @@ fun ReachCalibrationScreen(
                         }
                     } else {
                         AppButton(
-                            onClick = { showRegistrationMethodDialog = true },
+                            onClick = onContinueToHoldEditor,
                             enabled = canContinue,
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -229,51 +221,5 @@ fun ReachCalibrationScreen(
                     }
                 }
             }
-    }
-
-    if (showRegistrationMethodDialog) {
-        AlertDialog(
-            onDismissRequest = { showRegistrationMethodDialog = false },
-            title = {
-                Text(text = stringResource(R.string.registration_method_title))
-            },
-            text = {
-                Column {
-                    Text(text = stringResource(R.string.registration_method_description))
-
-                    AppButton(
-                        onClick = {
-                            showRegistrationMethodDialog = false
-                            onContinueToHoldEditor()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
-                    ) {
-                        Text(stringResource(R.string.registration_method_manual))
-                    }
-
-                    AppButton(
-                        onClick = {
-                            showRegistrationMethodDialog = false
-                            onContinueToAutoExtraction()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp)
-                    ) {
-                        Text(stringResource(R.string.registration_method_auto))
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(
-                    onClick = { showRegistrationMethodDialog = false }
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
     }
 }

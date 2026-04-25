@@ -25,6 +25,7 @@ import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.ui.AppScreen
 import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppBusyOverlayColor
+import com.example.holddetector.ui.HoldEditorTool
 import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.components.AppButton
@@ -43,7 +44,8 @@ fun HoldDetectorApp(
     onDeleteSavedWall: (String) -> Unit,
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,
-    onApplyCapturedImageCrop: (Float, Float, Float, Float) -> Unit,
+    onApplyCapturedImageCropManual: (Float, Float, Float, Float) -> Unit,
+    onApplyCapturedImageCropAuto: (Float, Float, Float, Float) -> Unit,
     onOpenManualHoldRegistrationAfterCapture: () -> Unit,
     onOpenAutoHoldExtractionAfterCapture: () -> Unit,
     onBackToCameraFromHoldRegistrationMethod: () -> Unit,
@@ -56,23 +58,24 @@ fun HoldDetectorApp(
     onAutoExtractionTuningChange: (AutoExtractionTuning) -> Unit,
     onApplyAutoExtractedHoldsAndContinue: () -> Unit,
     onBackToList: () -> Unit,
+    onReturnToList: () -> Unit,
     onSaveWall: () -> Unit,
-    onOpenHoldAttributeEditor: () -> Unit,
+    onOpenReachCalibrationScreen: () -> Unit,
     onBackFromHoldAttributeEditor: () -> Unit,
     onOpenHoldScoring: () -> Unit,
     onBackFromHoldScoring: () -> Unit,
     onDifficultyScoreSelected: (Int) -> Unit,
     onSaveWallAndOpenChallenge: () -> Unit,
     onHoldTapAreaSizeChange: (HoldTapAreaSize) -> Unit,
+    onOpenHoldEditOperation: (HoldEditorTool) -> Unit,
     onDeleteSelectedHold: () -> Unit,
     onEditorHoldTapped: (Int?) -> Unit,
     onAssignHoldAsStartCandidate: (Int?) -> Unit,
     onAssignHoldAsGoalCandidate: (Int?) -> Unit,
     onClearHoldAttributes: (Int?) -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
-    onManualHoldCreated: (Hold) -> Unit,
+    onApplyEditedHoldsAndReturn: (List<Hold>, Int?) -> Unit,
     onContinueToHoldEditorFromReachCalibration: () -> Unit,
-    onContinueToAutoExtractionFromReachCalibration: () -> Unit,
     onBackFromReachCalibration: () -> Unit,
     onStartReachCalibrationSelection: () -> Unit,
     onReachCalibrationLengthInputChange: (String) -> Unit,
@@ -157,7 +160,8 @@ fun HoldDetectorApp(
                     ImageCropScreen(
                         bitmap = state.capturedBitmap,
                         message = state.message,
-                        onApplyCrop = onApplyCapturedImageCrop,
+                        onApplyCropManual = onApplyCapturedImageCropManual,
+                        onApplyCropAuto = onApplyCapturedImageCropAuto,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -202,7 +206,6 @@ fun HoldDetectorApp(
                         onClearReachCalibration = onClearReachCalibration,
                         onReachCalibrationPointSelected = onReachCalibrationPointSelected,
                         onContinueToHoldEditor = onContinueToHoldEditorFromReachCalibration,
-                        onContinueToAutoExtraction = onContinueToAutoExtractionFromReachCalibration,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -210,13 +213,21 @@ fun HoldDetectorApp(
                 AppScreen.HOLD_EDITOR -> {
                     HoldEditorScreen(
                         state = state,
+                        onReturnToList = onReturnToList,
+                        onOpenHoldEditOperation = onOpenHoldEditOperation,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                AppScreen.HOLD_EDIT_OPERATION -> {
+                    HoldEditOperationScreen(
+                        mode = state.holdEditorTool,
+                        bitmap = state.capturedBitmap,
+                        initialHolds = state.holds,
+                        initialSelectedIndex = state.selectedHoldIndex,
+                        holdTapAreaSize = state.holdTapAreaSize,
                         onHoldTapAreaSizeChange = onHoldTapAreaSizeChange,
-                        onSaveWall = onSaveWall,
-                        onOpenHoldAttributeEditor = onOpenHoldAttributeEditor,
-                        onBackToList = onBackToList,
-                        onDeleteSelectedHold = onDeleteSelectedHold,
-                        onEditorHoldTapped = onEditorHoldTapped,
-                        onManualHoldCreated = onManualHoldCreated,
+                        onConfirm = onApplyEditedHoldsAndReturn,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -84,10 +83,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                val primaryColor = MaterialTheme.colorScheme.primary
-
                 SideEffect {
-                    window.statusBarColor = primaryColor.toArgb()
                     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
                 }
 
@@ -112,7 +108,8 @@ class MainActivity : ComponentActivity() {
                         onDeleteSavedWall = viewModel::deleteSavedWall,
                         onTakePhoto = ::launchSystemCamera,
                         onPickPhoto = ::launchPhotoPicker,
-                        onApplyCapturedImageCrop = viewModel::applyCapturedImageCrop,
+                        onApplyCapturedImageCropManual = viewModel::applyCapturedImageCropAndOpenManual,
+                        onApplyCapturedImageCropAuto = viewModel::applyCapturedImageCropAndOpenAuto,
                         onOpenManualHoldRegistrationAfterCapture = viewModel::openManualHoldRegistrationAfterCapture,
                         onOpenAutoHoldExtractionAfterCapture = viewModel::openAutoHoldExtractionAfterCapture,
                         onBackToCameraFromHoldRegistrationMethod = viewModel::requestBackToList,
@@ -125,23 +122,24 @@ class MainActivity : ComponentActivity() {
                         onAutoExtractionTuningChange = viewModel::onAutoExtractionTuningChanged,
                         onApplyAutoExtractedHoldsAndContinue = viewModel::applyAutoExtractedHoldsAndContinue,
                         onBackToList = viewModel::requestBackToList,
+                        onReturnToList = viewModel::requestReturnToList,
                         onSaveWall = viewModel::saveWallAndReturnToList,
-                        onOpenHoldAttributeEditor = viewModel::openHoldAttributeEditor,
+                        onOpenReachCalibrationScreen = viewModel::openReachCalibrationScreen,
                         onBackFromHoldAttributeEditor = viewModel::returnToHoldEditorFromAttributeEditor,
                         onOpenHoldScoring = viewModel::openHoldScoring,
                         onBackFromHoldScoring = viewModel::returnToHoldAttributeEditorFromScoring,
                         onDifficultyScoreSelected = viewModel::setCurrentHoldDifficultyScore,
                         onSaveWallAndOpenChallenge = viewModel::saveWallAndOpenChallenge,
                         onHoldTapAreaSizeChange = viewModel::onHoldTapAreaSizeChanged,
+                        onOpenHoldEditOperation = viewModel::openHoldEditOperation,
                         onDeleteSelectedHold = viewModel::removeSelectedHold,
                         onEditorHoldTapped = viewModel::onEditorHoldTapped,
                         onAssignHoldAsStartCandidate = viewModel::assignHoldAsStartCandidate,
                         onAssignHoldAsGoalCandidate = viewModel::assignHoldAsGoalCandidate,
                         onClearHoldAttributes = viewModel::clearHoldAttributes,
                         onChallengeHoldTapped = viewModel::onChallengeHoldTapped,
-                        onManualHoldCreated = viewModel::addManualHold,
+                        onApplyEditedHoldsAndReturn = viewModel::applyEditedHoldsAndReturnToHoldEditor,
                         onContinueToHoldEditorFromReachCalibration = viewModel::continueToHoldEditorFromReachCalibration,
-                        onContinueToAutoExtractionFromReachCalibration = viewModel::continueToAutoHoldExtractionFromReachCalibration,
                         onBackFromReachCalibration = viewModel::backFromReachCalibration,
                         onStartReachCalibrationSelection = viewModel::startReachCalibrationSelection,
                         onReachCalibrationLengthInputChange = viewModel::onReachCalibrationLengthInputChanged,
