@@ -751,6 +751,7 @@ private fun ChallengeCanvasSection(
                 coreChallengeHoldIndex = uiModel.coreChallengeHoldIndex,
                 routeSelectionMode = state.routeSelectionMode,
                 isDrawTargetSelectionMode = state.isDrawTargetSelectionMode,
+                displayColorSettings = state.displayColorSettings,
                 onHoldTapped = onChallengeHoldTapped,
                 onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                 modifier = Modifier.fillMaxSize()

@@ -12,6 +12,7 @@ import com.example.holddetector.domain.hold.buildHoldScoringOrder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.holddetector.R
+import com.example.holddetector.data.DisplayColorSettingsRepository
 import com.example.holddetector.data.WallStorageRepository
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
@@ -39,10 +40,16 @@ private enum class PostCropDestination {
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = WallStorageRepository(application.applicationContext)
+    private val displayColorSettingsRepository =
+        DisplayColorSettingsRepository(application.applicationContext)
     private val appContext = application.applicationContext
     private var autoExtractionRequestId = 0L
 
-    private val _uiState = MutableStateFlow(MainUiState())
+    private val _uiState = MutableStateFlow(
+        MainUiState(
+            displayColorSettings = displayColorSettingsRepository.load()
+        )
+    )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
     init {
@@ -69,6 +76,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             savedWalls = _uiState.value.savedWalls,
             drawCountInput = _uiState.value.drawCountInput,
             holdTapAreaSize = _uiState.value.holdTapAreaSize,
+            displayColorSettings = _uiState.value.displayColorSettings,
             challengeDifficultyScoreMin = _uiState.value.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = _uiState.value.challengeDifficultyScoreMax,
             autoExtractionTuning = _uiState.value.autoExtractionTuning,
@@ -399,6 +407,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 text(R.string.message_reach_confirm)
             }
         )
+    }
+
+    fun openDisplayColorSettings() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            currentScreen = AppScreen.DISPLAY_COLOR_SETTINGS,
+            screenBackStack = pushedScreenBackStack(
+                state = state,
+                targetScreen = AppScreen.DISPLAY_COLOR_SETTINGS
+            ),
+            message = null
+        )
+    }
+
+    fun updateDisplayColor(target: DisplayColorTarget, color: EditableRgbColor) {
+        val normalized = EditableRgbColor(
+            red = color.normalizedRed,
+            green = color.normalizedGreen,
+            blue = color.normalizedBlue
+        )
+        val state = _uiState.value
+        val updatedSettings = when (target) {
+            DisplayColorTarget.HOLD_OUTLINE -> state.displayColorSettings.copy(holdOutline = normalized)
+            DisplayColorTarget.SELECTED_HOLD -> state.displayColorSettings.copy(selectedHold = normalized)
+            DisplayColorTarget.RANGE_SELECTION -> state.displayColorSettings.copy(rangeSelection = normalized)
+        }
+        if (updatedSettings == state.displayColorSettings) return
+
+        _uiState.value = state.copy(displayColorSettings = updatedSettings)
+        viewModelScope.launch(Dispatchers.IO) {
+            displayColorSettingsRepository.save(updatedSettings)
+        }
+    }
+
+    fun resetDisplayColorSettings() {
+        val defaults = DisplayColorSettings()
+        _uiState.value = _uiState.value.copy(displayColorSettings = defaults)
+        viewModelScope.launch(Dispatchers.IO) {
+            displayColorSettingsRepository.save(defaults)
+        }
     }
 
     fun continueToHoldEditorFromReachCalibration() {
@@ -1657,6 +1705,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             savedWalls = savedWalls,
             drawCountInput = source.drawCountInput,
             holdTapAreaSize = source.holdTapAreaSize,
+            displayColorSettings = source.displayColorSettings,
             challengeDifficultyScoreMin = source.challengeDifficultyScoreMin,
             challengeDifficultyScoreMax = source.challengeDifficultyScoreMax,
             autoExtractionTuning = source.autoExtractionTuning,

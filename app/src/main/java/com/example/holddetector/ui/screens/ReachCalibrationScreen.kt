@@ -146,6 +146,7 @@ fun ReachCalibrationScreen(
                             reachCalibrationReference = state.reachCalibrationReference,
                             pendingReachCalibrationPoint = state.pendingReachCalibrationPoint,
                             isReachCalibrationSelectionMode = state.isReachCalibrationSelectionMode,
+                            displayColorSettings = state.displayColorSettings,
                             onReachCalibrationPointSelected = onReachCalibrationPointSelected,
                             modifier = Modifier.fillMaxSize()
                         )

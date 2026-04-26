@@ -36,6 +36,7 @@ import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppTextColor
+import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.canvas.AutoExtractionCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
@@ -49,6 +50,7 @@ fun AutoHoldExtractionScreen(
     selectedHoldIndex: Int?,
     wallSamplePoints: List<HoldPoint>,
     isWallSamplingMode: Boolean,
+    displayColorSettings: DisplayColorSettings,
     onHoldTapped: (Int?) -> Unit,
     onStartWallSampling: () -> Unit,
     onStopWallSampling: () -> Unit,
@@ -188,6 +190,7 @@ fun AutoHoldExtractionScreen(
                     selectedIndex = selectedHoldIndex,
                     wallSamplePoints = wallSamplePoints,
                     isWallSamplingMode = isWallSamplingMode,
+                    displayColorSettings = displayColorSettings,
                     onHoldTapped = onHoldTapped,
                     onWallSamplePointSelected = onWallSamplePointSelected,
                     modifier = Modifier.fillMaxSize()

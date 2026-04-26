@@ -15,6 +15,7 @@ import com.example.holddetector.model.SavedWallSummary
 
 enum class AppScreen {
     LIST,
+    DISPLAY_COLOR_SETTINGS,
     CAMERA,
     IMAGE_CROP,
     HOLD_REGISTRATION_METHOD,
@@ -95,6 +96,7 @@ data class MainUiState(
     val drawCountInput: String = "10",
     val holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     val holdEditorTool: HoldEditorTool = HoldEditorTool.ADD,
+    val displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     val challengeDifficultyScoreMin: Int = MIN_HOLD_DIFFICULTY_SCORE,
     val challengeDifficultyScoreMax: Int = DEFAULT_HOLD_DIFFICULTY_SCORE.coerceAtMost(MAX_HOLD_DIFFICULTY_SCORE),
     val routeTuning: RouteGenerationTuning = RouteGenerationTuning(),

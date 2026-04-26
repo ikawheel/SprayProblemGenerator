@@ -108,6 +108,7 @@ fun HoldScoringScreen(
                             bitmap = bitmap,
                             holds = state.holds,
                             currentHoldIndex = uiModel.currentHoldIndex,
+                            displayColorSettings = state.displayColorSettings,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

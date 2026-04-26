@@ -36,11 +36,13 @@ import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
 fun HoldEditorScreen(
     state: MainUiState,
     onReturnToList: () -> Unit,
+    onOpenReachCalibration: () -> Unit,
     onOpenHoldEditOperation: (HoldEditorTool) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
     val uiModel = deriveHoldEditorUiModel(state)
+    val isEditingExistingWall = state.currentWallId != null
 
     Column(
         modifier = modifier
@@ -103,6 +105,7 @@ fun HoldEditorScreen(
                         reachCalibrationReference = null,
                         pendingReachCalibrationPoint = null,
                         isReachCalibrationSelectionMode = false,
+                        displayColorSettings = state.displayColorSettings,
                         holdTapAreaSize = state.holdTapAreaSize,
                         holdEditorTool = HoldEditorTool.ADD,
                         isSelectionOnly = true,
@@ -122,14 +125,6 @@ fun HoldEditorScreen(
             }
 
             AppButton(
-                onClick = { onOpenHoldEditOperation(HoldEditorTool.EXTEND) },
-                enabled = state.holds.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.hold_editor_tool_extend))
-            }
-
-            AppButton(
                 onClick = { onOpenHoldEditOperation(HoldEditorTool.ERASE) },
                 enabled = state.holds.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth()
@@ -145,11 +140,20 @@ fun HoldEditorScreen(
                 Text(stringResource(R.string.hold_editor_tool_delete))
             }
 
-            AppOutlinedButton(
-                onClick = onReturnToList,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.back_to_list))
+            if (isEditingExistingWall) {
+                AppOutlinedButton(
+                    onClick = onReturnToList,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.back_to_list))
+                }
+            } else {
+                AppButton(
+                    onClick = onOpenReachCalibration,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.open_reach_calibration))
+                }
             }
         }
     }

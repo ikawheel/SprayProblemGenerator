@@ -49,6 +49,7 @@ import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppCoreLabelBackgroundColor
+import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.AppOverlayStrokePreviewColor
 import com.example.holddetector.ui.AppStartGoalLabelBackgroundColor
 import com.example.holddetector.ui.DefaultHoldStrokeWidth
@@ -84,6 +85,7 @@ fun ReachCalibrationCanvasScreen(
     reachCalibrationReference: ReachCalibrationReference?,
     pendingReachCalibrationPoint: HoldPoint?,
     isReachCalibrationSelectionMode: Boolean,
+    displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -99,6 +101,7 @@ fun ReachCalibrationCanvasScreen(
         reachCalibrationReference = reachCalibrationReference,
         pendingReachCalibrationPoint = pendingReachCalibrationPoint,
         isReachCalibrationSelectionMode = isReachCalibrationSelectionMode,
+        displayColorSettings = displayColorSettings,
         isDrawTargetSelectionMode = false,
         mode = CanvasMode.REACH_CALIBRATION,
         onHoldTapped = {},
@@ -124,6 +127,7 @@ fun HoldCanvasScreen(
     reachCalibrationReference: ReachCalibrationReference?,
     pendingReachCalibrationPoint: HoldPoint?,
     isReachCalibrationSelectionMode: Boolean,
+    displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     holdEditorTool: HoldEditorTool = HoldEditorTool.ADD,
     isSelectionOnly: Boolean = false,
@@ -149,6 +153,7 @@ fun HoldCanvasScreen(
         reachCalibrationReference = reachCalibrationReference,
         pendingReachCalibrationPoint = pendingReachCalibrationPoint,
         isReachCalibrationSelectionMode = isReachCalibrationSelectionMode,
+        displayColorSettings = displayColorSettings,
         holdTapAreaSize = holdTapAreaSize,
         holdEditorTool = holdEditorTool,
         isSelectionOnly = isSelectionOnly,
@@ -170,6 +175,7 @@ fun HoldAttributeCanvasScreen(
     selectedIndex: Int?,
     startCandidateHoldIndices: Set<Int>,
     goalCandidateHoldIndices: Set<Int>,
+    displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onHoldTapped: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -187,6 +193,7 @@ fun HoldAttributeCanvasScreen(
         reachCalibrationReference = null,
         pendingReachCalibrationPoint = null,
         isReachCalibrationSelectionMode = false,
+        displayColorSettings = displayColorSettings,
         isDrawTargetSelectionMode = false,
         mode = CanvasMode.HOLD_ATTRIBUTE_EDITOR,
         onHoldTapped = onHoldTapped,
@@ -204,6 +211,7 @@ fun AutoExtractionCanvasScreen(
     selectedIndex: Int?,
     wallSamplePoints: List<HoldPoint>,
     isWallSamplingMode: Boolean,
+    displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onHoldTapped: (Int?) -> Unit,
     onWallSamplePointSelected: (HoldPoint) -> Unit,
     modifier: Modifier = Modifier
@@ -222,6 +230,7 @@ fun AutoExtractionCanvasScreen(
         reachCalibrationReference = null,
         pendingReachCalibrationPoint = null,
         isReachCalibrationSelectionMode = false,
+        displayColorSettings = displayColorSettings,
         wallColorSamplePoints = wallSamplePoints,
         isWallColorSamplingMode = isWallSamplingMode,
         isDrawTargetSelectionMode = false,
@@ -249,6 +258,7 @@ fun ChallengeCanvasScreen(
     coreChallengeHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
     isDrawTargetSelectionMode: Boolean,
+    displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     modifier: Modifier = Modifier
@@ -268,6 +278,7 @@ fun ChallengeCanvasScreen(
         reachCalibrationReference = null,
         pendingReachCalibrationPoint = null,
         isReachCalibrationSelectionMode = false,
+        displayColorSettings = displayColorSettings,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.CHALLENGE,
         onHoldTapped = onHoldTapped,
@@ -283,6 +294,7 @@ fun HoldScoringCanvasScreen(
     bitmap: Bitmap,
     holds: List<Hold>,
     currentHoldIndex: Int?,
+    displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     modifier: Modifier = Modifier
 ) {
     InteractiveCapturedImage(
@@ -298,6 +310,7 @@ fun HoldScoringCanvasScreen(
         reachCalibrationReference = null,
         pendingReachCalibrationPoint = null,
         isReachCalibrationSelectionMode = false,
+        displayColorSettings = displayColorSettings,
         isDrawTargetSelectionMode = false,
         focusHoldIndex = currentHoldIndex,
         mode = CanvasMode.SCORING,
@@ -328,6 +341,7 @@ private fun InteractiveCapturedImage(
     reachCalibrationReference: ReachCalibrationReference? = null,
     pendingReachCalibrationPoint: HoldPoint? = null,
     isReachCalibrationSelectionMode: Boolean = false,
+    displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     wallColorSamplePoints: List<HoldPoint> = emptyList(),
     isWallColorSamplingMode: Boolean = false,
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
@@ -381,6 +395,9 @@ private fun InteractiveCapturedImage(
     }
     val startMarkerLabel = stringResource(R.string.challenge_start_marker)
     val goalMarkerLabel = stringResource(R.string.challenge_goal_marker)
+    val holdOutlineColor = displayColorSettings.holdOutlineColor
+    val selectedHoldColor = displayColorSettings.selectedHoldColor
+    val rangeSelectionColor = displayColorSettings.rangeSelectionColor
 
     val baseLayout = remember(bitmap.width, bitmap.height, containerSize) {
         calculateBaseImageLayout(
@@ -782,10 +799,7 @@ private fun InteractiveCapturedImage(
 
                     var movedEnough = false
                     var multiTouchDetected = false
-                    var editorTargetIndex = if (
-                        mode == CanvasMode.HOLD_EDITOR &&
-                        holdEditorTool != HoldEditorTool.ADD
-                    ) {
+                    var editorTargetIndex = if (mode == CanvasMode.HOLD_EDITOR) {
                         findTappedIndexFromLocal(
                             localPoint = startLocal,
                             holds = holds,
@@ -846,11 +860,7 @@ private fun InteractiveCapturedImage(
                                 brushRadiusY = brushRadiusYLocal,
                                 baseLayout = baseLayout
                             )
-                            if (
-                                mode == CanvasMode.HOLD_EDITOR &&
-                                holdEditorTool != HoldEditorTool.ADD &&
-                                editorTargetIndex == null
-                            ) {
+                            if (mode == CanvasMode.HOLD_EDITOR && editorTargetIndex == null) {
                                 editorTargetIndex = findTappedIndexFromLocal(
                                     localPoint = currentLocal,
                                     holds = holds,
@@ -869,10 +879,7 @@ private fun InteractiveCapturedImage(
                                 baseLayout = baseLayout,
                                 holds = holds.toList()
                             )
-                        } else if (
-                            mode == CanvasMode.HOLD_EDITOR &&
-                            holdEditorTool != HoldEditorTool.ADD
-                        ) {
+                        } else if (mode == CanvasMode.HOLD_EDITOR) {
                             val appliedPoints = if (movedEnough) {
                                 gestureStrokePoints.toList()
                             } else {
@@ -905,13 +912,39 @@ private fun InteractiveCapturedImage(
                                 ?.takeIf { it.size == 1 }
                                 ?.firstOrNull()
                             val targetHold = targetIndex?.let(holds::getOrNull)
-                            if (targetIndex != null && targetHold != null) {
+                            if (holdEditorTool == HoldEditorTool.ADD && targetIndex == null) {
+                                if (movedEnough) {
+                                    createManualHoldFromBrushPoints(
+                                        points = appliedPoints,
+                                        brushRadiusX = appliedRadiusX,
+                                        brushRadiusY = appliedRadiusY,
+                                        baseLayout = baseLayout,
+                                        imageWidth = bitmap.width,
+                                        imageHeight = bitmap.height,
+                                        onManualHoldCreated = onManualHoldCreated
+                                    )
+                                } else {
+                                    createTapHoldFromLocalPoint(
+                                        localPoint = startLocal,
+                                        localRadiusX = appliedRadiusX,
+                                        localRadiusY = appliedRadiusY,
+                                        baseLayout = baseLayout,
+                                        imageWidth = bitmap.width,
+                                        imageHeight = bitmap.height,
+                                        onManualHoldCreated = onManualHoldCreated
+                                    )
+                                }
+                            } else if (targetIndex != null && targetHold != null) {
                                 val replacementHolds = if (holdEditorTool == HoldEditorTool.DELETE) {
                                     emptyList()
                                 } else {
                                     editExistingHoldWithBrushPoints(
                                         hold = targetHold,
-                                        editTool = holdEditorTool,
+                                        editTool = if (holdEditorTool == HoldEditorTool.ADD) {
+                                            HoldEditorTool.EXTEND
+                                        } else {
+                                            holdEditorTool
+                                        },
                                         points = appliedPoints,
                                         brushRadiusXLocal = appliedRadiusX,
                                         brushRadiusYLocal = appliedRadiusY,
@@ -1075,12 +1108,13 @@ private fun InteractiveCapturedImage(
 
                         val polygon = hold.toLocalPolygon(baseLayout)
                         val strokeColor = when {
-                            mode == CanvasMode.SCORING -> Color(0xFFDC2626)
+                            mode == CanvasMode.SCORING -> selectedHoldColor
                             index == startHoldIndex -> Color(0xFF0284C7)
                             index == goalHoldIndex -> Color(0xFFCA8A04)
-                            index == selectedIndex -> Color.Red
+                            index == selectedIndex -> selectedHoldColor
                             challengeHoldIndices.contains(index) -> Color.Yellow
-                            else -> Color.Green
+                            selectionCandidateIndices.contains(index) -> rangeSelectionColor
+                            else -> holdOutlineColor
                         }
 
                         drawPath(
@@ -1142,7 +1176,11 @@ private fun InteractiveCapturedImage(
                     ) {
                         draftStrokePoints.forEach { point ->
                             drawOval(
-                                color = AppOverlayStrokePreviewColor,
+                                color = if (mode == CanvasMode.CHALLENGE) {
+                                    rangeSelectionColor.copy(alpha = 0.22f)
+                                } else {
+                                    AppOverlayStrokePreviewColor
+                                },
                                 topLeft = Offset(point.x - brushRadiusXLocal, point.y - brushRadiusYLocal),
                                 size = Size(
                                     brushRadiusXLocal * 2f,
@@ -1154,7 +1192,11 @@ private fun InteractiveCapturedImage(
                         draftPreviewPolygon?.let { polygon ->
                             drawPath(
                                 path = polygon.toPath(),
-                                color = Color.Cyan,
+                                color = if (mode == CanvasMode.CHALLENGE) {
+                                    rangeSelectionColor
+                                } else {
+                                    holdOutlineColor
+                                },
                                 style = Stroke(width = 1f)
                             )
                         }

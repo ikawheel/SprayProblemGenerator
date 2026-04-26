@@ -143,6 +143,7 @@ fun HoldAttributeEditorScreen(
                             selectedIndex = state.selectedHoldIndex,
                             startCandidateHoldIndices = startCandidateIndices,
                             goalCandidateHoldIndices = goalCandidateIndices,
+                            displayColorSettings = state.displayColorSettings,
                             onHoldTapped = { index ->
                                 when (editMode) {
                                     HoldAttributeEditMode.START -> onAssignHoldAsStartCandidate(index)

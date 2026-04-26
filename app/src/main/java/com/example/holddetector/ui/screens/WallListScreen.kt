@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +46,7 @@ import com.example.holddetector.ui.selectors.formatWallTimestamp
 @Composable
 fun WallListScreen(
     savedWalls: List<SavedWallSummary>,
+    onOpenMenu: () -> Unit,
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,
     onOpenSavedWallForReachCalibration: (String) -> Unit,
@@ -63,12 +65,27 @@ fun WallListScreen(
     val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.wall_list_title),
-            color = AppTextColor,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onOpenMenu) {
+                Text(
+                    text = "\u2630",
+                    color = AppTextColor,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Text(
+                text = stringResource(R.string.wall_list_title),
+                color = AppTextColor,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         Text(
             text = stringResource(R.string.wall_list_description),

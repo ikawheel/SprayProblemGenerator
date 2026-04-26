@@ -36,6 +36,7 @@ import com.example.holddetector.ui.RouteSelectionMode
 import com.example.holddetector.ui.canvas.HoldCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.DisplayColorSettings
 
 private data class HoldEditOperationSnapshot(
     val holds: List<Hold>,
@@ -49,6 +50,7 @@ fun HoldEditOperationScreen(
     initialHolds: List<Hold>,
     initialSelectedIndex: Int?,
     holdTapAreaSize: HoldTapAreaSize,
+    displayColorSettings: DisplayColorSettings,
     onHoldTapAreaSizeChange: (HoldTapAreaSize) -> Unit,
     onConfirm: (List<Hold>, Int?) -> Unit,
     modifier: Modifier = Modifier
@@ -126,6 +128,7 @@ fun HoldEditOperationScreen(
                     reachCalibrationReference = null,
                     pendingReachCalibrationPoint = null,
                     isReachCalibrationSelectionMode = false,
+                    displayColorSettings = displayColorSettings,
                     holdTapAreaSize = holdTapAreaSize,
                     holdEditorTool = mode,
                     isSelectionOnly = isDeleteMode,
