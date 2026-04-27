@@ -19,7 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
@@ -51,6 +50,8 @@ import com.example.holddetector.ui.ChallengeGenerationMethod
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.canvas.ChallengeCanvasScreen
 import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppContentDialog
+import com.example.holddetector.ui.components.AppMessageDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.selectors.DrawTargetStatus
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
@@ -179,30 +180,20 @@ fun ChallengeCreatorScreen(
     }
 
     if (isTuningDialogOpen) {
-        AlertDialog(
+        AppContentDialog(
+            title = stringResource(R.string.challenge_tuning_title),
             onDismissRequest = { isTuningDialogOpen = false },
-            title = {
-                Text(stringResource(R.string.challenge_tuning_title))
-            },
-            text = {
-                Column {
-                    ChallengeTuningControls(
-                        state = state,
-                        onDetourStrengthChange = onDetourStrengthChange,
-                        onRouteWavinessChange = onRouteWavinessChange,
-                        onStepDistanceVarianceChange = onStepDistanceVarianceChange,
-                        onCorridorWidthChange = onCorridorWidthChange,
-                        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
-                    )
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(onClick = { isTuningDialogOpen = false }) {
-                    Text(stringResource(R.string.close))
-                }
-            }
-        )
+            dismissText = stringResource(R.string.close)
+        ) {
+            ChallengeTuningControls(
+                state = state,
+                onDetourStrengthChange = onDetourStrengthChange,
+                onRouteWavinessChange = onRouteWavinessChange,
+                onStepDistanceVarianceChange = onStepDistanceVarianceChange,
+                onCorridorWidthChange = onCorridorWidthChange,
+                onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
+            )
+        }
     }
 }
 
@@ -639,24 +630,14 @@ private fun ChallengeTuningControls(
     }
 
     if (helpDialogTitle != null && helpDialogBody != null) {
-        AlertDialog(
+        AppMessageDialog(
+            title = helpDialogTitle!!,
+            message = helpDialogBody!!,
             onDismissRequest = {
                 helpDialogTitle = null
                 helpDialogBody = null
             },
-            title = { Text(helpDialogTitle!!) },
-            text = { Text(helpDialogBody!!) },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(
-                    onClick = {
-                        helpDialogTitle = null
-                        helpDialogBody = null
-                    }
-                ) {
-                    Text(stringResource(R.string.close))
-                }
-            }
+            dismissText = stringResource(R.string.close)
         )
     }
 }

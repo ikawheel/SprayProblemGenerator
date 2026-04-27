@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +40,7 @@ import com.example.holddetector.ui.HoldEditorTool
 import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.AppConfirmDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -386,20 +385,13 @@ fun HoldDetectorApp(
     }
 
     if (state.showDiscardDialog) {
-        AlertDialog(
-            onDismissRequest = onDismissDiscardDialog,
-            title = { Text(stringResource(R.string.back_to_list)) },
-            text = { Text(stringResource(R.string.discard_dialog_message)) },
-            confirmButton = {
-                AppButton(onClick = onDiscardChanges) {
-                    Text(stringResource(R.string.discard_dialog_confirm))
-                }
-            },
-            dismissButton = {
-                AppOutlinedButton(onClick = onDismissDiscardDialog) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+        AppConfirmDialog(
+            title = stringResource(R.string.back_to_list),
+            message = stringResource(R.string.discard_dialog_message),
+            confirmText = stringResource(R.string.discard_dialog_confirm),
+            dismissText = stringResource(R.string.cancel),
+            onConfirm = onDiscardChanges,
+            onDismissRequest = onDismissDiscardDialog
         )
     }
 }

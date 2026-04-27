@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -39,6 +38,7 @@ import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.canvas.AutoExtractionCanvasScreen
 import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
 import kotlin.math.roundToInt
 
@@ -84,35 +84,25 @@ fun AutoHoldExtractionScreen(
     }
 
     if (isTuningDialogOpen) {
-        AlertDialog(
+        AppContentDialog(
+            title = stringResource(R.string.auto_hold_extraction_tuning_title),
             onDismissRequest = { isTuningDialogOpen = false },
-            title = {
-                Text(stringResource(R.string.auto_hold_extraction_tuning_title))
-            },
-            text = {
-                Column {
-                    AutoExtractionTuningControls(
-                        localHueTolerance = localHueTolerance,
-                        onHueToleranceChange = { localHueTolerance = it },
-                        localValueTolerance = localValueTolerance,
-                        onValueToleranceChange = { localValueTolerance = it },
-                        localSaturationMin = localSaturationMin,
-                        onSaturationMinChange = { localSaturationMin = it },
-                        localBackgroundDistanceThreshold = localBackgroundDistanceThreshold,
-                        onBackgroundDistanceThresholdChange = { localBackgroundDistanceThreshold = it },
-                        onTuningChange = {
-                            onTuningChange(currentLocalTuning())
-                        }
-                    )
+            dismissText = stringResource(R.string.close)
+        ) {
+            AutoExtractionTuningControls(
+                localHueTolerance = localHueTolerance,
+                onHueToleranceChange = { localHueTolerance = it },
+                localValueTolerance = localValueTolerance,
+                onValueToleranceChange = { localValueTolerance = it },
+                localSaturationMin = localSaturationMin,
+                onSaturationMinChange = { localSaturationMin = it },
+                localBackgroundDistanceThreshold = localBackgroundDistanceThreshold,
+                onBackgroundDistanceThresholdChange = { localBackgroundDistanceThreshold = it },
+                onTuningChange = {
+                    onTuningChange(currentLocalTuning())
                 }
-            },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(onClick = { isTuningDialogOpen = false }) {
-                    Text(stringResource(R.string.close))
-                }
-            }
-        )
+            )
+        }
     }
 
     Column(

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
@@ -37,6 +36,8 @@ import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppConfirmDialog
+import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.BottomActionBar
 import com.example.holddetector.ui.components.WallThumbnail
@@ -151,148 +152,115 @@ fun WallListScreen(
     }
 
     editingWallId?.let { wallId ->
-        AlertDialog(
+        AppContentDialog(
+            title = stringResource(R.string.edit_menu_title),
             onDismissRequest = { editingWallId = null },
-            title = { Text(stringResource(R.string.edit_menu_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AppButton(
-                        onClick = {
-                            editingWallId = null
-                            onOpenSavedWallForReachCalibration(wallId)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.edit_menu_reach_calibration))
-                    }
-                    AppButton(
-                        onClick = {
-                            editingWallId = null
-                            onOpenSavedWallForHoldEditor(wallId)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.edit_menu_hold_editor))
-                    }
-                    AppButton(
-                        onClick = {
-                            editingWallId = null
-                            onOpenSavedWallForHoldAttributeEditor(wallId)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.edit_menu_hold_attribute_editor))
-                    }
-                    AppButton(
-                        onClick = {
-                            editingWallId = null
-                            onOpenSavedWallForHoldScoring(wallId)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.edit_menu_hold_scoring))
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(onClick = { editingWallId = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
+            dismissText = stringResource(R.string.cancel)
+        ) {
+            AppButton(
+                onClick = {
+                    editingWallId = null
+                    onOpenSavedWallForReachCalibration(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.edit_menu_reach_calibration))
             }
-        )
+            AppButton(
+                onClick = {
+                    editingWallId = null
+                    onOpenSavedWallForHoldEditor(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.edit_menu_hold_editor))
+            }
+            AppButton(
+                onClick = {
+                    editingWallId = null
+                    onOpenSavedWallForHoldAttributeEditor(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.edit_menu_hold_attribute_editor))
+            }
+            AppButton(
+                onClick = {
+                    editingWallId = null
+                    onOpenSavedWallForHoldScoring(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.edit_menu_hold_scoring))
+            }
+        }
     }
 
     challengeWallId?.let { wallId ->
-        AlertDialog(
+        AppContentDialog(
+            title = stringResource(R.string.challenge_menu_title),
             onDismissRequest = { challengeWallId = null },
-            title = { Text(stringResource(R.string.challenge_menu_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AppButton(
-                        onClick = {
-                            challengeWallId = null
-                            onOpenSavedWallForManualStartGoalChallenge(wallId)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.challenge_method_manual_start_goal))
-                    }
-                    AppButton(
-                        onClick = {
-                            challengeWallId = null
-                            onOpenSavedWallForRandomStartGoalChallenge(wallId)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.challenge_method_random_start_goal))
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(onClick = { challengeWallId = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
+            dismissText = stringResource(R.string.cancel)
+        ) {
+            AppButton(
+                onClick = {
+                    challengeWallId = null
+                    onOpenSavedWallForManualStartGoalChallenge(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.challenge_method_manual_start_goal))
             }
-        )
+            AppButton(
+                onClick = {
+                    challengeWallId = null
+                    onOpenSavedWallForRandomStartGoalChallenge(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.challenge_method_random_start_goal))
+            }
+        }
     }
 
     if (isImageSourceDialogOpen) {
-        AlertDialog(
+        AppContentDialog(
+            title = stringResource(R.string.camera_title),
             onDismissRequest = { isImageSourceDialogOpen = false },
-            title = { Text(stringResource(R.string.camera_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AppButton(
-                        onClick = {
-                            isImageSourceDialogOpen = false
-                            onTakePhoto()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.camera_take_photo))
-                    }
-                    AppButton(
-                        onClick = {
-                            isImageSourceDialogOpen = false
-                            onPickPhoto()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.camera_pick_photo))
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(onClick = { isImageSourceDialogOpen = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
+            dismissText = stringResource(R.string.cancel)
+        ) {
+            AppButton(
+                onClick = {
+                    isImageSourceDialogOpen = false
+                    onTakePhoto()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.camera_take_photo))
             }
-        )
+            AppButton(
+                onClick = {
+                    isImageSourceDialogOpen = false
+                    onPickPhoto()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.camera_pick_photo))
+            }
+        }
     }
 
     deletingWallId?.let { wallId ->
-        AlertDialog(
-            onDismissRequest = { deletingWallId = null },
-            title = { Text(stringResource(R.string.delete_wall_title)) },
-            text = { Text(stringResource(R.string.delete_wall_message)) },
-            confirmButton = {
-                AppButton(
-                    onClick = {
-                        deletingWallId = null
-                        onDeleteSavedWall(wallId)
-                    }
-                ) {
-                    Text(stringResource(R.string.delete))
-                }
+        AppConfirmDialog(
+            title = stringResource(R.string.delete_wall_title),
+            message = stringResource(R.string.delete_wall_message),
+            confirmText = stringResource(R.string.delete),
+            dismissText = stringResource(R.string.cancel),
+            onConfirm = {
+                deletingWallId = null
+                onDeleteSavedWall(wallId)
             },
-            dismissButton = {
-                AppOutlinedButton(onClick = { deletingWallId = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+            onDismissRequest = { deletingWallId = null }
         )
     }
 }

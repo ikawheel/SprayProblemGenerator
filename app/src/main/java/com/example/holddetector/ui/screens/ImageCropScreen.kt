@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,7 +43,7 @@ import com.example.holddetector.R
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.AppContentDialog
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -226,45 +225,35 @@ fun ImageCropScreen(
     }
 
     if (showRegistrationMethodDialog) {
-        AlertDialog(
+        AppContentDialog(
+            title = stringResource(R.string.registration_method_title),
             onDismissRequest = { showRegistrationMethodDialog = false },
-            title = {
-                Text(text = stringResource(R.string.registration_method_title))
-            },
-            text = {
-                Column {
-                    AppButton(
-                        onClick = {
-                            showRegistrationMethodDialog = false
-                            onApplyCropManual(cropLeft, cropTop, cropRight, cropBottom)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
-                    ) {
-                        Text(stringResource(R.string.registration_method_manual))
-                    }
-
-                    AppButton(
-                        onClick = {
-                            showRegistrationMethodDialog = false
-                            onApplyCropAuto(cropLeft, cropTop, cropRight, cropBottom)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp)
-                    ) {
-                        Text(stringResource(R.string.registration_method_auto))
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                AppOutlinedButton(onClick = { showRegistrationMethodDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
+            dismissText = stringResource(R.string.cancel)
+        ) {
+            AppButton(
+                onClick = {
+                    showRegistrationMethodDialog = false
+                    onApplyCropManual(cropLeft, cropTop, cropRight, cropBottom)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
+                Text(stringResource(R.string.registration_method_manual))
             }
-        )
+
+            AppButton(
+                onClick = {
+                    showRegistrationMethodDialog = false
+                    onApplyCropAuto(cropLeft, cropTop, cropRight, cropBottom)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+            ) {
+                Text(stringResource(R.string.registration_method_auto))
+            }
+        }
     }
 }
 
