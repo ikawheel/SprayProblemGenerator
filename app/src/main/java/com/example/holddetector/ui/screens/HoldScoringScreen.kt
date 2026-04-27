@@ -71,12 +71,6 @@ fun HoldScoringScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text(
-                        text = stringResourceByName("hold_scoring_description"),
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
                 }
             }
 

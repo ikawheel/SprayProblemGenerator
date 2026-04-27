@@ -18,7 +18,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
-import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
@@ -48,14 +47,6 @@ fun CameraFullscreenScreen(
                 color = AppTextColor,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
-            )
-
-            // 補助説明を表示します。
-            Text(
-                text = stringResource(R.string.camera_subtitle),
-                color = AppSecondaryTextColor,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp)
             )
 
             // 取得方法をまとめたパネルです。

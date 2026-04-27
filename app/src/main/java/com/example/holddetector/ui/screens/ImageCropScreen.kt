@@ -233,8 +233,6 @@ fun ImageCropScreen(
             },
             text = {
                 Column {
-                    Text(text = stringResource(R.string.registration_method_description))
-
                     AppButton(
                         onClick = {
                             showRegistrationMethodDialog = false

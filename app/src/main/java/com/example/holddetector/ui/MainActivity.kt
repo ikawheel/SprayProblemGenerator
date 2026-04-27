@@ -32,6 +32,7 @@ import kotlinx.coroutines.withContext
 val AppBackgroundColor = Color(0xFFF7F7F7)
 val AppSurfaceColor = Color.White
 val AppSubtleSurfaceColor = Color(0xFFF1F3F5)
+val AppSectionSurfaceColor = Color(0xFFE5E7EB)
 val AppTextColor = Color(0xFF1F2937)
 val AppSecondaryTextColor = Color(0xFF6B7280)
 val AppOverlayBackgroundColor = Color(0xEFFFFFFF)

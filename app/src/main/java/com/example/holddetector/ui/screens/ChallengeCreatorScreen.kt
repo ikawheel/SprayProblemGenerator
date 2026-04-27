@@ -186,13 +186,6 @@ fun ChallengeCreatorScreen(
             },
             text = {
                 Column {
-                    Text(
-                        text = stringResource(R.string.challenge_tuning_description),
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
                     ChallengeTuningControls(
                         state = state,
                         onDetourStrengthChange = onDetourStrengthChange,
@@ -223,13 +216,6 @@ private fun ChallengeMethodSelectionContent(
         color = AppTextColor,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold
-    )
-
-    Text(
-        text = stringResource(R.string.challenge_method_select_description),
-        color = AppSecondaryTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
     )
 
     AppButton(
@@ -266,13 +252,6 @@ private fun ChallengeCommonSettingsContent(
         color = AppTextColor,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold
-    )
-
-    Text(
-        text = stringResource(R.string.challenge_settings_description),
-        color = AppSecondaryTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
     )
 
     ChallengeCanvasSection(
@@ -381,13 +360,6 @@ private fun ChallengeManualGenerationContent(
         fontWeight = FontWeight.SemiBold
     )
 
-    Text(
-        text = stringResource(uiModel.helpTextResId),
-        color = AppSecondaryTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
-    )
-
     ChallengeCanvasSection(
         state = state,
         uiModel = uiModel,
@@ -447,13 +419,6 @@ private fun ChallengeRandomGenerationContent(
         fontWeight = FontWeight.SemiBold
     )
 
-    Text(
-        text = stringResource(R.string.challenge_random_generation_description),
-        color = AppSecondaryTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
-    )
-
     ChallengeCanvasSection(
         state = state,
         uiModel = uiModel,
@@ -499,13 +464,6 @@ private fun ChallengeResultContent(
         color = AppTextColor,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold
-    )
-
-    Text(
-        text = stringResource(R.string.challenge_result_description),
-        color = AppSecondaryTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
     )
 
     ChallengeCanvasSection(
@@ -581,13 +539,6 @@ private fun ChallengeTuningContent(
         color = AppTextColor,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold
-    )
-
-    Text(
-        text = stringResource(R.string.challenge_tuning_description),
-        color = AppSecondaryTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
     )
 
     ChallengeTuningControls(

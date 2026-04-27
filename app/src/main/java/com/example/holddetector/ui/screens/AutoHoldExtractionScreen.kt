@@ -91,13 +91,6 @@ fun AutoHoldExtractionScreen(
             },
             text = {
                 Column {
-                    Text(
-                        text = stringResource(R.string.auto_hold_extraction_tuning_description),
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
                     AutoExtractionTuningControls(
                         localHueTolerance = localHueTolerance,
                         onHueToleranceChange = { localHueTolerance = it },
@@ -142,13 +135,6 @@ fun AutoHoldExtractionScreen(
                     color = AppTextColor,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = stringResource(R.string.auto_hold_extraction_description),
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp)
                 )
 
                 Text(

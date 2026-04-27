@@ -101,19 +101,6 @@ fun ReachCalibrationScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text(
-                        text = stringResourceByName("reach_calibration_description"),
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-
-                    Text(
-                        text = stringResourceByName("reach_calibration_recommendation"),
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
                 }
             }
 

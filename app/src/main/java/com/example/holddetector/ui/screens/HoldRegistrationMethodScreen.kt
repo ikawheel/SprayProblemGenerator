@@ -25,7 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
-import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
@@ -61,12 +60,6 @@ fun HoldRegistrationMethodScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(
-                    text = stringResource(R.string.registration_method_description),
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
             }
         }
 

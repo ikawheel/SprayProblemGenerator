@@ -1,7 +1,9 @@
 package com.example.holddetector.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -134,11 +136,19 @@ fun HoldDetectorApp(
         }
     }
 
+    BackHandler(enabled = drawerState.isOpen) {
+        drawerScope.launch {
+            drawerState.close()
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = state.currentScreen == AppScreen.LIST || state.currentScreen == AppScreen.DISPLAY_COLOR_SETTINGS,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(
+                modifier = Modifier.fillMaxWidth(0.5f)
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -150,6 +160,13 @@ fun HoldDetectorApp(
                         color = AppTextColor
                     )
                 }
+
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(AppTextColor.copy(alpha = 0.10f))
+                )
 
                 NavigationDrawerItem(
                     label = { Text(stringResource(R.string.display_color_settings_menu)) },
@@ -198,9 +215,7 @@ fun HoldDetectorApp(
                             onOpenSavedWallForManualStartGoalChallenge = onOpenSavedWallForManualStartGoalChallenge,
                             onOpenSavedWallForRandomStartGoalChallenge = onOpenSavedWallForRandomStartGoalChallenge,
                             onDeleteSavedWall = onDeleteSavedWall,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(contentPadding)
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 

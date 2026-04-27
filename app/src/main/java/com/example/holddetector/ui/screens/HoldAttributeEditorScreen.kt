@@ -104,12 +104,6 @@ fun HoldAttributeEditorScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text(
-                        text = stringResourceByName("hold_attribute_editor_help"),
-                        color = AppSecondaryTextColor,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
                 }
             }
 
@@ -217,20 +211,6 @@ fun HoldAttributeEditorScreen(
                         }
                     }
                 }
-
-                Text(
-                    text = when (editMode) {
-                        HoldAttributeEditMode.START ->
-                            stringResource(R.string.hold_attribute_mode_description_start)
-                        HoldAttributeEditMode.GOAL ->
-                            stringResource(R.string.hold_attribute_mode_description_goal)
-                        HoldAttributeEditMode.CLEAR ->
-                            stringResource(R.string.hold_attribute_mode_description_clear)
-                    },
-                    color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
 
                 Text(
                     text = stringResource(attributeSummaryResId),

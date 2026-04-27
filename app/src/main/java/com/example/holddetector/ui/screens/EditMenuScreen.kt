@@ -12,7 +12,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
-import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.components.AppButton
@@ -34,13 +33,6 @@ fun EditMenuScreen(
             color = AppTextColor,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            text = stringResource(R.string.edit_menu_description),
-            color = AppSecondaryTextColor,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(bottom = 4.dp)
         )
 
         AppButton(

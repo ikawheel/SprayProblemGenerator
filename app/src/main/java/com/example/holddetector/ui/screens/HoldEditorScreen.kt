@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
+import com.example.holddetector.ui.AppSectionSurfaceColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
@@ -117,37 +119,57 @@ fun HoldEditorScreen(
                 }
             }
 
-            AppButton(
-                onClick = { onOpenHoldEditOperation(HoldEditorTool.ADD) },
-                modifier = Modifier.fillMaxWidth()
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = AppSectionSurfaceColor,
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text(stringResource(R.string.hold_editor_tool_add))
-            }
-
-            AppButton(
-                onClick = { onOpenHoldEditOperation(HoldEditorTool.ERASE) },
-                enabled = state.holds.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.hold_editor_tool_erase))
-            }
-
-            AppButton(
-                onClick = { onOpenHoldEditOperation(HoldEditorTool.DELETE) },
-                enabled = state.holds.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.hold_editor_tool_delete))
-            }
-
-            if (isEditingExistingWall) {
-                AppOutlinedButton(
-                    onClick = onReturnToList,
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(stringResource(R.string.back_to_list))
+                    Text(
+                        text = stringResource(R.string.hold_editor_section_title),
+                        color = AppTextColor,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    AppButton(
+                        onClick = { onOpenHoldEditOperation(HoldEditorTool.ADD) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.hold_editor_tool_add))
+                    }
+
+                    AppButton(
+                        onClick = { onOpenHoldEditOperation(HoldEditorTool.ERASE) },
+                        enabled = state.holds.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.hold_editor_tool_erase))
+                    }
+
+                    AppButton(
+                        onClick = { onOpenHoldEditOperation(HoldEditorTool.DELETE) },
+                        enabled = state.holds.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.hold_editor_tool_delete))
+                    }
+
+                    if (isEditingExistingWall) {
+                        AppOutlinedButton(
+                            onClick = onReturnToList,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.back_to_list))
+                        }
+                    }
                 }
-            } else {
+            }
+
+            if (!isEditingExistingWall) {
                 AppButton(
                     onClick = onOpenReachCalibration,
                     modifier = Modifier.fillMaxWidth()
