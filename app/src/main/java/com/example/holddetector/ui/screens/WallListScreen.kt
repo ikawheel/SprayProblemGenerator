@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +35,7 @@ import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppIconButton
 import com.example.holddetector.ui.components.AppConfirmDialog
 import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
@@ -76,7 +76,7 @@ fun WallListScreen(
                     .fillMaxWidth()
                     .zIndex(1f),
                 leadingContent = {
-                    IconButton(onClick = onOpenMenu) {
+                    AppIconButton(onClick = onOpenMenu) {
                         Text(
                             text = "\u2630",
                             color = AppTextColor,

@@ -612,6 +612,8 @@ private fun InteractiveCapturedImage(
                 baseLayout,
                 zoomScale,
                 panOffset,
+                holdTapAreaSize,
+                isAutoMergeEnabled,
                 holds,
                 routeSelectionMode,
                 reachCalibrationReference,
@@ -1128,6 +1130,8 @@ private fun InteractiveCapturedImage(
                         val polygon = hold.toLocalPolygon(baseLayout)
                         val strokeColor = when {
                             mode == CanvasMode.SCORING -> selectedHoldColor
+                            mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR &&
+                                (startCandidateHoldIndices.contains(index) || goalCandidateHoldIndices.contains(index)) -> startGoalHoldColor
                             index == startHoldIndex -> startGoalHoldColor
                             index == goalHoldIndex -> startGoalHoldColor
                             index == selectedIndex -> selectedHoldColor
@@ -1143,15 +1147,12 @@ private fun InteractiveCapturedImage(
                         )
 
                         val label = buildList {
-                            if (mode == CanvasMode.HOLD_EDITOR || mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR) {
-                                if (startCandidateHoldIndices.contains(index)) add(startMarkerLabel)
-                                if (goalCandidateHoldIndices.contains(index)) add(goalMarkerLabel)
-                            } else {
+                            if (mode == CanvasMode.CHALLENGE) {
                                 if (index == startHoldIndex) add(startMarkerLabel)
                                 if (index == goalHoldIndex) add(goalMarkerLabel)
-                            }
-                            if (mode == CanvasMode.CHALLENGE && challengeHoldIndices.contains(index)) {
-                                challengeOrderLabels[index]?.let(::add)
+                                if (challengeHoldIndices.contains(index)) {
+                                    challengeOrderLabels[index]?.let(::add)
+                                }
                             }
                         }.joinToString("/")
                         if (label.isNotEmpty()) {

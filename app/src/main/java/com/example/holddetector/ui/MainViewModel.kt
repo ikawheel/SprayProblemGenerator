@@ -3,11 +3,8 @@
 import android.app.Application
 import android.graphics.Bitmap
 import androidx.annotation.StringRes
-import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
-import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
 import com.example.holddetector.domain.hold.AutoExtractionTuning
 import com.example.holddetector.domain.challenge.RouteGenerationTuning
-import com.example.holddetector.domain.hold.BinaryHoldExtractor
 import com.example.holddetector.domain.hold.buildHoldScoringOrder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,13 +12,9 @@ import com.example.holddetector.R
 import com.example.holddetector.data.DisplayColorSettingsRepository
 import com.example.holddetector.data.WallStorageRepository
 import com.example.holddetector.model.CapturedOrientation
-import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
-import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
-import com.example.holddetector.model.ReachCalibrationReference
 import com.example.holddetector.model.SavedWallSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
-import kotlin.random.Random
 
 private enum class PostCropDestination {
     MANUAL,
@@ -269,16 +261,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun backToHoldRegistrationMethodSelection() {
-        val state = _uiState.value
-        _uiState.value = popScreenState(
-            state = state.copy(
-            holds = emptyList(),
-            autoExtractedHolds = emptyList(),
-            selectedHoldIndex = null,
-            isAutoExtractionWallSamplingMode = false,
-            isBusy = false,
+        _uiState.value = buildBackToHoldRegistrationMethodState(
+            state = _uiState.value,
+            popScreenState = ::popScreenState,
             message = text(R.string.message_hold_registration_method_select)
-            )
         )
     }
 
@@ -290,7 +276,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onAutoExtractionTuningChanged(tuning: AutoExtractionTuning) {
         val state = _uiState.value
         val bitmap = state.capturedBitmap
-        _uiState.value = state.copy(autoExtractionTuning = tuning)
+        _uiState.value = buildAutoExtractionTuningUpdatedState(
+            state = state,
+            tuning = tuning
+        )
         if (state.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && bitmap != null) {
             runAutoHoldExtraction(
                 bitmap = bitmap,
@@ -301,18 +290,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startAutoExtractionWallSampling() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            isAutoExtractionWallSamplingMode = true,
+        _uiState.value = buildAutoExtractionWallSamplingStartedState(
+            state = _uiState.value,
             message = text(R.string.message_auto_hold_extraction_wall_sample_mode)
         )
     }
 
     fun stopAutoExtractionWallSampling() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            isAutoExtractionWallSamplingMode = false,
-            message = null
+        _uiState.value = buildAutoExtractionWallSamplingStoppedState(
+            state = _uiState.value
         )
     }
 
@@ -321,33 +307,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val bitmap = state.capturedBitmap ?: return
         if (state.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) return
 
-        val updatedPoints = (state.autoExtractionWallSamplePoints + point)
-            .distinct()
-            .take(10)
-        val keepSampling = updatedPoints.size < 10
-
-        _uiState.value = state.copy(
-            autoExtractionWallSamplePoints = updatedPoints,
-            isAutoExtractionWallSamplingMode = keepSampling,
+        _uiState.value = buildAutoExtractionWallSamplePointSelectedState(
+            state = state,
+            point = point,
             message = text(
                 R.string.message_auto_hold_extraction_wall_sample_added,
-                updatedPoints.size
+                ((state.autoExtractionWallSamplePoints + point).distinct().take(10)).size
             )
         )
 
         runAutoHoldExtraction(
             bitmap = bitmap,
             tuning = state.autoExtractionTuning,
-            wallSamplePoints = updatedPoints
+            wallSamplePoints = _uiState.value.autoExtractionWallSamplePoints
         )
     }
 
     fun clearAutoExtractionWallSamplePoints() {
         val state = _uiState.value
         val bitmap = state.capturedBitmap
-        _uiState.value = state.copy(
-            autoExtractionWallSamplePoints = emptyList(),
-            isAutoExtractionWallSamplingMode = false,
+        _uiState.value = buildClearedAutoExtractionWallSamplePointsState(
+            state = state,
             message = text(R.string.message_auto_hold_extraction_wall_sample_cleared)
         )
         if (state.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && bitmap != null) {
@@ -366,74 +346,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_EDITOR,
-            screenBackStack = pushedScreenBackStack(
-                state = state,
-                targetScreen = AppScreen.HOLD_EDITOR
-            ),
-            holds = state.autoExtractedHolds,
-            selectedHoldIndex = null,
-            holdScoringPosition = 0,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            reachCalibrationReturnToHoldEditor = false,
-            reachCalibrationReturnToAutoExtraction = false,
-            isHoldEditorDirty = true,
+        _uiState.value = buildHoldEditorStateFromAutoExtractedHolds(
+            state = state,
+            pushedScreenBackStack = ::pushedScreenBackStack,
             message = text(R.string.message_auto_hold_extraction_applied)
         )
     }
 
     fun openReachCalibrationScreen() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.REACH_CALIBRATION,
-            screenBackStack = pushedScreenBackStack(
-                state = state,
-                targetScreen = AppScreen.REACH_CALIBRATION
-            ),
-            selectedHoldIndex = null,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = state.reachCalibrationReference == null,
-            reachCalibrationReturnToHoldEditor = true,
-            reachCalibrationReturnToAutoExtraction = false,
-            reachCalibrationLengthInput = state.reachCalibrationReference
-                ?.referenceLengthCm
-                ?.toString()
-                ?: state.reachCalibrationLengthInput,
-            message = if (state.reachCalibrationReference == null) {
-                text(R.string.message_reach_first_point)
-            } else {
-                text(R.string.message_reach_confirm)
-            }
+        _uiState.value = buildReachCalibrationScreenState(
+            state = _uiState.value,
+            pushedScreenBackStack = ::pushedScreenBackStack,
+            firstPointMessage = text(R.string.message_reach_first_point),
+            confirmMessage = text(R.string.message_reach_confirm)
         )
     }
 
     fun openDisplayColorSettings() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.DISPLAY_COLOR_SETTINGS,
-            screenBackStack = pushedScreenBackStack(
-                state = state,
-                targetScreen = AppScreen.DISPLAY_COLOR_SETTINGS
-            ),
-            message = null
+        _uiState.value = buildDisplayColorSettingsScreenState(
+            state = _uiState.value,
+            pushedScreenBackStack = ::pushedScreenBackStack
         )
     }
 
     fun updateDisplayColor(target: DisplayColorTarget, color: EditableRgbColor) {
-        val normalized = EditableRgbColor(
-            red = color.normalizedRed,
-            green = color.normalizedGreen,
-            blue = color.normalizedBlue
-        )
         val state = _uiState.value
-        val updatedSettings = when (target) {
-            DisplayColorTarget.HOLD_OUTLINE -> state.displayColorSettings.copy(holdOutline = normalized)
-            DisplayColorTarget.SELECTED_HOLD -> state.displayColorSettings.copy(selectedHold = normalized)
-            DisplayColorTarget.RANGE_SELECTION -> state.displayColorSettings.copy(rangeSelection = normalized)
-            DisplayColorTarget.START_GOAL_HOLD -> state.displayColorSettings.copy(startGoalHold = normalized)
-        }
+        val updatedSettings = buildUpdatedDisplayColorSettings(
+            settings = state.displayColorSettings,
+            target = target,
+            color = color
+        )
         if (updatedSettings == state.displayColorSettings) return
 
         _uiState.value = state.copy(displayColorSettings = updatedSettings)
@@ -453,22 +395,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun continueToHoldEditorFromReachCalibration() {
         val state = _uiState.value
         if (state.capturedBitmap == null) return
-        val normalizedReference = requireConfiguredReachReference(state) ?: return
+        val validation = validateConfiguredReachReference(
+            state = state,
+            inputLengthMessage = text(R.string.message_reach_input_length),
+            setRequiredMessage = text(R.string.message_reach_set_required)
+        )
+        val normalizedReference = validation.reference
+        if (normalizedReference == null) {
+            _uiState.value = state.copy(message = validation.message)
+            return
+        }
 
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR,
-            screenBackStack = pushedScreenBackStack(
-                state = state,
-                targetScreen = AppScreen.HOLD_ATTRIBUTE_EDITOR
-            ),
-            selectedHoldIndex = null,
-            holdScoringPosition = 0,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            reachCalibrationReturnToHoldEditor = false,
-            reachCalibrationReturnToAutoExtraction = false,
-            autoExtractedHolds = emptyList(),
-            reachCalibrationReference = normalizedReference,
+        _uiState.value = buildHoldAttributeEditorStateFromReachCalibration(
+            state = state,
+            normalizedReference = normalizedReference,
+            pushedScreenBackStack = ::pushedScreenBackStack,
             message = text(R.string.message_reach_go_hold_editor)
         )
     }
@@ -476,26 +417,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun continueToAutoHoldExtractionFromReachCalibration() {
         val state = _uiState.value
         val bitmap = state.capturedBitmap ?: return
-        val normalizedReference = requireConfiguredReachReference(state) ?: return
+        val validation = validateConfiguredReachReference(
+            state = state,
+            inputLengthMessage = text(R.string.message_reach_input_length),
+            setRequiredMessage = text(R.string.message_reach_set_required)
+        )
+        val normalizedReference = validation.reference
+        if (normalizedReference == null) {
+            _uiState.value = state.copy(message = validation.message)
+            return
+        }
 
-        _uiState.value = state.copy(
-            currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
-            screenBackStack = pushedScreenBackStack(
-                state = state,
-                targetScreen = AppScreen.AUTO_HOLD_EXTRACTION
-            ),
-            holds = emptyList(),
-            selectedHoldIndex = null,
-            holdScoringPosition = 0,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            reachCalibrationReturnToHoldEditor = false,
-            reachCalibrationReturnToAutoExtraction = false,
-            autoExtractedHolds = emptyList(),
-            reachCalibrationReference = normalizedReference,
-            isAutoExtractionWallSamplingMode = false,
-            isBusy = true,
-            message = null
+        _uiState.value = buildAutoExtractionStateFromReachCalibration(
+            state = state,
+            normalizedReference = normalizedReference,
+            pushedScreenBackStack = ::pushedScreenBackStack
         )
         runAutoHoldExtraction(
             bitmap = bitmap,
@@ -505,17 +441,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun backFromReachCalibration() {
-        val state = _uiState.value
-        _uiState.value = popScreenState(
-            state = state.copy(
-                selectedHoldIndex = null,
-                holdScoringPosition = 0,
-                pendingReachCalibrationPoint = null,
-                isReachCalibrationSelectionMode = false,
-                reachCalibrationReturnToHoldEditor = false,
-                reachCalibrationReturnToAutoExtraction = false,
-                message = null
-            )
+        _uiState.value = buildBackFromReachCalibrationState(
+            state = _uiState.value,
+            popScreenState = ::popScreenState
         )
     }
 
@@ -1026,31 +954,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onReachCalibrationLengthInputChanged(value: String) {
         val state = _uiState.value
-        val normalizedInput = value.filter(Char::isDigit).take(3)
-        val parsedLength = normalizedInput.toIntOrNull()?.takeIf { it > 0 }
-        val updatedReference = if (parsedLength != null) {
-            state.reachCalibrationReference?.copy(referenceLengthCm = parsedLength)
-        } else {
-            state.reachCalibrationReference
-        }
-
-        _uiState.value = state.copy(
-            reachCalibrationLengthInput = normalizedInput,
-            reachCalibrationReference = updatedReference,
+        val updatedState = buildReachCalibrationLengthInputChangedState(
+            state = state,
+            value = value
+        )
+        _uiState.value = updatedState.copy(
             isHoldEditorDirty = state.isHoldEditorDirty ||
-                (normalizedInput != state.reachCalibrationLengthInput) ||
-                (updatedReference != state.reachCalibrationReference)
+                (updatedState.reachCalibrationLengthInput != state.reachCalibrationLengthInput) ||
+                (updatedState.reachCalibrationReference != state.reachCalibrationReference)
         )
     }
 
     fun clearReachCalibration() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            reachCalibrationReference = null,
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            selectedHoldIndex = null,
-            isHoldEditorDirty = true,
+        _uiState.value = buildClearedReachCalibrationState(
+            state = _uiState.value,
             message = text(R.string.message_reach_cleared)
         )
     }
@@ -1060,16 +977,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (!state.isReachCalibrationSelectionMode) return
 
         val firstPoint = state.pendingReachCalibrationPoint
-        if (firstPoint == null) {
-            _uiState.value = state.copy(
-                pendingReachCalibrationPoint = point,
-                selectedHoldIndex = null,
-                message = text(R.string.message_reach_second_point)
-            )
-            return
-        }
-
-        if (firstPoint == point) {
+        if (firstPoint == point && firstPoint != null) {
             _uiState.value = state.copy(
                 message = text(R.string.message_reach_select_different_second_point)
             )
@@ -1082,17 +990,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        _uiState.value = state.copy(
-            reachCalibrationReference = ReachCalibrationReference(
-                firstPoint = firstPoint,
-                secondPoint = point,
-                referenceLengthCm = referenceLengthCm
+        _uiState.value = buildReachCalibrationPointSelectedState(
+            state = state.copy(
+                reachCalibrationReference = state.reachCalibrationReference?.copy(
+                    referenceLengthCm = referenceLengthCm
+                )
             ),
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            selectedHoldIndex = null,
-            isHoldEditorDirty = true,
-            message = text(R.string.message_reach_set)
+            point = point,
+            messageSelectSecondPoint = text(R.string.message_reach_second_point),
+            messageSet = text(R.string.message_reach_set)
         )
     }
 
@@ -1111,81 +1017,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onChallengeHoldTapped(index: Int?) {
-        val state = _uiState.value
-        if (state.isDrawTargetSelectionMode) return
-        val selectionCandidateIndices = challengeSelectionCandidateIndices(state)
-
-        when (state.routeSelectionMode) {
-            RouteSelectionMode.SELECTING_START -> {
-                if (index == null || index !in selectionCandidateIndices) {
-                    _uiState.value = state.copy(message = text(R.string.message_select_start_from_candidates))
-                    return
-                }
-                _uiState.value = state.copy(
-                    selectedHoldIndex = index,
-                    startHoldIndex = index,
-                    goalHoldIndex = null,
-                    challengeHoldIndices = emptySet(),
-                    challengeOrderedHoldIndices = emptyList(),
-                    lastGeneratedIntermediateHoldIndices = emptySet(),
-                    routeSelectionMode = RouteSelectionMode.SELECTING_GOAL,
-                    message = text(R.string.message_start_set_next_goal)
-                )
-            }
-
-            RouteSelectionMode.SELECTING_GOAL -> {
-                if (index == null || index !in selectionCandidateIndices) {
-                    _uiState.value = state.copy(message = text(R.string.message_select_goal_from_candidates))
-                    return
-                }
-                if (index == state.startHoldIndex) {
-                    _uiState.value = state.copy(message = text(R.string.message_start_goal_must_differ))
-                    return
-                }
-                _uiState.value = state.copy(
-                    selectedHoldIndex = index,
-                    goalHoldIndex = index,
-                    challengeHoldIndices = emptySet(),
-                    challengeOrderedHoldIndices = emptyList(),
-                    lastGeneratedIntermediateHoldIndices = emptySet(),
-                    routeSelectionMode = RouteSelectionMode.NONE,
-                    message = text(R.string.message_goal_set)
-                )
-            }
-
-            RouteSelectionMode.NONE -> {
-                if (index == null) return
-                if (state.challengeHoldIndices.isEmpty()) return
-                if (index !in selectionCandidateIndices) return
-                val updated = state.challengeHoldIndices.toMutableSet()
-                val added = if (updated.contains(index)) {
-                    updated.remove(index)
-                    false
-                } else {
-                    updated.add(index)
-                    true
-                }
-                val updatedOrder = normalizeChallengeRouteOrder(
-                    challengeIndices = updated,
-                    preferredOrder = state.challengeOrderedHoldIndices,
-                    holds = state.holds,
-                    startIndex = state.startHoldIndex,
-                    goalIndex = state.goalHoldIndex
-                )
-                _uiState.value = state.copy(
-                    selectedHoldIndex = index,
-                    challengeHoldIndices = updated,
-                    challengeOrderedHoldIndices = updatedOrder,
-                    startHoldIndex = if (state.startHoldIndex == index && !added) null else state.startHoldIndex,
-                    goalHoldIndex = if (state.goalHoldIndex == index && !added) null else state.goalHoldIndex,
-                    message = if (added) {
-                        text(R.string.message_challenge_hold_added)
-                    } else {
-                        text(R.string.message_challenge_hold_removed)
-                    }
-                )
-            }
-        }
+        val result = buildChallengeHoldTappedResult(
+            state = _uiState.value,
+            index = index,
+            text = { resId, args -> text(resId, *args) }
+        )
+        _uiState.value = result.state.copy(message = result.message ?: result.state.message)
     }
 
     fun onDrawCountChanged(value: String) {
@@ -1193,79 +1030,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onChallengeDifficultyRangeChanged(start: Float, endInclusive: Float) {
-        val state = _uiState.value
-        val minScore = start.roundToInt().coerceIn(
-            MIN_HOLD_DIFFICULTY_SCORE,
-            MAX_HOLD_DIFFICULTY_SCORE
-        )
-        val maxScore = endInclusive.roundToInt().coerceIn(
-            MIN_HOLD_DIFFICULTY_SCORE,
-            MAX_HOLD_DIFFICULTY_SCORE
-        )
-        val normalizedMin = minOf(minScore, maxScore)
-        val normalizedMax = maxOf(minScore, maxScore)
-        val filteredChallengeIndices = filterChallengeEligibleIndices(
-            holds = state.holds,
-            indices = state.challengeHoldIndices,
-            minScore = normalizedMin,
-            maxScore = normalizedMax
-        )
-        val filteredStartIndex = state.startHoldIndex?.takeIf { index ->
-            index in filterChallengeEligibleIndices(
-                holds = state.holds,
-                indices = setOf(index),
-                minScore = normalizedMin,
-                maxScore = normalizedMax
-            )
-        }
-        val filteredGoalIndex = state.goalHoldIndex?.takeIf { index ->
-            index in filterChallengeEligibleIndices(
-                holds = state.holds,
-                indices = setOf(index),
-                minScore = normalizedMin,
-                maxScore = normalizedMax
-            )
-        }
-        val normalizedRouteSelectionMode = when (state.routeSelectionMode) {
-            RouteSelectionMode.SELECTING_START -> RouteSelectionMode.SELECTING_START
-            RouteSelectionMode.SELECTING_GOAL -> if (filteredStartIndex != null) {
-                RouteSelectionMode.SELECTING_GOAL
-            } else {
-                RouteSelectionMode.SELECTING_START
-            }
-            RouteSelectionMode.NONE -> RouteSelectionMode.NONE
-        }
-
-        _uiState.value = state.copy(
-            challengeDifficultyScoreMin = normalizedMin,
-            challengeDifficultyScoreMax = normalizedMax,
-            challengeHoldIndices = filteredChallengeIndices,
-            challengeOrderedHoldIndices = normalizeChallengeRouteOrder(
-                challengeIndices = filteredChallengeIndices,
-                preferredOrder = state.challengeOrderedHoldIndices,
-                holds = state.holds,
-                startIndex = filteredStartIndex,
-                goalIndex = filteredGoalIndex
-            ),
-            startHoldIndex = filteredStartIndex,
-            goalHoldIndex = filteredGoalIndex,
-            selectedHoldIndex = state.selectedHoldIndex?.takeIf { index ->
-                index in filterChallengeEligibleIndices(
-                    holds = state.holds,
-                    indices = setOf(index),
-                    minScore = normalizedMin,
-                    maxScore = normalizedMax
-                )
-            },
-            routeSelectionMode = normalizedRouteSelectionMode,
-            lastGeneratedIntermediateHoldIndices = state.lastGeneratedIntermediateHoldIndices.filterTo(linkedSetOf()) { index ->
-                index in filterChallengeEligibleIndices(
-                    holds = state.holds,
-                    indices = setOf(index),
-                    minScore = normalizedMin,
-                    maxScore = normalizedMax
-                )
-            }
+        _uiState.value = buildChallengeDifficultyRangeState(
+            state = _uiState.value,
+            start = start,
+            endInclusive = endInclusive
         )
     }
 
@@ -1298,66 +1066,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openChallengeMethodSelection() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            challengeFlowStep = ChallengeFlowStep.METHOD_SELECT,
-            challengeFlowBackStack = pushedChallengeFlowBackStack(
-                state = state,
-                targetStep = ChallengeFlowStep.METHOD_SELECT
-            ),
-            selectedHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = null
+        _uiState.value = buildChallengeFlowState(
+            state = _uiState.value,
+            targetStep = ChallengeFlowStep.METHOD_SELECT,
+            pushedChallengeFlowBackStack = ::pushedChallengeFlowBackStack
         )
     }
 
     fun openChallengeCommonSettings() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            challengeFlowStep = ChallengeFlowStep.COMMON_SETTINGS,
-            challengeFlowBackStack = pushedChallengeFlowBackStack(
-                state = state,
-                targetStep = ChallengeFlowStep.COMMON_SETTINGS
-            ),
-            selectedHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = null
+        _uiState.value = buildChallengeFlowState(
+            state = _uiState.value,
+            targetStep = ChallengeFlowStep.COMMON_SETTINGS,
+            pushedChallengeFlowBackStack = ::pushedChallengeFlowBackStack
         )
     }
 
     fun openChallengeGeneration() {
-        val state = _uiState.value
-        if (state.challengeGenerationMethod == null) {
-            _uiState.value = state.copy(message = text(R.string.message_select_challenge_generation_method))
-            return
-        }
-        _uiState.value = state.copy(
-            challengeFlowStep = ChallengeFlowStep.GENERATION,
-            challengeFlowBackStack = pushedChallengeFlowBackStack(
-                state = state,
-                targetStep = ChallengeFlowStep.GENERATION
-            ),
-            selectedHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = null
+        val result = buildChallengeGenerationStateResult(
+            state = _uiState.value,
+            pushedChallengeFlowBackStack = ::pushedChallengeFlowBackStack,
+            selectMethodMessage = text(R.string.message_select_challenge_generation_method)
         )
+        _uiState.value = result.state.copy(message = result.message ?: result.state.message)
     }
 
     fun openChallengeTuning() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            challengeFlowStep = ChallengeFlowStep.TUNING,
-            challengeFlowBackStack = pushedChallengeFlowBackStack(
-                state = state,
-                targetStep = ChallengeFlowStep.TUNING
-            ),
-            selectedHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = null
+        _uiState.value = buildChallengeFlowState(
+            state = _uiState.value,
+            targetStep = ChallengeFlowStep.TUNING,
+            pushedChallengeFlowBackStack = ::pushedChallengeFlowBackStack
         )
     }
 
@@ -1539,82 +1276,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startDrawTargetSelection() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            selectedHoldIndex = null,
-            challengeHoldIndices = emptySet(),
-            challengeOrderedHoldIndices = emptyList(),
-            lastGeneratedIntermediateHoldIndices = emptySet(),
-            startHoldIndex = null,
-            goalHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = true,
+        _uiState.value = buildDrawTargetSelectionState(
+            state = _uiState.value,
             message = text(R.string.message_draw_target_instruction)
         )
     }
 
     fun applyDrawTargetSelection(indices: Set<Int>) {
-        val state = _uiState.value
-        val eligibleIndices = filterChallengeEligibleIndices(
-            holds = state.holds,
+        _uiState.value = buildAppliedDrawTargetSelectionState(
+            state = _uiState.value,
             indices = indices,
-            minScore = state.challengeDifficultyScoreMin,
-            maxScore = state.challengeDifficultyScoreMax
-        )
-        _uiState.value = state.copy(
-            selectedHoldIndex = null,
-            challengeHoldIndices = emptySet(),
-            challengeOrderedHoldIndices = emptyList(),
-            lastGeneratedIntermediateHoldIndices = emptySet(),
-            drawTargetHoldIndices = indices,
-            hasDrawTargetSelection = true,
-            startHoldIndex = null,
-            goalHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = if (eligibleIndices.isEmpty()) {
-                text(R.string.message_draw_target_empty_after_filter)
-            } else {
-                text(R.string.message_draw_target_selected_count, eligibleIndices.size)
+            emptyMessage = text(R.string.message_draw_target_empty_after_filter),
+            selectedCountMessage = { count ->
+                text(R.string.message_draw_target_selected_count, count)
             }
         )
     }
 
     fun startChallengeStartGoalSelection() {
-        val state = _uiState.value
-        if (state.isDrawTargetSelectionMode) {
-            _uiState.value = state.copy(message = text(R.string.message_finish_range_selection_first))
-            return
-        }
-        if (challengeSelectionCandidateIndices(state).isEmpty()) {
-            _uiState.value = state.copy(message = text(R.string.message_select_candidate_holds_first))
-            return
-        }
-        _uiState.value = state.copy(
-            selectedHoldIndex = null,
-            challengeHoldIndices = emptySet(),
-            challengeOrderedHoldIndices = emptyList(),
-            lastGeneratedIntermediateHoldIndices = emptySet(),
-            startHoldIndex = null,
-            goalHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.SELECTING_START,
-            message = text(R.string.message_select_start_prompt)
+        val result = buildChallengeStartGoalSelectionResult(
+            state = _uiState.value,
+            finishRangeSelectionFirstMessage = text(R.string.message_finish_range_selection_first),
+            selectCandidateHoldsFirstMessage = text(R.string.message_select_candidate_holds_first),
+            selectStartPromptMessage = text(R.string.message_select_start_prompt)
         )
+        _uiState.value = result.state.copy(message = result.message ?: result.state.message)
     }
 
     fun clearChallengeSelection() {
-        val state = _uiState.value
-        _uiState.value = state.copy(
-            selectedHoldIndex = null,
-            challengeHoldIndices = emptySet(),
-            challengeOrderedHoldIndices = emptyList(),
-            lastGeneratedIntermediateHoldIndices = emptySet(),
-            drawTargetHoldIndices = emptySet(),
-            hasDrawTargetSelection = false,
-            startHoldIndex = null,
-            goalHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
+        _uiState.value = buildClearedChallengeSelectionState(
+            state = _uiState.value,
             message = text(R.string.message_challenge_cleared)
         )
     }
@@ -1815,49 +1506,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    private fun buildHoldRegistrationMethodState(
-        state: MainUiState,
-        bitmap: Bitmap,
-        capturedOrientation: CapturedOrientation,
-        capturedRotationDegrees: Int
-    ): MainUiState {
-        return state.copy(
-            currentScreen = AppScreen.HOLD_REGISTRATION_METHOD,
-            screenBackStack = pushedScreenBackStack(
-                state = state,
-                targetScreen = AppScreen.HOLD_REGISTRATION_METHOD
-            ),
-            currentWallId = null,
-            capturedBitmap = bitmap,
-            capturedOrientation = capturedOrientation,
-            capturedRotationDegrees = capturedRotationDegrees,
-            holds = emptyList(),
-            autoExtractedHolds = emptyList(),
-            autoExtractionWallSamplePoints = emptyList(),
-            isAutoExtractionWallSamplingMode = false,
-            reachCalibrationReference = null,
-            reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            reachCalibrationReturnToHoldEditor = false,
-            reachCalibrationReturnToAutoExtraction = false,
-            selectedHoldIndex = null,
-            challengeHoldIndices = emptySet(),
-            challengeOrderedHoldIndices = emptyList(),
-            lastGeneratedIntermediateHoldIndices = emptySet(),
-            drawTargetHoldIndices = emptySet(),
-            hasDrawTargetSelection = false,
-            startHoldIndex = null,
-            goalHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            isHoldEditorDirty = true,
-            showDiscardDialog = false,
-            isBusy = false,
-            message = text(R.string.message_hold_registration_method_select)
-        )
-    }
-
     private fun buildManualHoldEditorState(
         state: MainUiState,
         bitmap: Bitmap,
@@ -1897,49 +1545,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isHoldEditorDirty = true,
             showDiscardDialog = false,
             isBusy = false,
-            message = null
-        )
-    }
-
-    private fun buildAutoExtractionState(
-        state: MainUiState,
-        bitmap: Bitmap,
-        capturedOrientation: CapturedOrientation,
-        capturedRotationDegrees: Int
-    ): MainUiState {
-        return state.copy(
-            currentScreen = AppScreen.AUTO_HOLD_EXTRACTION,
-            screenBackStack = pushedScreenBackStack(
-                state = state,
-                targetScreen = AppScreen.AUTO_HOLD_EXTRACTION
-            ),
-            currentWallId = null,
-            capturedBitmap = bitmap,
-            capturedOrientation = capturedOrientation,
-            capturedRotationDegrees = capturedRotationDegrees,
-            holds = emptyList(),
-            autoExtractedHolds = emptyList(),
-            autoExtractionWallSamplePoints = emptyList(),
-            isAutoExtractionWallSamplingMode = false,
-            reachCalibrationReference = null,
-            reachCalibrationLengthInput = DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
-            pendingReachCalibrationPoint = null,
-            isReachCalibrationSelectionMode = false,
-            reachCalibrationReturnToHoldEditor = false,
-            reachCalibrationReturnToAutoExtraction = false,
-            selectedHoldIndex = null,
-            challengeHoldIndices = emptySet(),
-            challengeOrderedHoldIndices = emptyList(),
-            lastGeneratedIntermediateHoldIndices = emptySet(),
-            drawTargetHoldIndices = emptySet(),
-            hasDrawTargetSelection = false,
-            startHoldIndex = null,
-            goalHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            isHoldEditorDirty = true,
-            showDiscardDialog = false,
-            isBusy = true,
             message = null
         )
     }
@@ -2016,10 +1621,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun parseReachCalibrationLengthCentimeters(state: MainUiState): Int? {
-        return state.reachCalibrationLengthInput.toIntOrNull()?.takeIf { it > 0 }
-    }
-
     private fun updateSelectedHoldAttribute(
         transform: (Hold) -> Hold
     ) {
@@ -2045,32 +1646,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isHoldEditorDirty = true,
             message = null
         )
-    }
-
-    private fun ReachCalibrationReference?.withCurrentLength(state: MainUiState): ReachCalibrationReference? {
-        val parsedLength = parseReachCalibrationLengthCentimeters(state) ?: return this
-        return this?.copy(referenceLengthCm = parsedLength)
-    }
-
-    private fun requireConfiguredReachReference(state: MainUiState): ReachCalibrationReference? {
-        if (parseReachCalibrationLengthCentimeters(state) == null) {
-            _uiState.value = state.copy(message = text(R.string.message_reach_input_length))
-            return null
-        }
-        val normalizedReference = state.reachCalibrationReference.withCurrentLength(state)
-        if (normalizedReference == null) {
-            _uiState.value = state.copy(message = text(R.string.message_reach_set_required))
-            return null
-        }
-        return normalizedReference
-    }
-
-    private fun orientationForBitmap(bitmap: Bitmap): CapturedOrientation {
-        return if (bitmap.width > bitmap.height) {
-            CapturedOrientation.LANDSCAPE
-        } else {
-            CapturedOrientation.PORTRAIT
-        }
     }
 
     private fun cropBitmap(
@@ -2101,168 +1676,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return Bitmap.createBitmap(bitmap, cropLeft, cropTop, cropWidth, cropHeight)
     }
 
-    private fun challengeSelectionCandidateIndices(state: MainUiState): Set<Int> {
-        val baseIndices = if (state.hasDrawTargetSelection) {
-            state.drawTargetHoldIndices
-        } else {
-            state.holds.indices.toSet()
-        }
-        return filterChallengeEligibleIndices(
-            holds = state.holds,
-            indices = baseIndices,
-            minScore = state.challengeDifficultyScoreMin,
-            maxScore = state.challengeDifficultyScoreMax
-        )
-    }
-
-    private fun filterChallengeEligibleIndices(
-        holds: List<Hold>,
-        indices: Set<Int>,
-        minScore: Int,
-        maxScore: Int
-    ): Set<Int> {
-        return indices.filterTo(linkedSetOf()) { index ->
-            val score = holds.getOrNull(index)?.difficultyScore ?: DEFAULT_HOLD_DIFFICULTY_SCORE
-            score in minScore..maxScore
-        }
-    }
-
     private fun selectChallengeGenerationMethod(method: ChallengeGenerationMethod) {
-        val state = _uiState.value
-        val targetStep = if (state.challengeFlowStep == ChallengeFlowStep.COMMON_SETTINGS) {
-            ChallengeFlowStep.GENERATION
-        } else {
-            ChallengeFlowStep.COMMON_SETTINGS
-        }
-        _uiState.value = state.copy(
-            challengeGenerationMethod = method,
-            challengeFlowStep = targetStep,
-            challengeFlowBackStack = pushedChallengeFlowBackStack(
-                state = state,
-                targetStep = targetStep
-            ),
-            selectedHoldIndex = null,
-            challengeHoldIndices = emptySet(),
-            challengeOrderedHoldIndices = emptyList(),
-            lastGeneratedIntermediateHoldIndices = emptySet(),
-            startHoldIndex = null,
-            goalHoldIndex = null,
-            routeSelectionMode = RouteSelectionMode.NONE,
-            isDrawTargetSelectionMode = false,
-            message = null
+        _uiState.value = buildSelectedChallengeGenerationMethodState(
+            state = _uiState.value,
+            method = method,
+            pushedChallengeFlowBackStack = ::pushedChallengeFlowBackStack
         )
-    }
-
-    private fun generateChallengeRouteWithRetries(
-        holds: List<Hold>,
-        sourceIndices: Set<Int>,
-        startIndex: Int,
-        goalIndex: Int,
-        targetCount: Int?,
-        tuning: RouteGenerationTuning,
-        reachCalibrationReference: ReachCalibrationReference?
-    ): List<Int>? {
-        val maximumAttempts = 512
-
-        repeat(maximumAttempts) {
-            ChallengeRouteGenerator.generate(
-                holds = holds,
-                sourceIndices = sourceIndices,
-                startIndex = startIndex,
-                goalIndex = goalIndex,
-                targetCount = targetCount,
-                tuning = tuning,
-                reachCalibrationReference = reachCalibrationReference
-            )?.let { generatedRoute ->
-                return generatedRoute
-            }
-        }
-
-        return null
-    }
-
-    private fun generateChallengeRouteWithRandomStartGoal(
-        holds: List<Hold>,
-        selectionCandidateIndices: Set<Int>,
-        lastGeneratedIntermediateHoldIndices: Set<Int>,
-        targetCount: Int?,
-        tuning: RouteGenerationTuning,
-        reachCalibrationReference: ReachCalibrationReference?
-    ): RandomStartGoalGenerationResult? {
-        val filteredSelectionCandidateIndices = if (tuning.excludePreviouslyGeneratedHolds) {
-            selectionCandidateIndices
-                .filterNotTo(linkedSetOf()) { it in lastGeneratedIntermediateHoldIndices }
-                .takeIf { it.size >= 2 }
-                ?: selectionCandidateIndices
-        } else {
-            selectionCandidateIndices
-        }
-
-        val preferredStartIndices = filteredSelectionCandidateIndices.filterTo(linkedSetOf()) { index ->
-            holds.getOrNull(index)?.isStartCandidate == true
-        }
-        val preferredGoalIndices = filteredSelectionCandidateIndices.filterTo(linkedSetOf()) { index ->
-            holds.getOrNull(index)?.isGoalCandidate == true
-        }
-        val preferredPairs = buildDistinctStartGoalPairs(
-            startIndices = if (preferredStartIndices.isNotEmpty()) preferredStartIndices else filteredSelectionCandidateIndices,
-            goalIndices = if (preferredGoalIndices.isNotEmpty()) preferredGoalIndices else filteredSelectionCandidateIndices
-        )
-        val candidatePairs = if (preferredPairs.isNotEmpty()) {
-            preferredPairs
-        } else {
-            buildDistinctStartGoalPairs(
-                startIndices = filteredSelectionCandidateIndices,
-                goalIndices = filteredSelectionCandidateIndices
-            )
-        }
-        if (candidatePairs.isEmpty()) return null
-
-        candidatePairs
-            .shuffled(Random.Default)
-            .take(64)
-            .forEach { (startIndex, goalIndex) ->
-                val drawSourceIndices = selectionCandidateIndices.toMutableSet().apply {
-                    if (tuning.excludePreviouslyGeneratedHolds) {
-                        removeAll(lastGeneratedIntermediateHoldIndices)
-                    }
-                    add(startIndex)
-                    add(goalIndex)
-                }
-                val orderedIndices = generateChallengeRouteWithRetries(
-                    holds = holds,
-                    sourceIndices = drawSourceIndices,
-                    startIndex = startIndex,
-                    goalIndex = goalIndex,
-                    targetCount = targetCount,
-                    tuning = tuning,
-                    reachCalibrationReference = reachCalibrationReference
-                )
-                if (orderedIndices != null) {
-                    return RandomStartGoalGenerationResult(
-                        startIndex = startIndex,
-                        goalIndex = goalIndex,
-                        orderedIndices = orderedIndices
-                    )
-                }
-            }
-
-        return null
-    }
-
-    private fun buildDistinctStartGoalPairs(
-        startIndices: Set<Int>,
-        goalIndices: Set<Int>
-    ): List<Pair<Int, Int>> {
-        return buildList {
-            startIndices.forEach { startIndex ->
-                goalIndices.forEach { goalIndex ->
-                    if (startIndex != goalIndex) {
-                        add(startIndex to goalIndex)
-                    }
-                }
-            }
-        }
     }
 
     private fun runAutoHoldExtraction(
@@ -2279,7 +1698,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             val extractedHolds = withContext(Dispatchers.Default) {
-                BinaryHoldExtractor.extract(
+                extractAutoHolds(
                     bitmap = bitmap,
                     tuning = tuning,
                     wallSamplePoints = wallSamplePoints
@@ -2307,9 +1726,3 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 }
-
-private data class RandomStartGoalGenerationResult(
-    val startIndex: Int,
-    val goalIndex: Int,
-    val orderedIndices: List<Int>
-)
