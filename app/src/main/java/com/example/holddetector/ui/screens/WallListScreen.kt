@@ -18,7 +18,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.example.holddetector.R
 import com.example.holddetector.model.SavedWallSummary
 import com.example.holddetector.ui.AppSecondaryTextColor
@@ -40,6 +40,7 @@ import com.example.holddetector.ui.components.AppConfirmDialog
 import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.BottomActionBar
+import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.components.WallThumbnail
 import com.example.holddetector.ui.selectors.formatWallTimestamp
 
@@ -62,7 +63,7 @@ fun WallListScreen(
     var editingWallId by remember { mutableStateOf<String?>(null) }
     var challengeWallId by remember { mutableStateOf<String?>(null) }
     var isImageSourceDialogOpen by remember { mutableStateOf(false) }
-    val footerOverlayPadding = 104.dp
+    val footerOverlayPadding = 136.dp
 
     Box(
         modifier = modifier.fillMaxSize()
@@ -71,20 +72,12 @@ fun WallListScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            Surface(
+            ScreenHeader(
+                title = stringResource(R.string.wall_list_title),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                color = AppSurfaceColor,
-                shadowElevation = 12.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                    .zIndex(1f),
+                leadingContent = {
                     IconButton(onClick = onOpenMenu) {
                         Text(
                             text = "\u2630",
@@ -93,15 +86,8 @@ fun WallListScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
-
-                    Text(
-                        text = stringResource(R.string.wall_list_title),
-                        color = AppTextColor,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
-            }
+            )
 
             if (savedWalls.isEmpty()) {
                 Box(
@@ -122,7 +108,7 @@ fun WallListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 16.dp),
-                    contentPadding = PaddingValues(bottom = footerOverlayPadding),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = footerOverlayPadding),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(savedWalls, key = { it.id }) { wall ->

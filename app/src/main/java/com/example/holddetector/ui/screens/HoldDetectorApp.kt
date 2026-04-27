@@ -363,9 +363,7 @@ fun HoldDetectorApp(
                             onStepDistanceVarianceChange = onStepDistanceVarianceChange,
                             onCorridorWidthChange = onCorridorWidthChange,
                             onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(contentPadding)
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }

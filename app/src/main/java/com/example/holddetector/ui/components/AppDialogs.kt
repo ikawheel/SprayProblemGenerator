@@ -2,6 +2,8 @@ package com.example.holddetector.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -99,21 +101,33 @@ fun AppConfirmDialog(
             )
         },
         text = {
-            Text(
-                text = message,
-                color = AppTextColor,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        },
-        confirmButton = {
-            AppButton(onClick = onConfirm) {
-                Text(confirmText)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = message,
+                    color = AppTextColor,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                AppButton(
+                    onClick = onConfirm,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(confirmText)
+                }
+
+                AppOutlinedButton(
+                    onClick = onDismissRequest,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                ) {
+                    Text(dismissText)
+                }
             }
         },
-        dismissButton = {
-            AppOutlinedButton(onClick = onDismissRequest) {
-                Text(dismissText)
-            }
-        }
+        confirmButton = {},
+        dismissButton = {}
     )
 }

@@ -19,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,8 +37,9 @@ import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.DisplayColorTarget
 import com.example.holddetector.ui.EditableRgbColor
-import com.example.holddetector.ui.components.BottomActionBar
 import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.BottomActionBar
+import com.example.holddetector.ui.components.ScreenHeader
 
 @Composable
 fun DisplayColorSettingsScreen(
@@ -54,24 +54,10 @@ fun DisplayColorSettingsScreen(
         modifier = modifier
             .fillMaxSize()
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            color = AppSurfaceColor,
-            shadowElevation = 12.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.display_color_settings_title),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
+        ScreenHeader(
+            title = stringResource(R.string.display_color_settings_title),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         Box(
             modifier = Modifier

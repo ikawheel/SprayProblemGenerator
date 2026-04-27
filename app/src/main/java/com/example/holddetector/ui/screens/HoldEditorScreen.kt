@@ -32,6 +32,7 @@ import com.example.holddetector.ui.RouteSelectionMode
 import com.example.holddetector.ui.canvas.HoldCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
 
 @Composable
@@ -51,24 +52,10 @@ fun HoldEditorScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            color = AppSurfaceColor,
-            shadowElevation = 12.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-            ) {
-                Text(
-                    text = stringResource(uiModel.titleResId),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
+        ScreenHeader(
+            title = stringResource(uiModel.titleResId),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         Column(
             modifier = Modifier

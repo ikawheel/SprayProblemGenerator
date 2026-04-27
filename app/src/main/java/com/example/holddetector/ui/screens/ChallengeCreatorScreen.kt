@@ -53,6 +53,7 @@ import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppMessageDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.selectors.DrawTargetStatus
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import java.util.Locale
@@ -86,97 +87,116 @@ fun ChallengeCreatorScreen(
     var isDebugSummaryExpanded by rememberSaveable { mutableStateOf(false) }
     var isTuningDialogOpen by rememberSaveable { mutableStateOf(false) }
     val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val screenTitleResId = when (state.challengeFlowStep) {
+        ChallengeFlowStep.METHOD_SELECT -> R.string.challenge_method_select_heading
+        ChallengeFlowStep.COMMON_SETTINGS -> R.string.challenge_settings_heading
+        ChallengeFlowStep.GENERATION -> when (state.challengeGenerationMethod) {
+            ChallengeGenerationMethod.MANUAL_START_GOAL -> R.string.challenge_manual_generation_heading
+            ChallengeGenerationMethod.RANDOM_START_GOAL -> R.string.challenge_random_generation_heading
+            null -> R.string.challenge_method_select_heading
+        }
+        ChallengeFlowStep.RESULT -> R.string.challenge_result_heading
+        ChallengeFlowStep.TUNING -> R.string.challenge_tuning_title
+    }
 
     Column(
         modifier = modifier
+            .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(bottom = navigationBarBottomPadding)
     ) {
-        Text(
-            text = stringResource(R.string.challenge_creator_title),
-            color = AppTextColor,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+        ScreenHeader(
+            title = stringResource(screenTitleResId),
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        when (state.challengeFlowStep) {
-            ChallengeFlowStep.METHOD_SELECT -> {
-                ChallengeMethodSelectionContent(
-                    onSelectManualStartGoalChallengeMethod = onSelectManualStartGoalChallengeMethod,
-                    onSelectRandomStartGoalChallengeMethod = onSelectRandomStartGoalChallengeMethod
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = 20.dp + navigationBarBottomPadding
                 )
-            }
+        ) {
+            when (state.challengeFlowStep) {
+                ChallengeFlowStep.METHOD_SELECT -> {
+                    ChallengeMethodSelectionContent(
+                        onSelectManualStartGoalChallengeMethod = onSelectManualStartGoalChallengeMethod,
+                        onSelectRandomStartGoalChallengeMethod = onSelectRandomStartGoalChallengeMethod
+                    )
+                }
 
-            ChallengeFlowStep.COMMON_SETTINGS -> {
-                ChallengeCommonSettingsContent(
-                    state = state,
-                    uiModel = uiModel,
-                    onOpenChallengeGeneration = onOpenChallengeGeneration,
-                    onShowTuningDialog = { isTuningDialogOpen = true },
-                    onChallengeHoldTapped = onChallengeHoldTapped,
-                    onStartDrawTargetSelection = onStartDrawTargetSelection,
-                    onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
-                    onDrawCountChange = onDrawCountChange,
-                    onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange
-                )
-            }
+                ChallengeFlowStep.COMMON_SETTINGS -> {
+                    ChallengeCommonSettingsContent(
+                        state = state,
+                        uiModel = uiModel,
+                        onOpenChallengeGeneration = onOpenChallengeGeneration,
+                        onShowTuningDialog = { isTuningDialogOpen = true },
+                        onChallengeHoldTapped = onChallengeHoldTapped,
+                        onStartDrawTargetSelection = onStartDrawTargetSelection,
+                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        onDrawCountChange = onDrawCountChange,
+                        onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange
+                    )
+                }
 
-            ChallengeFlowStep.GENERATION -> {
-                when (state.challengeGenerationMethod) {
-                    ChallengeGenerationMethod.MANUAL_START_GOAL -> {
-                        ChallengeManualGenerationContent(
-                            state = state,
-                            uiModel = uiModel,
-                            onChallengeHoldTapped = onChallengeHoldTapped,
-                            onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
-                            onStartGoalSelection = onStartGoalSelection,
-                            onDrawClick = onDrawClick
-                        )
-                    }
+                ChallengeFlowStep.GENERATION -> {
+                    when (state.challengeGenerationMethod) {
+                        ChallengeGenerationMethod.MANUAL_START_GOAL -> {
+                            ChallengeManualGenerationContent(
+                                state = state,
+                                uiModel = uiModel,
+                                onChallengeHoldTapped = onChallengeHoldTapped,
+                                onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                                onStartGoalSelection = onStartGoalSelection,
+                                onDrawClick = onDrawClick
+                            )
+                        }
 
-                    ChallengeGenerationMethod.RANDOM_START_GOAL -> {
-                        ChallengeRandomGenerationContent(
-                            state = state,
-                            uiModel = uiModel,
-                            onChallengeHoldTapped = onChallengeHoldTapped,
-                            onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
-                            onDrawWithRandomStartGoal = onDrawWithRandomStartGoal
-                        )
-                    }
+                        ChallengeGenerationMethod.RANDOM_START_GOAL -> {
+                            ChallengeRandomGenerationContent(
+                                state = state,
+                                uiModel = uiModel,
+                                onChallengeHoldTapped = onChallengeHoldTapped,
+                                onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                                onDrawWithRandomStartGoal = onDrawWithRandomStartGoal
+                            )
+                        }
 
-                    null -> {
-                        ChallengeMethodSelectionContent(
-                            onSelectManualStartGoalChallengeMethod = onSelectManualStartGoalChallengeMethod,
-                            onSelectRandomStartGoalChallengeMethod = onSelectRandomStartGoalChallengeMethod
-                        )
+                        null -> {
+                            ChallengeMethodSelectionContent(
+                                onSelectManualStartGoalChallengeMethod = onSelectManualStartGoalChallengeMethod,
+                                onSelectRandomStartGoalChallengeMethod = onSelectRandomStartGoalChallengeMethod
+                            )
+                        }
                     }
                 }
-            }
 
-            ChallengeFlowStep.RESULT -> {
-                ChallengeResultContent(
-                    state = state,
-                    uiModel = uiModel,
-                    isDebugSummaryExpanded = isDebugSummaryExpanded,
-                    onDebugSummaryExpandedChange = { isDebugSummaryExpanded = it },
-                    onChallengeHoldTapped = onChallengeHoldTapped,
-                    onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
-                    onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration
-                )
-            }
+                ChallengeFlowStep.RESULT -> {
+                    ChallengeResultContent(
+                        state = state,
+                        uiModel = uiModel,
+                        isDebugSummaryExpanded = isDebugSummaryExpanded,
+                        onDebugSummaryExpandedChange = { isDebugSummaryExpanded = it },
+                        onChallengeHoldTapped = onChallengeHoldTapped,
+                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration
+                    )
+                }
 
-            ChallengeFlowStep.TUNING -> {
-                ChallengeTuningContent(
-                    state = state,
-                    onDetourStrengthChange = onDetourStrengthChange,
-                    onRouteWavinessChange = onRouteWavinessChange,
-                    onStepDistanceVarianceChange = onStepDistanceVarianceChange,
-                    onCorridorWidthChange = onCorridorWidthChange,
-                    onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
-                )
+                ChallengeFlowStep.TUNING -> {
+                    ChallengeTuningContent(
+                        state = state,
+                        onDetourStrengthChange = onDetourStrengthChange,
+                        onRouteWavinessChange = onRouteWavinessChange,
+                        onStepDistanceVarianceChange = onStepDistanceVarianceChange,
+                        onCorridorWidthChange = onCorridorWidthChange,
+                        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
+                    )
+                }
             }
         }
-
     }
 
     if (isTuningDialogOpen) {
@@ -202,13 +222,6 @@ private fun ChallengeMethodSelectionContent(
     onSelectManualStartGoalChallengeMethod: () -> Unit,
     onSelectRandomStartGoalChallengeMethod: () -> Unit
 ) {
-    Text(
-        text = stringResource(R.string.challenge_method_select_heading),
-        color = AppTextColor,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
-    )
-
     AppButton(
         onClick = onSelectManualStartGoalChallengeMethod,
         modifier = Modifier.fillMaxWidth()
@@ -238,13 +251,6 @@ private fun ChallengeCommonSettingsContent(
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit
 ) {
-    Text(
-        text = stringResource(R.string.challenge_settings_heading),
-        color = AppTextColor,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
-    )
-
     ChallengeCanvasSection(
         state = state,
         uiModel = uiModel,
@@ -344,13 +350,6 @@ private fun ChallengeManualGenerationContent(
     onStartGoalSelection: () -> Unit,
     onDrawClick: () -> Unit
 ) {
-    Text(
-        text = stringResource(R.string.challenge_manual_generation_heading),
-        color = AppTextColor,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
-    )
-
     ChallengeCanvasSection(
         state = state,
         uiModel = uiModel,
@@ -403,13 +402,6 @@ private fun ChallengeRandomGenerationContent(
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawWithRandomStartGoal: () -> Unit
 ) {
-    Text(
-        text = stringResource(R.string.challenge_random_generation_heading),
-        color = AppTextColor,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
-    )
-
     ChallengeCanvasSection(
         state = state,
         uiModel = uiModel,
@@ -450,13 +442,6 @@ private fun ChallengeResultContent(
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onRerunCurrentChallengeGeneration: () -> Unit
 ) {
-    Text(
-        text = stringResource(R.string.challenge_result_heading),
-        color = AppTextColor,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
-    )
-
     ChallengeCanvasSection(
         state = state,
         uiModel = uiModel,
@@ -525,13 +510,6 @@ private fun ChallengeTuningContent(
     onCorridorWidthChange: (Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit
 ) {
-    Text(
-        text = stringResource(R.string.challenge_tuning_title),
-        color = AppTextColor,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
-    )
-
     ChallengeTuningControls(
         state = state,
         onDetourStrengthChange = onDetourStrengthChange,

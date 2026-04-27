@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,7 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
@@ -34,6 +32,7 @@ import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.HoldScoringCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.selectors.deriveHoldScoringUiModel
 
 @Composable
@@ -54,25 +53,10 @@ fun HoldScoringScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                color = AppSurfaceColor,
-                shadowElevation = 12.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-                ) {
-                    Text(
-                        text = stringResourceByName("hold_scoring_title"),
-                        color = AppTextColor,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                }
-            }
+            ScreenHeader(
+                title = stringResourceByName("hold_scoring_title"),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
             Column(
                 modifier = Modifier

@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.model.Hold
-import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.HoldEditorTool
@@ -37,6 +36,7 @@ import com.example.holddetector.ui.canvas.HoldCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.DisplayColorSettings
+import com.example.holddetector.ui.components.ScreenHeader
 
 private data class HoldEditOperationSnapshot(
     val holds: List<Hold>,
@@ -79,24 +79,10 @@ fun HoldEditOperationScreen(
         modifier = modifier
             .fillMaxSize()
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            color = AppSurfaceColor,
-            shadowElevation = 12.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-            ) {
-                Text(
-                    text = stringResource(holdEditOperationTitleResId(mode)),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
+        ScreenHeader(
+            title = stringResource(holdEditOperationTitleResId(mode)),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         Column(
             modifier = Modifier
