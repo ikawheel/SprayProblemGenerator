@@ -28,6 +28,11 @@ class DisplayColorSettingsRepository(context: Context) {
                 red = preferences.getInt(KEY_RANGE_SELECTION_RED, defaults.rangeSelection.normalizedRed),
                 green = preferences.getInt(KEY_RANGE_SELECTION_GREEN, defaults.rangeSelection.normalizedGreen),
                 blue = preferences.getInt(KEY_RANGE_SELECTION_BLUE, defaults.rangeSelection.normalizedBlue)
+            ),
+            startGoalHold = EditableRgbColor(
+                red = preferences.getInt(KEY_START_GOAL_HOLD_RED, defaults.startGoalHold.normalizedRed),
+                green = preferences.getInt(KEY_START_GOAL_HOLD_GREEN, defaults.startGoalHold.normalizedGreen),
+                blue = preferences.getInt(KEY_START_GOAL_HOLD_BLUE, defaults.startGoalHold.normalizedBlue)
             )
         )
     }
@@ -43,6 +48,9 @@ class DisplayColorSettingsRepository(context: Context) {
             .putInt(KEY_RANGE_SELECTION_RED, settings.rangeSelection.normalizedRed)
             .putInt(KEY_RANGE_SELECTION_GREEN, settings.rangeSelection.normalizedGreen)
             .putInt(KEY_RANGE_SELECTION_BLUE, settings.rangeSelection.normalizedBlue)
+            .putInt(KEY_START_GOAL_HOLD_RED, settings.startGoalHold.normalizedRed)
+            .putInt(KEY_START_GOAL_HOLD_GREEN, settings.startGoalHold.normalizedGreen)
+            .putInt(KEY_START_GOAL_HOLD_BLUE, settings.startGoalHold.normalizedBlue)
             .apply()
     }
 
@@ -60,5 +68,9 @@ class DisplayColorSettingsRepository(context: Context) {
         const val KEY_RANGE_SELECTION_RED = "range_selection_red"
         const val KEY_RANGE_SELECTION_GREEN = "range_selection_green"
         const val KEY_RANGE_SELECTION_BLUE = "range_selection_blue"
+
+        const val KEY_START_GOAL_HOLD_RED = "start_goal_hold_red"
+        const val KEY_START_GOAL_HOLD_GREEN = "start_goal_hold_green"
+        const val KEY_START_GOAL_HOLD_BLUE = "start_goal_hold_blue"
     }
 }

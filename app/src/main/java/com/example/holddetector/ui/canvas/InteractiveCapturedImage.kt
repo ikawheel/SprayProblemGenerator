@@ -51,7 +51,6 @@ import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppCoreLabelBackgroundColor
 import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.AppOverlayStrokePreviewColor
-import com.example.holddetector.ui.AppStartGoalLabelBackgroundColor
 import com.example.holddetector.ui.DefaultHoldStrokeWidth
 import com.example.holddetector.ui.HoldEditorTool
 import com.example.holddetector.ui.HoldTapAreaSize
@@ -130,6 +129,7 @@ fun HoldCanvasScreen(
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     holdEditorTool: HoldEditorTool = HoldEditorTool.ADD,
+    isAutoMergeEnabled: Boolean = true,
     isSelectionOnly: Boolean = false,
     isDrawTargetSelectionMode: Boolean = false,
     onHoldTapped: (Int?) -> Unit,
@@ -156,6 +156,7 @@ fun HoldCanvasScreen(
         displayColorSettings = displayColorSettings,
         holdTapAreaSize = holdTapAreaSize,
         holdEditorTool = holdEditorTool,
+        isAutoMergeEnabled = isAutoMergeEnabled,
         isSelectionOnly = isSelectionOnly,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.HOLD_EDITOR,
@@ -346,6 +347,7 @@ private fun InteractiveCapturedImage(
     isWallColorSamplingMode: Boolean = false,
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
     holdEditorTool: HoldEditorTool = HoldEditorTool.ADD,
+    isAutoMergeEnabled: Boolean = true,
     isSelectionOnly: Boolean = false,
     isDrawTargetSelectionMode: Boolean,
     focusHoldIndex: Int? = null,
@@ -398,6 +400,7 @@ private fun InteractiveCapturedImage(
     val holdOutlineColor = displayColorSettings.holdOutlineColor
     val selectedHoldColor = displayColorSettings.selectedHoldColor
     val rangeSelectionColor = displayColorSettings.rangeSelectionColor
+    val startGoalHoldColor = displayColorSettings.startGoalHoldColor
 
     val baseLayout = remember(bitmap.width, bitmap.height, containerSize) {
         calculateBaseImageLayout(
@@ -481,7 +484,7 @@ private fun InteractiveCapturedImage(
         val targetZoom = minOf(
             containerWidth * 0.48f / holdWidth,
             containerHeight * 0.48f / holdHeight
-        ).coerceIn(1f, 5f)
+        ).coerceIn(1f, 15f)
         val holdCenter = Offset(
             x = (polygon.minX + polygon.maxX) / 2f,
             y = (polygon.minY + polygon.maxY) / 2f
@@ -574,7 +577,7 @@ private fun InteractiveCapturedImage(
                             val pan = currentCentroid - lastCentroid
                             val zoom = (currentSpan / lastSpan).coerceIn(0.5f, 2f)
                             val previousScale = zoomScale
-                            val updatedScale = (previousScale * zoom).coerceIn(1f, 5f)
+                            val updatedScale = (previousScale * zoom).coerceIn(1f, 15f)
                             val zoomFactor = updatedScale / previousScale
                             val contentOrigin = Offset(baseLayout.left, baseLayout.top)
                             val candidatePanOffset = (panOffset * zoomFactor) +
@@ -799,7 +802,11 @@ private fun InteractiveCapturedImage(
 
                     var movedEnough = false
                     var multiTouchDetected = false
-                    var editorTargetIndex = if (mode == CanvasMode.HOLD_EDITOR) {
+                    var editorTargetIndex = if (
+                        mode == CanvasMode.HOLD_EDITOR &&
+                        holdEditorTool == HoldEditorTool.ADD &&
+                        isAutoMergeEnabled
+                    ) {
                         findTappedIndexFromLocal(
                             localPoint = startLocal,
                             holds = holds,
@@ -860,7 +867,12 @@ private fun InteractiveCapturedImage(
                                 brushRadiusY = brushRadiusYLocal,
                                 baseLayout = baseLayout
                             )
-                            if (mode == CanvasMode.HOLD_EDITOR && editorTargetIndex == null) {
+                            if (
+                                mode == CanvasMode.HOLD_EDITOR &&
+                                holdEditorTool == HoldEditorTool.ADD &&
+                                isAutoMergeEnabled &&
+                                editorTargetIndex == null
+                            ) {
                                 editorTargetIndex = findTappedIndexFromLocal(
                                     localPoint = currentLocal,
                                     holds = holds,
@@ -901,16 +913,23 @@ private fun InteractiveCapturedImage(
                                 brushRadiusY = appliedRadiusY,
                                 baseLayout = baseLayout
                             )
-                            val targetIndex = editorTargetIndex ?: brushPolygon
-                                ?.let { polygon ->
-                                    findHoldIndicesIntersectingSelectionPolygon(
-                                        selectionPolygon = polygon,
-                                        holds = holds,
-                                        baseLayout = baseLayout
-                                    )
-                                }
-                                ?.takeIf { it.size == 1 }
-                                ?.firstOrNull()
+                            val targetIndex = if (
+                                holdEditorTool == HoldEditorTool.ADD &&
+                                !isAutoMergeEnabled
+                            ) {
+                                null
+                            } else {
+                                editorTargetIndex ?: brushPolygon
+                                    ?.let { polygon ->
+                                        findHoldIndicesIntersectingSelectionPolygon(
+                                            selectionPolygon = polygon,
+                                            holds = holds,
+                                            baseLayout = baseLayout
+                                        )
+                                    }
+                                    ?.takeIf { it.size == 1 }
+                                    ?.firstOrNull()
+                            }
                             val targetHold = targetIndex?.let(holds::getOrNull)
                             if (holdEditorTool == HoldEditorTool.ADD && targetIndex == null) {
                                 if (movedEnough) {
@@ -1109,8 +1128,8 @@ private fun InteractiveCapturedImage(
                         val polygon = hold.toLocalPolygon(baseLayout)
                         val strokeColor = when {
                             mode == CanvasMode.SCORING -> selectedHoldColor
-                            index == startHoldIndex -> Color(0xFF0284C7)
-                            index == goalHoldIndex -> Color(0xFFCA8A04)
+                            index == startHoldIndex -> startGoalHoldColor
+                            index == goalHoldIndex -> startGoalHoldColor
                             index == selectedIndex -> selectedHoldColor
                             challengeHoldIndices.contains(index) -> Color.Yellow
                             selectionCandidateIndices.contains(index) -> rangeSelectionColor
@@ -1152,8 +1171,10 @@ private fun InteractiveCapturedImage(
                                     challengeHoldIndices.contains(index)
                                 ) {
                                     AppCoreLabelBackgroundColor
+                                } else if (index == startHoldIndex || index == goalHoldIndex) {
+                                    startGoalHoldColor
                                 } else {
-                                    AppStartGoalLabelBackgroundColor
+                                    Color(0x55FFFFFF)
                                 },
                                 topLeft = Offset(labelLeft, labelTop),
                                 size = Size(labelWidth, labelHeight)

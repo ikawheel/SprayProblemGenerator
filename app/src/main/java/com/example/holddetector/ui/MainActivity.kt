@@ -36,7 +36,6 @@ val AppSectionSurfaceColor = Color(0xFFE5E7EB)
 val AppTextColor = Color(0xFF1F2937)
 val AppSecondaryTextColor = Color(0xFF6B7280)
 val AppOverlayBackgroundColor = Color(0xEFFFFFFF)
-val AppStartGoalLabelBackgroundColor = Color(0x55FFFFFF)
 val AppCoreHighlightBackgroundColor = Color(0x26F59E0B)
 val AppCoreLabelBackgroundColor = Color(0x99FDE68A)
 val AppOverlayStrokePreviewColor = Color(0x44222222)
@@ -104,8 +103,7 @@ class MainActivity : ComponentActivity() {
                         onOpenSavedWallForHoldEditor = viewModel::openSavedWallForHoldEditor,
                         onOpenSavedWallForHoldAttributeEditor = viewModel::openSavedWallForHoldAttributeEditor,
                         onOpenSavedWallForHoldScoring = viewModel::openSavedWallForHoldScoring,
-                        onOpenSavedWallForManualStartGoalChallenge = viewModel::openSavedWallForManualStartGoalChallenge,
-                        onOpenSavedWallForRandomStartGoalChallenge = viewModel::openSavedWallForRandomStartGoalChallenge,
+                        onOpenSavedWallForChallenge = viewModel::openSavedWallForChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
                         onOpenDisplayColorSettings = viewModel::openDisplayColorSettings,
                         onUpdateDisplayColor = viewModel::updateDisplayColor,
@@ -143,6 +141,7 @@ class MainActivity : ComponentActivity() {
                         onClearHoldAttributes = viewModel::clearHoldAttributes,
                         onChallengeHoldTapped = viewModel::onChallengeHoldTapped,
                         onApplyEditedHoldsAndReturn = viewModel::applyEditedHoldsAndReturnToHoldEditor,
+                        onBackFromHoldEditOperation = viewModel::onBackPressed,
                         onContinueToHoldEditorFromReachCalibration = viewModel::continueToHoldEditorFromReachCalibration,
                         onBackFromReachCalibration = viewModel::backFromReachCalibration,
                         onStartReachCalibrationSelection = viewModel::startReachCalibrationSelection,

@@ -54,14 +54,12 @@ fun WallListScreen(
     onOpenSavedWallForHoldEditor: (String) -> Unit,
     onOpenSavedWallForHoldAttributeEditor: (String) -> Unit,
     onOpenSavedWallForHoldScoring: (String) -> Unit,
-    onOpenSavedWallForManualStartGoalChallenge: (String) -> Unit,
-    onOpenSavedWallForRandomStartGoalChallenge: (String) -> Unit,
+    onOpenSavedWallForChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var deletingWallId by remember { mutableStateOf<String?>(null) }
     var editingWallId by remember { mutableStateOf<String?>(null) }
-    var challengeWallId by remember { mutableStateOf<String?>(null) }
     var isImageSourceDialogOpen by remember { mutableStateOf(false) }
     val footerOverlayPadding = 136.dp
 
@@ -115,7 +113,7 @@ fun WallListScreen(
                         SavedWallCard(
                             wall = wall,
                             onEdit = { editingWallId = wall.id },
-                            onCreateChallenge = { challengeWallId = wall.id },
+                            onCreateChallenge = { onOpenSavedWallForChallenge(wall.id) },
                             onDelete = { deletingWallId = wall.id }
                         )
                     }
@@ -178,33 +176,6 @@ fun WallListScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.edit_menu_hold_scoring))
-            }
-        }
-    }
-
-    challengeWallId?.let { wallId ->
-        AppContentDialog(
-            title = stringResource(R.string.challenge_menu_title),
-            onDismissRequest = { challengeWallId = null },
-            dismissText = stringResource(R.string.cancel)
-        ) {
-            AppButton(
-                onClick = {
-                    challengeWallId = null
-                    onOpenSavedWallForManualStartGoalChallenge(wallId)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.challenge_method_manual_start_goal))
-            }
-            AppButton(
-                onClick = {
-                    challengeWallId = null
-                    onOpenSavedWallForRandomStartGoalChallenge(wallId)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.challenge_method_random_start_goal))
             }
         }
     }

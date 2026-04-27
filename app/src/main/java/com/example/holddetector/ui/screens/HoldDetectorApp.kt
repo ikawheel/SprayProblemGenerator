@@ -51,8 +51,7 @@ fun HoldDetectorApp(
     onOpenSavedWallForHoldEditor: (String) -> Unit,
     onOpenSavedWallForHoldAttributeEditor: (String) -> Unit,
     onOpenSavedWallForHoldScoring: (String) -> Unit,
-    onOpenSavedWallForManualStartGoalChallenge: (String) -> Unit,
-    onOpenSavedWallForRandomStartGoalChallenge: (String) -> Unit,
+    onOpenSavedWallForChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     onOpenDisplayColorSettings: () -> Unit,
     onUpdateDisplayColor: (DisplayColorTarget, EditableRgbColor) -> Unit,
@@ -90,6 +89,7 @@ fun HoldDetectorApp(
     onClearHoldAttributes: (Int?) -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onApplyEditedHoldsAndReturn: (List<Hold>, Int?) -> Unit,
+    onBackFromHoldEditOperation: () -> Unit,
     onContinueToHoldEditorFromReachCalibration: () -> Unit,
     onBackFromReachCalibration: () -> Unit,
     onStartReachCalibrationSelection: () -> Unit,
@@ -211,8 +211,7 @@ fun HoldDetectorApp(
                             onOpenSavedWallForHoldEditor = onOpenSavedWallForHoldEditor,
                             onOpenSavedWallForHoldAttributeEditor = onOpenSavedWallForHoldAttributeEditor,
                             onOpenSavedWallForHoldScoring = onOpenSavedWallForHoldScoring,
-                            onOpenSavedWallForManualStartGoalChallenge = onOpenSavedWallForManualStartGoalChallenge,
-                            onOpenSavedWallForRandomStartGoalChallenge = onOpenSavedWallForRandomStartGoalChallenge,
+                            onOpenSavedWallForChallenge = onOpenSavedWallForChallenge,
                             onDeleteSavedWall = onDeleteSavedWall,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -311,8 +310,10 @@ fun HoldDetectorApp(
                             initialSelectedIndex = state.selectedHoldIndex,
                             holdTapAreaSize = state.holdTapAreaSize,
                             displayColorSettings = state.displayColorSettings,
+                            isEditingExistingWall = state.currentWallId != null,
                             onHoldTapAreaSizeChange = onHoldTapAreaSizeChange,
                             onConfirm = onApplyEditedHoldsAndReturn,
+                            onRequestBack = onBackFromHoldEditOperation,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

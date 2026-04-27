@@ -86,6 +86,7 @@ fun ChallengeCreatorScreen(
     val uiModel = deriveChallengeCreatorUiModel(state)
     var isDebugSummaryExpanded by rememberSaveable { mutableStateOf(false) }
     var isTuningDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var isGenerationMethodDialogOpen by rememberSaveable { mutableStateOf(false) }
     val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val screenTitleResId = when (state.challengeFlowStep) {
         ChallengeFlowStep.METHOD_SELECT -> R.string.challenge_method_select_heading
@@ -131,7 +132,7 @@ fun ChallengeCreatorScreen(
                     ChallengeCommonSettingsContent(
                         state = state,
                         uiModel = uiModel,
-                        onOpenChallengeGeneration = onOpenChallengeGeneration,
+                        onOpenChallengeGeneration = { isGenerationMethodDialogOpen = true },
                         onShowTuningDialog = { isTuningDialogOpen = true },
                         onChallengeHoldTapped = onChallengeHoldTapped,
                         onStartDrawTargetSelection = onStartDrawTargetSelection,
@@ -213,6 +214,33 @@ fun ChallengeCreatorScreen(
                 onCorridorWidthChange = onCorridorWidthChange,
                 onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
             )
+        }
+    }
+
+    if (isGenerationMethodDialogOpen) {
+        AppContentDialog(
+            title = stringResource(R.string.challenge_menu_title),
+            onDismissRequest = { isGenerationMethodDialogOpen = false },
+            dismissText = stringResource(R.string.cancel)
+        ) {
+            AppButton(
+                onClick = {
+                    isGenerationMethodDialogOpen = false
+                    onSelectManualStartGoalChallengeMethod()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.challenge_method_manual_start_goal))
+            }
+            AppButton(
+                onClick = {
+                    isGenerationMethodDialogOpen = false
+                    onSelectRandomStartGoalChallengeMethod()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.challenge_method_random_start_goal))
+            }
         }
     }
 }
@@ -323,21 +351,7 @@ private fun ChallengeCommonSettingsContent(
             .fillMaxWidth()
             .padding(top = 12.dp)
     ) {
-        Text(
-            text = stringResource(
-                when (state.challengeGenerationMethod) {
-                    ChallengeGenerationMethod.MANUAL_START_GOAL -> {
-                        R.string.challenge_open_generation_manual
-                    }
-
-                    ChallengeGenerationMethod.RANDOM_START_GOAL -> {
-                        R.string.challenge_open_generation_random
-                    }
-
-                    null -> R.string.challenge_open_generation_manual
-                }
-            )
-        )
+        Text(text = stringResource(R.string.challenge_method_select_heading))
     }
 }
 

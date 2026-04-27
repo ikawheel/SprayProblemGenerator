@@ -92,6 +92,13 @@ fun DisplayColorSettingsScreen(
                     onColorChange = { onUpdateColor(DisplayColorTarget.RANGE_SELECTION, it) }
                 )
 
+                DisplayColorSection(
+                    title = stringResource(R.string.display_color_start_goal_hold_label),
+                    description = stringResource(R.string.display_color_start_goal_hold_description),
+                    color = settings.startGoalHold,
+                    onColorChange = { onUpdateColor(DisplayColorTarget.START_GOAL_HOLD, it) }
+                )
+
                 Spacer(modifier = Modifier.height(footerOverlayPadding))
             }
 

@@ -97,6 +97,7 @@ fun HoldEditorScreen(
                         displayColorSettings = state.displayColorSettings,
                         holdTapAreaSize = state.holdTapAreaSize,
                         holdEditorTool = HoldEditorTool.ADD,
+                        isAutoMergeEnabled = true,
                         isSelectionOnly = true,
                         onHoldTapped = {},
                         onReachCalibrationPointSelected = {},

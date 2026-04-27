@@ -5,7 +5,8 @@ import androidx.compose.ui.graphics.Color
 enum class DisplayColorTarget {
     HOLD_OUTLINE,
     SELECTED_HOLD,
-    RANGE_SELECTION
+    RANGE_SELECTION,
+    START_GOAL_HOLD
 }
 
 data class EditableRgbColor(
@@ -27,7 +28,8 @@ data class EditableRgbColor(
 data class DisplayColorSettings(
     val holdOutline: EditableRgbColor = EditableRgbColor(red = 0, green = 255, blue = 0),
     val selectedHold: EditableRgbColor = EditableRgbColor(red = 255, green = 0, blue = 0),
-    val rangeSelection: EditableRgbColor = EditableRgbColor(red = 0, green = 255, blue = 255)
+    val rangeSelection: EditableRgbColor = EditableRgbColor(red = 0, green = 255, blue = 255),
+    val startGoalHold: EditableRgbColor = EditableRgbColor(red = 59, green = 130, blue = 246)
 ) {
     val holdOutlineColor: Color
         get() = holdOutline.toComposeColor()
@@ -37,4 +39,7 @@ data class DisplayColorSettings(
 
     val rangeSelectionColor: Color
         get() = rangeSelection.toComposeColor()
+
+    val startGoalHoldColor: Color
+        get() = startGoalHold.toComposeColor()
 }

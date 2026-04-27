@@ -432,6 +432,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             DisplayColorTarget.HOLD_OUTLINE -> state.displayColorSettings.copy(holdOutline = normalized)
             DisplayColorTarget.SELECTED_HOLD -> state.displayColorSettings.copy(selectedHold = normalized)
             DisplayColorTarget.RANGE_SELECTION -> state.displayColorSettings.copy(rangeSelection = normalized)
+            DisplayColorTarget.START_GOAL_HOLD -> state.displayColorSettings.copy(startGoalHold = normalized)
         }
         if (updatedSettings == state.displayColorSettings) return
 
@@ -616,11 +617,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 challengeOrderedHoldIndices = emptyList(),
                 lastGeneratedIntermediateHoldIndices = emptySet(),
                 challengeGenerationMethod = initialMethod,
-                challengeFlowStep = if (initialMethod == null) {
-                    ChallengeFlowStep.METHOD_SELECT
-                } else {
-                    ChallengeFlowStep.COMMON_SETTINGS
-                },
+                challengeFlowStep = ChallengeFlowStep.COMMON_SETTINGS,
                 challengeFlowBackStack = emptyList(),
                 drawTargetHoldIndices = emptySet(),
                 hasDrawTargetSelection = false,
@@ -716,6 +713,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun applyEditedHoldsAndReturnToHoldEditor(updatedHolds: List<Hold>, selectedIndex: Int?) {
         val state = _uiState.value
         if (state.currentScreen != AppScreen.HOLD_EDIT_OPERATION) return
+
+        if (state.currentWallId != null) {
+            val bitmap = state.capturedBitmap ?: run {
+                _uiState.value = state.copy(message = text(R.string.message_image_missing_to_save))
+                return
+            }
+            val normalizedSelectedIndex = selectedIndex?.takeIf { it in updatedHolds.indices }
+            val normalizedReference = state.reachCalibrationReference.withCurrentLength(state)
+
+            viewModelScope.launch {
+                _uiState.value = state.copy(
+                    holds = updatedHolds,
+                    selectedHoldIndex = normalizedSelectedIndex,
+                    reachCalibrationReference = normalizedReference,
+                    isBusy = true
+                )
+
+                val savedSummary = withContext(Dispatchers.IO) {
+                    repository.saveWall(
+                        wallId = state.currentWallId,
+                        bitmap = bitmap,
+                        holds = updatedHolds,
+                        reachCalibrationReference = normalizedReference,
+                        capturedOrientation = state.capturedOrientation,
+                        capturedRotationDegrees = state.capturedRotationDegrees
+                    )
+                }
+                val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
+                val latestState = _uiState.value
+                _uiState.value = popScreenState(
+                    state = latestState.copy(
+                        currentWallId = savedSummary.id,
+                        savedWalls = refreshed,
+                        holds = updatedHolds,
+                        selectedHoldIndex = normalizedSelectedIndex,
+                        reachCalibrationReference = normalizedReference,
+                        isHoldEditorDirty = false,
+                        isBusy = false,
+                        message = text(R.string.message_saved_wall)
+                    )
+                )
+            }
+            return
+        }
 
         val normalizedSelectedIndex = selectedIndex?.takeIf { it in updatedHolds.indices }
         _uiState.value = popScreenState(
@@ -2088,12 +2129,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun selectChallengeGenerationMethod(method: ChallengeGenerationMethod) {
         val state = _uiState.value
+        val targetStep = if (state.challengeFlowStep == ChallengeFlowStep.COMMON_SETTINGS) {
+            ChallengeFlowStep.GENERATION
+        } else {
+            ChallengeFlowStep.COMMON_SETTINGS
+        }
         _uiState.value = state.copy(
             challengeGenerationMethod = method,
-            challengeFlowStep = ChallengeFlowStep.COMMON_SETTINGS,
+            challengeFlowStep = targetStep,
             challengeFlowBackStack = pushedChallengeFlowBackStack(
                 state = state,
-                targetStep = ChallengeFlowStep.COMMON_SETTINGS
+                targetStep = targetStep
             ),
             selectedHoldIndex = null,
             challengeHoldIndices = emptySet(),

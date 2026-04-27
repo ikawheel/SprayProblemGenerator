@@ -43,7 +43,6 @@ import com.example.holddetector.R
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppContentDialog
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -79,7 +78,6 @@ fun ImageCropScreen(
     var cropTop by rememberSaveable { mutableStateOf(0.08f) }
     var cropRight by rememberSaveable { mutableStateOf(0.92f) }
     var cropBottom by rememberSaveable { mutableStateOf(0.92f) }
-    var showRegistrationMethodDialog by rememberSaveable { mutableStateOf(false) }
     var displayedImageSize by remember { mutableStateOf(IntSize.Zero) }
     val imageBitmap = remember(bitmap) { bitmap?.asImageBitmap() }
 
@@ -209,7 +207,7 @@ fun ImageCropScreen(
 
         AppButton(
             onClick = {
-                showRegistrationMethodDialog = true
+                onApplyCropAuto(cropLeft, cropTop, cropRight, cropBottom)
             },
             enabled = bitmap != null,
             modifier = Modifier
@@ -221,38 +219,6 @@ fun ImageCropScreen(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-    }
-
-    if (showRegistrationMethodDialog) {
-        AppContentDialog(
-            title = stringResource(R.string.registration_method_title),
-            onDismissRequest = { showRegistrationMethodDialog = false },
-            dismissText = stringResource(R.string.cancel)
-        ) {
-            AppButton(
-                onClick = {
-                    showRegistrationMethodDialog = false
-                    onApplyCropManual(cropLeft, cropTop, cropRight, cropBottom)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-            ) {
-                Text(stringResource(R.string.registration_method_manual))
-            }
-
-            AppButton(
-                onClick = {
-                    showRegistrationMethodDialog = false
-                    onApplyCropAuto(cropLeft, cropTop, cropRight, cropBottom)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-            ) {
-                Text(stringResource(R.string.registration_method_auto))
-            }
         }
     }
 }

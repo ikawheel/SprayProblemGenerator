@@ -1,6 +1,7 @@
 package com.example.holddetector.ui.screens
 
 import android.graphics.Bitmap
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +36,7 @@ import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.RouteSelectionMode
 import com.example.holddetector.ui.canvas.HoldCanvasScreen
 import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.AppConfirmDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.components.ScreenHeader
@@ -51,8 +54,10 @@ fun HoldEditOperationScreen(
     initialSelectedIndex: Int?,
     holdTapAreaSize: HoldTapAreaSize,
     displayColorSettings: DisplayColorSettings,
+    isEditingExistingWall: Boolean,
     onHoldTapAreaSizeChange: (HoldTapAreaSize) -> Unit,
     onConfirm: (List<Hold>, Int?) -> Unit,
+    onRequestBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val safeBitmap = bitmap ?: return
@@ -63,6 +68,25 @@ fun HoldEditOperationScreen(
     }
     var undoStack by remember(mode, initialHolds, initialSelectedIndex) {
         mutableStateOf<List<HoldEditOperationSnapshot>>(emptyList())
+    }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    var isAutoMergeEnabled by remember(mode) { mutableStateOf(true) }
+    val hasUnsavedDraftChanges = draftHolds != initialHolds
+
+    BackHandler {
+        when {
+            showDiscardDialog -> {
+                showDiscardDialog = false
+            }
+
+            isEditingExistingWall && hasUnsavedDraftChanges -> {
+                showDiscardDialog = true
+            }
+
+            else -> {
+                onRequestBack()
+            }
+        }
     }
 
     fun updateDraft(updatedHolds: List<Hold>, updatedSelectedIndex: Int?) {
@@ -117,6 +141,7 @@ fun HoldEditOperationScreen(
                     displayColorSettings = displayColorSettings,
                     holdTapAreaSize = holdTapAreaSize,
                     holdEditorTool = mode,
+                    isAutoMergeEnabled = isAutoMergeEnabled,
                     isSelectionOnly = isDeleteMode,
                     onHoldTapped = { index ->
                         if (isDeleteMode) {
@@ -216,6 +241,26 @@ fun HoldEditOperationScreen(
                                 }
                             }
                         }
+
+                        if (mode == HoldEditorTool.ADD) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.hold_editor_auto_merge_label),
+                                    color = AppTextColor,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Switch(
+                                    checked = isAutoMergeEnabled,
+                                    onCheckedChange = { isAutoMergeEnabled = it }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -234,6 +279,20 @@ fun HoldEditOperationScreen(
                 }
             }
         }
+    }
+
+    if (showDiscardDialog) {
+        AppConfirmDialog(
+            title = stringResource(R.string.back_to_list),
+            message = stringResource(R.string.discard_dialog_message),
+            confirmText = stringResource(R.string.discard_dialog_confirm),
+            dismissText = stringResource(R.string.cancel),
+            onConfirm = {
+                showDiscardDialog = false
+                onRequestBack()
+            },
+            onDismissRequest = { showDiscardDialog = false }
+        )
     }
 }
 
