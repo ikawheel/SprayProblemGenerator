@@ -1,146 +1,195 @@
-# まぶし課題ジェネレーター
+# Spray Problem Generator
 
-ボルダリング壁の写真からホールド情報を登録し、その情報をもとに課題を作成する Android アプリです。
+[日本語版はこちら](./README.ja.md)
 
-壁画像に対してホールドの位置・属性・点数・リーチ基準を登録し、登録済みのホールド情報を使って、まぶし壁向けの課題作成を支援します。
+Spray Problem Generator is an Android app for registering climbing hold information from a bouldering wall photo and generating problems based on that data.
 
-## 概要
+The app allows users to register hold positions, hold attributes, scores, and reach reference settings on a wall image. The registered hold data can then be used to create spray wall problems.
 
-このアプリは、ボルダリングジムや自宅壁などのまぶし壁を対象に、以下の作業を行うためのアプリです。
+## Overview
 
-- 壁画像の登録
-- ホールド位置の自動抽出
-- ホールド情報の手動編集
-- リーチ基準の設定
-- スタート候補・ゴール候補などの属性設定
-- ホールドごとの点数設定
-- 登録済みホールドを使った課題作成
+This app is designed for spray walls in bouldering gyms, home walls, and similar climbing walls.
 
-自動抽出は完全自動化を目的としたものではなく、候補を作成する補助機能です。  
-最終的なホールド情報は、ユーザーが手動で調整する前提です。
+Main use cases include:
 
-## 主な機能
+- Registering a wall image
+- Automatically detecting hold candidates
+- Manually editing hold information
+- Setting a reach reference
+- Assigning start and goal candidate attributes
+- Setting scores for each hold
+- Generating problems from registered holds
 
-### 壁の登録
+The automatic detection feature is intended as a support tool, not as a fully automatic final detection system.  
+Detected holds are expected to be reviewed and adjusted manually by the user.
 
-壁一覧画面から新しい壁を追加できます。
+## Features
 
-新規登録の流れは以下の通りです。
+### Wall Registration
 
-1. カメラ撮影、または端末画像の選択
-2. 壁画像の切り抜き
-3. ホールドの自動抽出
-4. 手動でのホールド編集
-5. リーチ設定
-6. ホールド属性設定
-7. ホールド点数設定
-8. 保存
+Users can add a new wall from the wall list screen.
 
-### ホールド自動抽出
+The registration flow is as follows:
 
-壁色サンプルをユーザーが画像上で指定し、その色を背景基準としてホールド候補を抽出します。
+1. Take a photo or select an image from the device
+2. Crop the wall image
+3. Automatically detect hold candidates
+4. Manually edit holds
+5. Set reach reference
+6. Set hold attributes
+7. Set hold scores
+8. Save the wall
 
-調整できる項目は以下です。
+### Automatic Hold Detection
 
-- 色幅
-- 明暗幅
-- 彩度下限
-- 背景差しきい値
+The user manually selects wall color samples on the image.  
+The app uses those colors as the background reference and extracts hold candidates based on the difference from the background.
 
-自動抽出後は、抽出結果をもとに手動で追加・削除・修正できます。
+Adjustable parameters include:
 
-### ホールド編集
+- Color range
+- Brightness range
+- Minimum saturation
+- Background difference threshold
 
-ホールド編集では、以下の操作ができます。
+After automatic detection, users can manually add, remove, or edit holds.
 
-- ホールドの追加
-- 既存ホールドへの追記
-- ホールドの一部削除
-- ホールド単位での削除
+### Hold Editing
 
-追加と追記は同じ画面で行えます。  
-既存ホールドに触れた場合に追記として扱うか、新規ホールドとして扱うかを切り替えられます。
+The hold editing feature supports the following operations:
 
-また、消しゴム操作によって1つのホールドが複数領域に分かれた場合は、分裂後の領域をそれぞれ別ホールドとして扱います。
+- Add holds
+- Add to existing holds
+- Erase parts of holds
+- Delete holds
 
-### リーチ設定
+Adding and appending are handled in the same editing mode.  
+When the user draws over an existing hold, the app can either append the drawn area to that hold or create a new hold, depending on the selected setting.
 
-画像上で2点を選択し、実際の距離を入力することで、リーチ計算の基準を設定できます。
+If erasing a hold splits it into multiple separate regions, each separated region is kept as an individual hold.
 
-この設定は、課題作成時の距離感の判定に利用されます。
+### Reach Reference
 
-### ホールド属性設定
+Users can select two points on the image and enter the real-world distance between them.  
+This setting is used as a reference for distance and reach calculations during problem generation.
 
-各ホールドに以下の属性を設定できます。
+### Hold Attributes
 
-- スタート候補
-- ゴール候補
+Each hold can be assigned the following attributes:
 
-設定された属性は、課題作成時にスタート・ゴールを選ぶ際の条件として利用できます。
+- Start candidate
+- Goal candidate
 
-### ホールド点数設定
+These attributes can be used when selecting start and goal holds during problem generation.
 
-各ホールドに点数を設定できます。
+### Hold Scores
 
-点数は、課題作成時の使用範囲や難易度調整に利用します。
+Each hold can be assigned a score.
 
-### 課題作成
+Scores are used for filtering, difficulty adjustment, and problem generation settings.
 
-登録済みの壁データから課題を作成できます。
+### Problem Generation
 
-課題作成には以下の方式があります。
+Users can generate problems from registered wall data.
 
-- スタート / ゴール指定
-- スタート / ゴールおまかせ
+Problem generation supports the following modes:
 
-共通設定では、以下のような条件を調整できます。
+- Specify start and goal holds
+- Let the app choose start and goal holds
 
-- 抽選範囲
-- 使用点数レンジ
-- ホールド数上限
-- ルート生成に関する詳細パラメータ
+Common generation settings include:
 
-生成後の課題は画像上で強調表示され、再生成も可能です。
+- Hold selection range
+- Score range
+- Maximum number of holds
+- Additional route generation parameters
 
-### 表示色設定
+Generated problems are highlighted on the wall image, and users can regenerate problems using the same settings.
 
-アプリ全体で使用する表示色を変更できます。
+### Display Color Settings
 
-変更できる色は以下です。
+Users can customize app-wide display colors.
 
-- ホールド枠色
-- 選択色
-- 範囲選択色
-- スタート / ゴール色
+Configurable colors include:
 
-設定はアプリ全体で共通です。  
-再起動後も保持されます。
+- Hold outline color
+- Selection color
+- Range selection color
+- Start / goal color
 
-## 画面構成
+These settings are shared across the entire app and are preserved after restarting the app.
 
-主な画面構成は以下です。
+## Screen Flow
+
+The main screen flow is as follows:
 
 ```text
-壁一覧
- ├─ 新しい壁を追加
- │   └─ 画像選択 / 撮影
- │       └─ 画像切り抜き
- │           └─ ホールド自動抽出
- │               └─ ホールド編集
- │                   └─ リーチ設定
- │                       └─ ホールド属性設定
- │                           └─ ホールド点数設定
- │                               └─ 保存
+Wall List
+ ├─ Add New Wall
+ │   └─ Select Image / Take Photo
+ │       └─ Crop Image
+ │           └─ Automatic Hold Detection
+ │               └─ Hold Editing
+ │                   └─ Reach Reference
+ │                       └─ Hold Attributes
+ │                           └─ Hold Scores
+ │                               └─ Save
  │
- ├─ 既存壁を編集
- │   ├─ ホールド編集
- │   ├─ リーチ設定
- │   ├─ ホールド属性設定
- │   └─ ホールド点数設定
+ ├─ Edit Existing Wall
+ │   ├─ Hold Editing
+ │   ├─ Reach Reference
+ │   ├─ Hold Attributes
+ │   └─ Hold Scores
  │
- ├─ 課題作成
- │   └─ 共通設定
- │       ├─ スタート / ゴール指定
- │       └─ スタート / ゴールおまかせ
+ ├─ Generate Problem
+ │   └─ Common Settings
+ │       ├─ Specify Start / Goal
+ │       └─ Auto Select Start / Goal
  │
- └─ 表示色設定
+ └─ Display Color Settings
+```
+
+## Saved Data
+
+### Data Saved Per Wall
+
+- Wall image
+- Hold shapes
+- Hold attributes
+- Hold scores
+- Reach reference settings
+
+### App-Wide Saved Data
+
+- Display color settings
+
+## Tech Stack
+
+- Android
+- Kotlin
+- Jetpack Compose
+- MVVM architecture
+
+## Development Policy
+
+This app prioritizes manual adjustability over fully automatic hold recognition.
+
+Automatic hold detection is designed to create initial candidates only.  
+Final hold data is expected to be refined through manual editing.
+
+Because the app requires detailed editing on wall images, screens such as hold editing, reach reference setting, and problem generation support image zooming.
+
+## Possible Future Features
+
+- Saving generated problems
+- Problem history management
+- Improved difficulty estimation
+- Improved automatic hold detection
+- Chalk and shadow correction
+- Hold color-based detection settings
+
+## License
+
+This repository is intended to be released under the Unlicense.
+
+See the `LICENSE` file for details.
