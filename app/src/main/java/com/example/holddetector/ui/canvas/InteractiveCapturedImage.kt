@@ -1216,6 +1216,11 @@ private fun InteractiveCapturedImage(
                                 path = polygon.toPath(),
                                 color = if (mode == CanvasMode.CHALLENGE) {
                                     rangeSelectionColor
+                                } else if (
+                                    mode == CanvasMode.HOLD_EDITOR &&
+                                    holdEditorTool == HoldEditorTool.ERASE
+                                ) {
+                                    Color.White
                                 } else {
                                     holdOutlineColor
                                 },

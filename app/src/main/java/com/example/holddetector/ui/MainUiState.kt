@@ -16,6 +16,7 @@ import com.example.holddetector.model.SavedWallSummary
 enum class AppScreen {
     LIST,
     DISPLAY_COLOR_SETTINGS,
+    LICENSES,
     CAMERA,
     IMAGE_CROP,
     HOLD_REGISTRATION_METHOD,

@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
                         onOpenSavedWallForChallenge = viewModel::openSavedWallForChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
                         onOpenDisplayColorSettings = viewModel::openDisplayColorSettings,
+                        onOpenLicenses = viewModel::openLicenses,
                         onUpdateDisplayColor = viewModel::updateDisplayColor,
                         onResetDisplayColorSettings = viewModel::resetDisplayColorSettings,
                         onTakePhoto = ::launchSystemCamera,

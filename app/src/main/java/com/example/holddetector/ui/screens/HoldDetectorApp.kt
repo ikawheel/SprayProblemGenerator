@@ -54,6 +54,7 @@ fun HoldDetectorApp(
     onOpenSavedWallForChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     onOpenDisplayColorSettings: () -> Unit,
+    onOpenLicenses: () -> Unit,
     onUpdateDisplayColor: (DisplayColorTarget, EditableRgbColor) -> Unit,
     onResetDisplayColorSettings: () -> Unit,
     onTakePhoto: () -> Unit,
@@ -129,6 +130,7 @@ fun HoldDetectorApp(
         if (
             state.currentScreen != AppScreen.LIST &&
             state.currentScreen != AppScreen.DISPLAY_COLOR_SETTINGS &&
+            state.currentScreen != AppScreen.LICENSES &&
             drawerState.isOpen
         ) {
             drawerState.close()
@@ -143,7 +145,9 @@ fun HoldDetectorApp(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = state.currentScreen == AppScreen.LIST || state.currentScreen == AppScreen.DISPLAY_COLOR_SETTINGS,
+        gesturesEnabled = state.currentScreen == AppScreen.LIST ||
+            state.currentScreen == AppScreen.DISPLAY_COLOR_SETTINGS ||
+            state.currentScreen == AppScreen.LICENSES,
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.fillMaxWidth(0.5f)
@@ -173,6 +177,16 @@ fun HoldDetectorApp(
                     onClick = {
                         drawerScope.launch { drawerState.close() }
                         onOpenDisplayColorSettings()
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text(stringResource(R.string.licenses_menu)) },
+                    selected = state.currentScreen == AppScreen.LICENSES,
+                    onClick = {
+                        drawerScope.launch { drawerState.close() }
+                        onOpenLicenses()
                     },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -222,6 +236,12 @@ fun HoldDetectorApp(
                             settings = state.displayColorSettings,
                             onUpdateColor = onUpdateDisplayColor,
                             onResetToDefaults = onResetDisplayColorSettings,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    AppScreen.LICENSES -> {
+                        LicensesScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                     }

@@ -12,6 +12,8 @@
     <string name="wall_list_description">新しい壁を追加するか、保存済みの壁から編集・課題作成を始めてください。</string>
     <string name="app_menu_title">メニュー</string>
     <string name="display_color_settings_menu">表示色設定</string>
+    <string name="licenses_menu">ライセンス</string>
+    <string name="licenses_title">ライセンス</string>
     <string name="display_color_settings_title">表示色設定</string>
     <string name="display_color_settings_description">ホールドの枠線、選択中ホールド、範囲選択の色を設定します。</string>
     <string name="display_color_hold_outline_label">ホールド枠色</string>

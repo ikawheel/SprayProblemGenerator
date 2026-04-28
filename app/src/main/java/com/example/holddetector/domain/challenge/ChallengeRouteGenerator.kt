@@ -599,7 +599,7 @@ private fun chooseDetourOffset(
     } else {
         baseDetour
     }
-    val clampedPreferred = preferredOffset.coerceIn(lowerBound, upperBound)
+    val clampedPreferred = preferredOffset.coerceInSafe(lowerBound, upperBound)
     val randomLowerBound = max(lowerBound, clampedPreferred * blendDouble(0.90, 0.55, randomness))
     val randomUpperBound = min(
         upperBound,
@@ -723,13 +723,21 @@ private fun createTargetDistances(
         }
         val minAllowed = previousDistance + minGap
         val maxAllowed = routeLength - minGap * (remainingSlots + 1)
-        val safeUpperBound = max(minAllowed, maxAllowed)
-        val targetDistance = (baseDistance + jitter).coerceIn(minAllowed, safeUpperBound)
+        val targetDistance = (baseDistance + jitter).coerceInSafe(minAllowed, maxAllowed)
         targetDistances += targetDistance
         previousDistance = targetDistance
     }
 
     return targetDistances
+}
+
+private fun Double.coerceInSafe(a: Double, b: Double): Double {
+    val lower = min(a, b)
+    val upper = max(a, b)
+    if (upper - lower < 0.000001) {
+        return lower
+    }
+    return coerceIn(lower, upper)
 }
 
 private fun pickRouteCandidate(

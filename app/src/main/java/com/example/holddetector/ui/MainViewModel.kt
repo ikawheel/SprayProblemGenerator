@@ -369,6 +369,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun openLicenses() {
+        _uiState.value = buildLicensesScreenState(
+            state = _uiState.value,
+            pushedScreenBackStack = ::pushedScreenBackStack
+        )
+    }
+
     fun updateDisplayColor(target: DisplayColorTarget, color: EditableRgbColor) {
         val state = _uiState.value
         val updatedSettings = buildUpdatedDisplayColorSettings(
@@ -977,7 +984,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (!state.isReachCalibrationSelectionMode) return
 
         val firstPoint = state.pendingReachCalibrationPoint
-        if (firstPoint == point && firstPoint != null) {
+        if (firstPoint == point) {
             _uiState.value = state.copy(
                 message = text(R.string.message_reach_select_different_second_point)
             )
