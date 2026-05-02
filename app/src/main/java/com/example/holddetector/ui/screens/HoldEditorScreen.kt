@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.model.Hold
+import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSectionSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
@@ -212,7 +215,8 @@ fun HoldEditorScreen(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.Bottom
                         ) {
                             holdEditorToolButtons().forEach { tool ->
                                 val isSelected = activeTool == tool
@@ -224,27 +228,13 @@ fun HoldEditorScreen(
                                         HoldEditorTool.EXTEND -> R.string.hold_editor_tool_extend
                                     }
                                 )
-                                if (isSelected) {
-                                AppButton(
-                                    onClick = { activeTool = tool },
+                                HoldEditorModeTab(
+                                    label = label,
+                                    selected = isSelected,
                                     enabled = tool != HoldEditorTool.DELETE || draftHolds.isNotEmpty(),
-                                    contentPadding = compactButtonContentPadding,
-                                    minHeight = compactButtonMinHeight,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(label)
-                                }
-                            } else {
-                                AppOutlinedButton(
                                     onClick = { activeTool = tool },
-                                    enabled = tool != HoldEditorTool.DELETE || draftHolds.isNotEmpty(),
-                                    contentPadding = compactButtonContentPadding,
-                                    minHeight = compactButtonMinHeight,
                                     modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(label)
-                                }
-                            }
+                                )
                             }
                         }
 
@@ -382,4 +372,43 @@ private fun holdEditorToolButtons(): List<HoldEditorTool> {
         HoldEditorTool.ERASE,
         HoldEditorTool.DELETE
     )
+}
+
+@Composable
+private fun HoldEditorModeTab(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accentColor = MaterialTheme.colorScheme.primary
+    val textColor = when {
+        !enabled -> AppSecondaryTextColor.copy(alpha = 0.45f)
+        selected -> accentColor
+        else -> AppTextColor
+    }
+
+    Column(
+        modifier = modifier
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(top = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = label,
+            color = textColor,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    if (selected) accentColor else AppSecondaryTextColor.copy(alpha = 0.18f)
+                )
+        )
+    }
 }
