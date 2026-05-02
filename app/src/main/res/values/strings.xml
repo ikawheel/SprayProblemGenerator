@@ -281,10 +281,10 @@
     <string name="message_challenge_cleared">課題の選択をクリアしました</string>
     <string name="selected_hold_debug">選択中 #%1$d 中心(%2$d, %3$d) 頂点数:%4$d</string>
     <string name="hold_editor_tool_label">編集ツール</string>
-    <string name="hold_editor_tool_add">追加・追記</string>
+    <string name="hold_editor_tool_add">追加</string>
     <string name="hold_editor_tool_extend">追記</string>
-    <string name="hold_editor_tool_erase">消しゴム</string>
-    <string name="hold_editor_tool_delete">選択を削除</string>
+    <string name="hold_editor_tool_erase">削る</string>
+    <string name="hold_editor_tool_delete">削除</string>
     <string name="hold_editor_dialog_title_add">ホールドを追加・追記</string>
     <string name="hold_editor_dialog_title_extend">ホールドに追記</string>
     <string name="hold_editor_dialog_title_erase">ホールドを削る</string>

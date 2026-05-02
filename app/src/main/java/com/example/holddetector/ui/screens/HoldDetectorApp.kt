@@ -76,6 +76,7 @@ fun HoldDetectorApp(
     onReturnToList: () -> Unit,
     onSaveWall: () -> Unit,
     onOpenReachCalibrationScreen: () -> Unit,
+    onSaveEditedHoldsInHoldEditor: (List<Hold>, Int?) -> Unit,
     onBackFromHoldAttributeEditor: () -> Unit,
     onOpenHoldScoring: () -> Unit,
     onBackFromHoldScoring: () -> Unit,
@@ -317,7 +318,8 @@ fun HoldDetectorApp(
                             state = state,
                             onReturnToList = onReturnToList,
                             onOpenReachCalibration = onOpenReachCalibrationScreen,
-                            onOpenHoldEditOperation = onOpenHoldEditOperation,
+                            onHoldTapAreaSizeChange = onHoldTapAreaSizeChange,
+                            onSaveEditedHolds = onSaveEditedHoldsInHoldEditor,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

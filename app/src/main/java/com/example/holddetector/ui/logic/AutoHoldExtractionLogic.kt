@@ -78,12 +78,11 @@ internal fun buildClearedAutoExtractionWallSamplePointsState(
 
 internal fun buildHoldEditorStateFromAutoExtractedHolds(
     state: MainUiState,
-    pushedScreenBackStack: (MainUiState, AppScreen) -> List<AppScreen>,
     message: String
 ): MainUiState {
     return state.copy(
         currentScreen = AppScreen.HOLD_EDITOR,
-        screenBackStack = pushedScreenBackStack(state, AppScreen.HOLD_EDITOR),
+        screenBackStack = state.screenBackStack,
         holds = state.autoExtractedHolds,
         selectedHoldIndex = null,
         holdScoringPosition = 0,

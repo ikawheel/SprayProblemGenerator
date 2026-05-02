@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.material3.Button as MaterialButton
 import androidx.compose.material3.ButtonDefaults
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppSecondaryTextColor
@@ -66,6 +68,8 @@ fun AppButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     shape: Shape = RoundedCornerShape(14.dp),
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    minHeight: Dp = 48.dp,
     content: @Composable () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -105,12 +109,13 @@ fun AppButton(
             pressedElevation = 0.dp,
             disabledElevation = 0.dp
         ),
+        contentPadding = contentPadding,
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
-            .defaultMinSize(minHeight = 48.dp)
+            .defaultMinSize(minHeight = minHeight)
     ) {
         content()
     }
@@ -164,6 +169,8 @@ fun AppOutlinedButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     shape: Shape = RoundedCornerShape(14.dp),
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    minHeight: Dp = 48.dp,
     content: @Composable () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -214,12 +221,13 @@ fun AppOutlinedButton(
             disabledContentColor = AppSecondaryTextColor.copy(alpha = 0.5f)
         ),
         border = BorderStroke(1.5.dp, borderColor),
+        contentPadding = contentPadding,
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
-            .defaultMinSize(minHeight = 48.dp)
+            .defaultMinSize(minHeight = minHeight)
     ) {
         content()
     }

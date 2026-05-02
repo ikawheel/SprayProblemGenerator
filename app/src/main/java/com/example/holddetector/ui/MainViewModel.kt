@@ -348,7 +348,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.value = buildHoldEditorStateFromAutoExtractedHolds(
             state = state,
-            pushedScreenBackStack = ::pushedScreenBackStack,
             message = text(R.string.message_auto_hold_extraction_applied)
         )
     }
@@ -643,6 +642,64 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             holdScoringPosition = 0,
             message = null
         )
+    }
+
+    fun saveEditedHoldsInHoldEditor(updatedHolds: List<Hold>, selectedIndex: Int?) {
+        val state = _uiState.value
+        if (state.currentScreen != AppScreen.HOLD_EDITOR) return
+
+        val normalizedSelectedIndex = selectedIndex?.takeIf { it in updatedHolds.indices }
+        if (state.currentWallId == null) {
+            _uiState.value = state.copy(
+                holds = updatedHolds,
+                selectedHoldIndex = normalizedSelectedIndex,
+                isHoldEditorDirty = true,
+                holdScoringPosition = 0,
+                message = null
+            )
+            return
+        }
+
+        val bitmap = state.capturedBitmap ?: run {
+            _uiState.value = state.copy(message = text(R.string.message_image_missing_to_save))
+            return
+        }
+        val normalizedReference = state.reachCalibrationReference.withCurrentLength(state)
+
+        viewModelScope.launch {
+            _uiState.value = state.copy(
+                holds = updatedHolds,
+                selectedHoldIndex = normalizedSelectedIndex,
+                reachCalibrationReference = normalizedReference,
+                isBusy = true
+            )
+
+            val savedSummary = withContext(Dispatchers.IO) {
+                repository.saveWall(
+                    wallId = state.currentWallId,
+                    bitmap = bitmap,
+                    holds = updatedHolds,
+                    reachCalibrationReference = normalizedReference,
+                    capturedOrientation = state.capturedOrientation,
+                    capturedRotationDegrees = state.capturedRotationDegrees
+                )
+            }
+            val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
+            val latestState = _uiState.value
+            _uiState.value = buildListState(
+                source = latestState.copy(
+                    currentWallId = savedSummary.id,
+                    holds = updatedHolds,
+                    selectedHoldIndex = normalizedSelectedIndex,
+                    reachCalibrationReference = normalizedReference,
+                    isHoldEditorDirty = false,
+                    holdScoringPosition = 0,
+                    isBusy = false
+                ),
+                savedWalls = refreshed,
+                message = text(R.string.message_saved_wall)
+            )
+        }
     }
 
     fun applyEditedHoldsAndReturnToHoldEditor(updatedHolds: List<Hold>, selectedIndex: Int?) {
