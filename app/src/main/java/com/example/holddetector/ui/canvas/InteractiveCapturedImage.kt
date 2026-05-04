@@ -822,10 +822,24 @@ private fun InteractiveCapturedImage(
                     }
                     draftPreviewPolygon = null
                     val gestureStrokePoints = mutableListOf(startLocal)
+                    var latestClampedPoint = startLocal
                     draftStrokePoints = listOf(startLocal)
 
                     while (true) {
                         val event = awaitPointerEvent()
+                        val primaryChange = event.changes.firstOrNull()
+                        if (primaryChange != null) {
+                            val latestLocal = screenToLocalPoint(
+                                screenPoint = primaryChange.position,
+                                baseLayout = baseLayout,
+                                panOffset = panOffset,
+                                zoomScale = zoomScale
+                            )
+                            latestClampedPoint = Offset(
+                                x = latestLocal.x.coerceIn(0f, baseLayout.drawWidth),
+                                y = latestLocal.y.coerceIn(0f, baseLayout.drawHeight)
+                            )
+                        }
                         val pressed = event.changes.filter { it.pressed }
 
                         if (pressed.isEmpty()) {
@@ -898,7 +912,15 @@ private fun InteractiveCapturedImage(
                             )
                         } else if (mode == CanvasMode.HOLD_EDITOR) {
                             val appliedPoints = if (movedEnough) {
-                                gestureStrokePoints.toList()
+                                buildList {
+                                    addAll(gestureStrokePoints)
+                                    val lastGesturePoint = gestureStrokePoints.last()
+                                    val finalDx = latestClampedPoint.x - lastGesturePoint.x
+                                    val finalDy = latestClampedPoint.y - lastGesturePoint.y
+                                    if (finalDx * finalDx + finalDy * finalDy >= 0.25f) {
+                                        add(latestClampedPoint)
+                                    }
+                                }
                             } else {
                                 listOf(startLocal)
                             }
