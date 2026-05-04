@@ -56,6 +56,7 @@ fun HoldDetectorApp(
     onOpenDisplayColorSettings: () -> Unit,
     onOpenLicenses: () -> Unit,
     onUpdateDisplayColor: (DisplayColorTarget, EditableRgbColor) -> Unit,
+    onUpdateDisplayStrokeWidth: (DisplayColorTarget, Int) -> Unit,
     onResetDisplayColorSettings: () -> Unit,
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,
@@ -236,6 +237,7 @@ fun HoldDetectorApp(
                         DisplayColorSettingsScreen(
                             settings = state.displayColorSettings,
                             onUpdateColor = onUpdateDisplayColor,
+                            onUpdateStrokeWidth = onUpdateDisplayStrokeWidth,
                             onResetToDefaults = onResetDisplayColorSettings,
                             modifier = Modifier.fillMaxSize()
                         )

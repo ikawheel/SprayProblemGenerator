@@ -248,7 +248,9 @@ fun HoldEditorScreen(
                             enabled = undoStack.isNotEmpty(),
                             contentPadding = compactButtonContentPadding,
                             minHeight = compactButtonMinHeight,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 1.dp)
                         ) {
                             Text(stringResource(R.string.undo))
                         }

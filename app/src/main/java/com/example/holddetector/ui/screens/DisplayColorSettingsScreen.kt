@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,11 +41,13 @@ import com.example.holddetector.ui.EditableRgbColor
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.BottomActionBar
 import com.example.holddetector.ui.components.ScreenHeader
+import kotlin.math.roundToInt
 
 @Composable
 fun DisplayColorSettingsScreen(
     settings: DisplayColorSettings,
     onUpdateColor: (DisplayColorTarget, EditableRgbColor) -> Unit,
+    onUpdateStrokeWidth: (DisplayColorTarget, Int) -> Unit,
     onResetToDefaults: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -75,28 +78,36 @@ fun DisplayColorSettingsScreen(
                     title = stringResource(R.string.display_color_hold_outline_label),
                     description = stringResource(R.string.display_color_hold_outline_description),
                     color = settings.holdOutline,
-                    onColorChange = { onUpdateColor(DisplayColorTarget.HOLD_OUTLINE, it) }
+                    strokeWidth = settings.normalizedHoldOutlineStrokeWidth,
+                    onColorChange = { onUpdateColor(DisplayColorTarget.HOLD_OUTLINE, it) },
+                    onStrokeWidthChange = { onUpdateStrokeWidth(DisplayColorTarget.HOLD_OUTLINE, it) }
                 )
 
                 DisplayColorSection(
                     title = stringResource(R.string.display_color_selected_hold_label),
                     description = stringResource(R.string.display_color_selected_hold_description),
                     color = settings.selectedHold,
-                    onColorChange = { onUpdateColor(DisplayColorTarget.SELECTED_HOLD, it) }
+                    strokeWidth = settings.normalizedSelectedHoldStrokeWidth,
+                    onColorChange = { onUpdateColor(DisplayColorTarget.SELECTED_HOLD, it) },
+                    onStrokeWidthChange = { onUpdateStrokeWidth(DisplayColorTarget.SELECTED_HOLD, it) }
                 )
 
                 DisplayColorSection(
                     title = stringResource(R.string.display_color_range_selection_label),
                     description = stringResource(R.string.display_color_range_selection_description),
                     color = settings.rangeSelection,
-                    onColorChange = { onUpdateColor(DisplayColorTarget.RANGE_SELECTION, it) }
+                    strokeWidth = settings.normalizedRangeSelectionStrokeWidth,
+                    onColorChange = { onUpdateColor(DisplayColorTarget.RANGE_SELECTION, it) },
+                    onStrokeWidthChange = { onUpdateStrokeWidth(DisplayColorTarget.RANGE_SELECTION, it) }
                 )
 
                 DisplayColorSection(
                     title = stringResource(R.string.display_color_start_goal_hold_label),
                     description = stringResource(R.string.display_color_start_goal_hold_description),
                     color = settings.startGoalHold,
-                    onColorChange = { onUpdateColor(DisplayColorTarget.START_GOAL_HOLD, it) }
+                    strokeWidth = settings.normalizedStartGoalHoldStrokeWidth,
+                    onColorChange = { onUpdateColor(DisplayColorTarget.START_GOAL_HOLD, it) },
+                    onStrokeWidthChange = { onUpdateStrokeWidth(DisplayColorTarget.START_GOAL_HOLD, it) }
                 )
 
                 Spacer(modifier = Modifier.height(footerOverlayPadding))
@@ -121,7 +132,9 @@ private fun DisplayColorSection(
     title: String,
     description: String,
     color: EditableRgbColor,
-    onColorChange: (EditableRgbColor) -> Unit
+    strokeWidth: Int,
+    onColorChange: (EditableRgbColor) -> Unit,
+    onStrokeWidthChange: (Int) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -141,7 +154,7 @@ private fun DisplayColorSection(
                         .size(44.dp)
                         .background(color.toComposeColor(), RoundedCornerShape(12.dp))
                         .border(
-                            width = 1.dp,
+                            width = strokeWidth.dp,
                             color = AppSecondaryTextColor.copy(alpha = 0.35f),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -169,7 +182,39 @@ private fun DisplayColorSection(
                 selectedColor = color,
                 onColorSelected = onColorChange
             )
+
+            StrokeWidthSlider(
+                strokeWidth = strokeWidth,
+                onStrokeWidthChange = onStrokeWidthChange
+            )
         }
+    }
+}
+
+@Composable
+private fun StrokeWidthSlider(
+    strokeWidth: Int,
+    onStrokeWidthChange: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AppSubtleSurfaceColor, RoundedCornerShape(14.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = "線の太さ ${strokeWidth}px",
+            color = AppTextColor,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Slider(
+            value = strokeWidth.toFloat(),
+            onValueChange = { onStrokeWidthChange(it.roundToInt().coerceIn(1, 5)) },
+            valueRange = 1f..5f,
+            steps = 3
+        )
     }
 }
 

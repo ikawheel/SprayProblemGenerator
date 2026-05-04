@@ -40,7 +40,6 @@ val AppCoreHighlightBackgroundColor = Color(0x26F59E0B)
 val AppCoreLabelBackgroundColor = Color(0x99FDE68A)
 val AppOverlayStrokePreviewColor = Color(0x44222222)
 val AppBusyOverlayColor = Color(0x66FFFFFF)
-const val DefaultHoldStrokeWidth = 1f
 
 class MainActivity : ComponentActivity() {
 
@@ -108,6 +107,7 @@ class MainActivity : ComponentActivity() {
                         onOpenDisplayColorSettings = viewModel::openDisplayColorSettings,
                         onOpenLicenses = viewModel::openLicenses,
                         onUpdateDisplayColor = viewModel::updateDisplayColor,
+                        onUpdateDisplayStrokeWidth = viewModel::updateDisplayStrokeWidth,
                         onResetDisplayColorSettings = viewModel::resetDisplayColorSettings,
                         onTakePhoto = ::launchSystemCamera,
                         onPickPhoto = ::launchPhotoPicker,

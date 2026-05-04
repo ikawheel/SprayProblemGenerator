@@ -28,3 +28,17 @@ internal fun buildUpdatedDisplayColorSettings(
         DisplayColorTarget.START_GOAL_HOLD -> settings.copy(startGoalHold = normalized)
     }
 }
+
+internal fun buildUpdatedDisplayStrokeWidthSettings(
+    settings: DisplayColorSettings,
+    target: DisplayColorTarget,
+    strokeWidth: Int
+): DisplayColorSettings {
+    val normalized = strokeWidth.coerceIn(1, 5)
+    return when (target) {
+        DisplayColorTarget.HOLD_OUTLINE -> settings.copy(holdOutlineStrokeWidth = normalized)
+        DisplayColorTarget.SELECTED_HOLD -> settings.copy(selectedHoldStrokeWidth = normalized)
+        DisplayColorTarget.RANGE_SELECTION -> settings.copy(rangeSelectionStrokeWidth = normalized)
+        DisplayColorTarget.START_GOAL_HOLD -> settings.copy(startGoalHoldStrokeWidth = normalized)
+    }
+}

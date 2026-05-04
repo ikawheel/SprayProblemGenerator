@@ -33,6 +33,22 @@ class DisplayColorSettingsRepository(context: Context) {
                 red = preferences.getInt(KEY_START_GOAL_HOLD_RED, defaults.startGoalHold.normalizedRed),
                 green = preferences.getInt(KEY_START_GOAL_HOLD_GREEN, defaults.startGoalHold.normalizedGreen),
                 blue = preferences.getInt(KEY_START_GOAL_HOLD_BLUE, defaults.startGoalHold.normalizedBlue)
+            ),
+            holdOutlineStrokeWidth = preferences.getInt(
+                KEY_HOLD_OUTLINE_STROKE_WIDTH,
+                defaults.normalizedHoldOutlineStrokeWidth
+            ),
+            selectedHoldStrokeWidth = preferences.getInt(
+                KEY_SELECTED_HOLD_STROKE_WIDTH,
+                defaults.normalizedSelectedHoldStrokeWidth
+            ),
+            rangeSelectionStrokeWidth = preferences.getInt(
+                KEY_RANGE_SELECTION_STROKE_WIDTH,
+                defaults.normalizedRangeSelectionStrokeWidth
+            ),
+            startGoalHoldStrokeWidth = preferences.getInt(
+                KEY_START_GOAL_HOLD_STROKE_WIDTH,
+                defaults.normalizedStartGoalHoldStrokeWidth
             )
         )
     }
@@ -51,6 +67,10 @@ class DisplayColorSettingsRepository(context: Context) {
             .putInt(KEY_START_GOAL_HOLD_RED, settings.startGoalHold.normalizedRed)
             .putInt(KEY_START_GOAL_HOLD_GREEN, settings.startGoalHold.normalizedGreen)
             .putInt(KEY_START_GOAL_HOLD_BLUE, settings.startGoalHold.normalizedBlue)
+            .putInt(KEY_HOLD_OUTLINE_STROKE_WIDTH, settings.normalizedHoldOutlineStrokeWidth)
+            .putInt(KEY_SELECTED_HOLD_STROKE_WIDTH, settings.normalizedSelectedHoldStrokeWidth)
+            .putInt(KEY_RANGE_SELECTION_STROKE_WIDTH, settings.normalizedRangeSelectionStrokeWidth)
+            .putInt(KEY_START_GOAL_HOLD_STROKE_WIDTH, settings.normalizedStartGoalHoldStrokeWidth)
             .apply()
     }
 
@@ -60,17 +80,21 @@ class DisplayColorSettingsRepository(context: Context) {
         const val KEY_HOLD_OUTLINE_RED = "hold_outline_red"
         const val KEY_HOLD_OUTLINE_GREEN = "hold_outline_green"
         const val KEY_HOLD_OUTLINE_BLUE = "hold_outline_blue"
+        const val KEY_HOLD_OUTLINE_STROKE_WIDTH = "hold_outline_stroke_width"
 
         const val KEY_SELECTED_HOLD_RED = "selected_hold_red"
         const val KEY_SELECTED_HOLD_GREEN = "selected_hold_green"
         const val KEY_SELECTED_HOLD_BLUE = "selected_hold_blue"
+        const val KEY_SELECTED_HOLD_STROKE_WIDTH = "selected_hold_stroke_width"
 
         const val KEY_RANGE_SELECTION_RED = "range_selection_red"
         const val KEY_RANGE_SELECTION_GREEN = "range_selection_green"
         const val KEY_RANGE_SELECTION_BLUE = "range_selection_blue"
+        const val KEY_RANGE_SELECTION_STROKE_WIDTH = "range_selection_stroke_width"
 
         const val KEY_START_GOAL_HOLD_RED = "start_goal_hold_red"
         const val KEY_START_GOAL_HOLD_GREEN = "start_goal_hold_green"
         const val KEY_START_GOAL_HOLD_BLUE = "start_goal_hold_blue"
+        const val KEY_START_GOAL_HOLD_STROKE_WIDTH = "start_goal_hold_stroke_width"
     }
 }

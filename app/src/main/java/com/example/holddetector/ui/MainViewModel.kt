@@ -348,6 +348,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.value = buildHoldEditorStateFromAutoExtractedHolds(
             state = state,
+            pushedScreenBackStack = ::pushedScreenBackStack,
             message = text(R.string.message_auto_hold_extraction_applied)
         )
     }
@@ -381,6 +382,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             settings = state.displayColorSettings,
             target = target,
             color = color
+        )
+        if (updatedSettings == state.displayColorSettings) return
+
+        _uiState.value = state.copy(displayColorSettings = updatedSettings)
+        viewModelScope.launch(Dispatchers.IO) {
+            displayColorSettingsRepository.save(updatedSettings)
+        }
+    }
+
+    fun updateDisplayStrokeWidth(target: DisplayColorTarget, strokeWidth: Int) {
+        val state = _uiState.value
+        val updatedSettings = buildUpdatedDisplayStrokeWidthSettings(
+            settings = state.displayColorSettings,
+            target = target,
+            strokeWidth = strokeWidth
         )
         if (updatedSettings == state.displayColorSettings) return
 

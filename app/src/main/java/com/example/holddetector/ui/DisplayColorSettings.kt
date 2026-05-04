@@ -29,7 +29,11 @@ data class DisplayColorSettings(
     val holdOutline: EditableRgbColor = EditableRgbColor(red = 0, green = 255, blue = 0),
     val selectedHold: EditableRgbColor = EditableRgbColor(red = 255, green = 0, blue = 0),
     val rangeSelection: EditableRgbColor = EditableRgbColor(red = 0, green = 255, blue = 255),
-    val startGoalHold: EditableRgbColor = EditableRgbColor(red = 59, green = 130, blue = 246)
+    val startGoalHold: EditableRgbColor = EditableRgbColor(red = 59, green = 130, blue = 246),
+    val holdOutlineStrokeWidth: Int = 1,
+    val selectedHoldStrokeWidth: Int = 1,
+    val rangeSelectionStrokeWidth: Int = 1,
+    val startGoalHoldStrokeWidth: Int = 1
 ) {
     val holdOutlineColor: Color
         get() = holdOutline.toComposeColor()
@@ -42,4 +46,16 @@ data class DisplayColorSettings(
 
     val startGoalHoldColor: Color
         get() = startGoalHold.toComposeColor()
+
+    val normalizedHoldOutlineStrokeWidth: Int
+        get() = holdOutlineStrokeWidth.coerceIn(1, 5)
+
+    val normalizedSelectedHoldStrokeWidth: Int
+        get() = selectedHoldStrokeWidth.coerceIn(1, 5)
+
+    val normalizedRangeSelectionStrokeWidth: Int
+        get() = rangeSelectionStrokeWidth.coerceIn(1, 5)
+
+    val normalizedStartGoalHoldStrokeWidth: Int
+        get() = startGoalHoldStrokeWidth.coerceIn(1, 5)
 }

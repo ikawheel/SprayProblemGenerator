@@ -51,7 +51,6 @@ import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppCoreLabelBackgroundColor
 import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.AppOverlayStrokePreviewColor
-import com.example.holddetector.ui.DefaultHoldStrokeWidth
 import com.example.holddetector.ui.HoldEditorTool
 import com.example.holddetector.ui.HoldTapAreaSize
 import com.example.holddetector.ui.RouteSelectionMode
@@ -401,6 +400,10 @@ private fun InteractiveCapturedImage(
     val selectedHoldColor = displayColorSettings.selectedHoldColor
     val rangeSelectionColor = displayColorSettings.rangeSelectionColor
     val startGoalHoldColor = displayColorSettings.startGoalHoldColor
+    val holdOutlineStrokeWidth = displayColorSettings.normalizedHoldOutlineStrokeWidth.toFloat()
+    val selectedHoldStrokeWidth = displayColorSettings.normalizedSelectedHoldStrokeWidth.toFloat()
+    val rangeSelectionStrokeWidth = displayColorSettings.normalizedRangeSelectionStrokeWidth.toFloat()
+    val startGoalHoldStrokeWidth = displayColorSettings.normalizedStartGoalHoldStrokeWidth.toFloat()
 
     val baseLayout = remember(bitmap.width, bitmap.height, containerSize) {
         calculateBaseImageLayout(
@@ -1139,11 +1142,21 @@ private fun InteractiveCapturedImage(
                             selectionCandidateIndices.contains(index) -> rangeSelectionColor
                             else -> holdOutlineColor
                         }
+                        val strokeWidth = when {
+                            mode == CanvasMode.SCORING -> selectedHoldStrokeWidth
+                            mode == CanvasMode.HOLD_ATTRIBUTE_EDITOR &&
+                                (startCandidateHoldIndices.contains(index) || goalCandidateHoldIndices.contains(index)) -> startGoalHoldStrokeWidth
+                            index == startHoldIndex -> startGoalHoldStrokeWidth
+                            index == goalHoldIndex -> startGoalHoldStrokeWidth
+                            index == selectedIndex -> selectedHoldStrokeWidth
+                            selectionCandidateIndices.contains(index) -> rangeSelectionStrokeWidth
+                            else -> holdOutlineStrokeWidth
+                        }
 
                         drawPath(
                             path = polygon.toPath(),
                             color = strokeColor,
-                            style = Stroke(width = DefaultHoldStrokeWidth)
+                            style = Stroke(width = strokeWidth)
                         )
 
                         val label = buildList {
@@ -1212,6 +1225,11 @@ private fun InteractiveCapturedImage(
                         }
 
                         draftPreviewPolygon?.let { polygon ->
+                            val previewStrokeWidth = if (mode == CanvasMode.CHALLENGE) {
+                                rangeSelectionStrokeWidth
+                            } else {
+                                holdOutlineStrokeWidth
+                            }
                             drawPath(
                                 path = polygon.toPath(),
                                 color = if (mode == CanvasMode.CHALLENGE) {
@@ -1224,7 +1242,7 @@ private fun InteractiveCapturedImage(
                                 } else {
                                     holdOutlineColor
                                 },
-                                style = Stroke(width = 1f)
+                                style = Stroke(width = previewStrokeWidth)
                             )
                         }
                     }

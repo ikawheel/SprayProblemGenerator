@@ -942,7 +942,6 @@ object BinaryHoldExtractor {
 
         return kept.distinct()
     }
-
     private fun isUsablePolygon(points: List<HoldPoint>): Boolean {
         if (points.size < 3) return false
 
