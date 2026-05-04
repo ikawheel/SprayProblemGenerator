@@ -109,7 +109,7 @@
     <string name="hold_editor_title_create">ホールドの追加・削除</string>
     <string name="hold_editor_title_edit">ホールドの追加・削除</string>
     <string name="hold_editor_section_title">ホールドを編集</string>
-    <string name="hold_editor_help">追加・追記、消しゴム、選択削除は下のボタンから開けます。追加・追記では、ホールドのない場所をなぞると新規登録し、既存ホールドに触れてなぞるとそのホールドに追記します。2本指で拡大・移動できます。</string>
+    <string name="hold_editor_help">追加・追記、消しゴム、選択削除は下のボタンから開けます。追加・追記では、ホールドのない場所をなぞると新規登録できます。2本指で拡大・移動できます。</string>
     <string name="hold_tap_size_label">タップ範囲</string>
     <string name="hold_tap_size_small">小</string>
     <string name="hold_tap_size_medium">中</string>
@@ -293,7 +293,7 @@
     <string name="ok">OK</string>
     <string name="message_hold_updated">ホールドを更新しました</string>
     <string name="message_hold_split">ホールドを%1$d個に分割しました</string>
-    <string name="hold_editor_auto_merge_label">既存ホールドに触れたらくっつける</string>
+    <string name="hold_editor_auto_merge_label">既存ホールドにくっつける</string>
     <string name="display_color_start_goal_hold_label">スタート/ゴール色</string>
     <string name="display_color_start_goal_hold_description">課題作成で選んだスタートホールドとゴールホールドに共通で使う色です。</string>
 </resources>

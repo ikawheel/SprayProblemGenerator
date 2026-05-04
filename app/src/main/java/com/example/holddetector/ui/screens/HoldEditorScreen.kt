@@ -76,7 +76,7 @@ fun HoldEditorScreen(
         mutableStateOf<List<HoldEditorSnapshot>>(emptyList())
     }
     var showDiscardDialog by remember { mutableStateOf(false) }
-    var isAutoMergeEnabled by remember { mutableStateOf(true) }
+    var isAutoMergeEnabled by remember { mutableStateOf(false) }
     val hasUnsavedDraftChanges = draftHolds != state.holds
     val isDeleteMode = activeTool == HoldEditorTool.DELETE
     val compactButtonContentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
