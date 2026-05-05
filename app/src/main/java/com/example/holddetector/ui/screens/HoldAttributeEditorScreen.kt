@@ -33,7 +33,6 @@ import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
 import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.HoldAttributeCanvasScreen
@@ -86,11 +85,6 @@ fun HoldAttributeEditorScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-            ScreenHeader(
-                title = stringResourceByName("hold_attribute_editor_title"),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -40,7 +40,6 @@ import com.example.holddetector.ui.canvas.AutoExtractionCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.ScreenHeader
 import kotlin.math.roundToInt
 
 @Composable
@@ -111,11 +110,6 @@ fun AutoHoldExtractionScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        ScreenHeader(
-            title = stringResource(R.string.auto_hold_extraction_title),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         Text(
             text = if (extractedHolds.isEmpty()) {
                 stringResource(R.string.auto_hold_extraction_empty)
@@ -124,7 +118,7 @@ fun AutoHoldExtractionScreen(
             },
             color = AppTextColor,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
         )
 
         Box(

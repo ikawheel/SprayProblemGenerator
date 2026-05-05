@@ -39,7 +39,6 @@ import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppConfirmDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.DisplayColorSettings
-import com.example.holddetector.ui.components.ScreenHeader
 
 private data class HoldEditOperationSnapshot(
     val holds: List<Hold>,
@@ -103,11 +102,6 @@ fun HoldEditOperationScreen(
         modifier = modifier
             .fillMaxSize()
     ) {
-        ScreenHeader(
-            title = stringResource(holdEditOperationTitleResId(mode)),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -293,14 +287,5 @@ fun HoldEditOperationScreen(
             },
             onDismissRequest = { showDiscardDialog = false }
         )
-    }
-}
-
-private fun holdEditOperationTitleResId(mode: HoldEditorTool): Int {
-    return when (mode) {
-        HoldEditorTool.ADD -> R.string.hold_editor_dialog_title_add
-        HoldEditorTool.EXTEND -> R.string.hold_editor_dialog_title_extend
-        HoldEditorTool.ERASE -> R.string.hold_editor_dialog_title_erase
-        HoldEditorTool.DELETE -> R.string.hold_editor_dialog_title_delete
     }
 }
