@@ -289,7 +289,7 @@
     <string name="hold_editor_dialog_title_extend">ホールドに追記</string>
     <string name="hold_editor_dialog_title_erase">ホールドを削る</string>
     <string name="hold_editor_dialog_title_delete">ホールドを削除</string>
-    <string name="undo">元に戻す</string>
+    <string name="undo">1つ戻す</string>
     <string name="ok">OK</string>
     <string name="message_hold_updated">ホールドを更新しました</string>
     <string name="message_hold_split">ホールドを%1$d個に分割しました</string>
