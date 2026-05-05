@@ -40,7 +40,6 @@ import com.example.holddetector.ui.DisplayColorTarget
 import com.example.holddetector.ui.EditableRgbColor
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.BottomActionBar
-import com.example.holddetector.ui.components.ScreenHeader
 import kotlin.math.roundToInt
 
 @Composable
@@ -57,11 +56,6 @@ fun DisplayColorSettingsScreen(
         modifier = modifier
             .fillMaxSize()
     ) {
-        ScreenHeader(
-            title = stringResource(R.string.display_color_settings_title),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -71,7 +65,7 @@ fun DisplayColorSettingsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
+                    .padding(start = 16.dp, top = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 DisplayColorSection(

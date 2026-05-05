@@ -53,7 +53,6 @@ import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppMessageDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.selectors.DrawTargetStatus
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import java.util.Locale
@@ -88,28 +87,12 @@ fun ChallengeCreatorScreen(
     var isTuningDialogOpen by rememberSaveable { mutableStateOf(false) }
     var isGenerationMethodDialogOpen by rememberSaveable { mutableStateOf(false) }
     val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val screenTitleResId = when (state.challengeFlowStep) {
-        ChallengeFlowStep.METHOD_SELECT -> R.string.challenge_method_select_heading
-        ChallengeFlowStep.COMMON_SETTINGS -> R.string.challenge_settings_heading
-        ChallengeFlowStep.GENERATION -> when (state.challengeGenerationMethod) {
-            ChallengeGenerationMethod.MANUAL_START_GOAL -> R.string.challenge_manual_generation_heading
-            ChallengeGenerationMethod.RANDOM_START_GOAL -> R.string.challenge_random_generation_heading
-            null -> R.string.challenge_method_select_heading
-        }
-        ChallengeFlowStep.RESULT -> R.string.challenge_result_heading
-        ChallengeFlowStep.TUNING -> R.string.challenge_tuning_title
-    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
     ) {
-        ScreenHeader(
-            title = stringResource(screenTitleResId),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()

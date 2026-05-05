@@ -32,7 +32,6 @@ import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.HoldScoringCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.selectors.deriveHoldScoringUiModel
 
 @Composable
@@ -53,11 +52,6 @@ fun HoldScoringScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-            ScreenHeader(
-                title = stringResourceByName("hold_scoring_title"),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

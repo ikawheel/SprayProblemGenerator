@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
-import com.example.holddetector.ui.components.ScreenHeader
 import com.mikepenz.aboutlibraries.ui.compose.android.rememberLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 
@@ -25,16 +23,11 @@ fun LicensesScreen(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        ScreenHeader(
-            title = stringResource(R.string.licenses_title),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 16.dp, vertical = 0.dp)
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 0.dp)
                 .navigationBarsPadding()
         ) {
             LibrariesContainer(

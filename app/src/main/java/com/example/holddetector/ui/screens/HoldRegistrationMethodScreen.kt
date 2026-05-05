@@ -27,7 +27,6 @@ import com.example.holddetector.R
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.ScreenHeader
 
 @Composable
 fun HoldRegistrationMethodScreen(
@@ -42,11 +41,6 @@ fun HoldRegistrationMethodScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        ScreenHeader(
-            title = stringResource(R.string.registration_method_title),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()

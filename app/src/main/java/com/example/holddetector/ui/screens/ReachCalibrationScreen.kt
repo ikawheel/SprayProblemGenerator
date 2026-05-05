@@ -35,7 +35,6 @@ import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.ReachCalibrationCanvasScreen
 import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.model.HoldPoint
 
 @Composable
@@ -83,11 +82,6 @@ fun ReachCalibrationScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-            ScreenHeader(
-                title = stringResourceByName("reach_calibration_title"),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
