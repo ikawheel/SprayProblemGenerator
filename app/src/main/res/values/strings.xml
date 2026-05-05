@@ -289,7 +289,7 @@
     <string name="hold_editor_dialog_title_extend">Append to hold</string>
     <string name="hold_editor_dialog_title_erase">Erase part of hold</string>
     <string name="hold_editor_dialog_title_delete">Delete hold</string>
-    <string name="undo">Undo</string>
+    <string name="undo">Undo one step</string>
     <string name="ok">OK</string>
     <string name="message_hold_updated">Updated hold</string>
     <string name="message_hold_split">Split hold into %1$d holds</string>
