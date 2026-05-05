@@ -146,10 +146,12 @@ object BinaryHoldExtractor {
             imageWidth: Int,
             imageHeight: Int
         ): Hold {
+            val componentWidth = maxX - minX + 1
+            val componentHeight = maxY - minY + 1
             val componentMask = createComponentMask()
             val boundaryPixels = traceBoundaryPixels(componentMask)
             if (boundaryPixels != null) {
-                val minDistance = max(2f, min(maxX - minX + 1, maxY - minY + 1) * 0.08f)
+                val minDistance = max(2f, min(componentWidth, componentHeight) * 0.08f)
                 val thinnedPoints = thinBoundaryPoints(
                     points = boundaryPixels.map { pixel ->
                         FloatPoint(
@@ -159,7 +161,12 @@ object BinaryHoldExtractor {
                     },
                     minDistance = minDistance
                 )
-                val holdPoints = thinnedPoints
+                val silhouettePoints = buildRoundedSilhouette(
+                    points = thinnedPoints,
+                    componentWidth = componentWidth,
+                    componentHeight = componentHeight
+                )
+                val holdPoints = silhouettePoints
                     .map { point ->
                         HoldPoint(
                             x = (point.x * scaleX).roundToInt().coerceIn(0, imageWidth - 1),
@@ -173,23 +180,43 @@ object BinaryHoldExtractor {
                 }
             }
 
-            val paddingX = max(2, ((maxX - minX + 1) * 0.08f).roundToInt())
-            val paddingY = max(2, ((maxY - minY + 1) * 0.08f).roundToInt())
-            val left = ((minX - paddingX) * scaleX).roundToInt().coerceIn(0, imageWidth - 1)
-            val top = ((minY - paddingY) * scaleY).roundToInt().coerceIn(0, imageHeight - 1)
-            val right = ((maxX + paddingX) * scaleX).roundToInt().coerceIn(0, imageWidth - 1)
-            val bottom = ((maxY + paddingY) * scaleY).roundToInt().coerceIn(0, imageHeight - 1)
-            val normalizedRight = max(right, left + 1).coerceAtMost(imageWidth - 1)
-            val normalizedBottom = max(bottom, top + 1).coerceAtMost(imageHeight - 1)
-
-            return Hold(
-                points = listOf(
-                    HoldPoint(left, top),
-                    HoldPoint(normalizedRight, top),
-                    HoldPoint(normalizedRight, normalizedBottom),
-                    HoldPoint(left, normalizedBottom)
-                )
+            val paddingX = max(2f, componentWidth * 0.08f)
+            val paddingY = max(2f, componentHeight * 0.08f)
+            val fallbackBase = listOf(
+                FloatPoint(minX.toFloat() - paddingX, minY.toFloat() - paddingY),
+                FloatPoint(maxX.toFloat() + paddingX, minY.toFloat() - paddingY),
+                FloatPoint(maxX.toFloat() + paddingX, maxY.toFloat() + paddingY),
+                FloatPoint(minX.toFloat() - paddingX, maxY.toFloat() + paddingY)
             )
+            val fallbackPoints = buildRoundedSilhouette(
+                points = fallbackBase,
+                componentWidth = componentWidth,
+                componentHeight = componentHeight
+            ).map { point ->
+                HoldPoint(
+                    x = (point.x * scaleX).roundToInt().coerceIn(0, imageWidth - 1),
+                    y = (point.y * scaleY).roundToInt().coerceIn(0, imageHeight - 1)
+                )
+            }.distinct()
+
+            return if (fallbackPoints.size >= 3 && isUsablePolygon(fallbackPoints)) {
+                Hold(points = fallbackPoints)
+            } else {
+                val left = ((minX - paddingX) * scaleX).roundToInt().coerceIn(0, imageWidth - 1)
+                val top = ((minY - paddingY) * scaleY).roundToInt().coerceIn(0, imageHeight - 1)
+                val right = ((maxX + paddingX) * scaleX).roundToInt().coerceIn(0, imageWidth - 1)
+                val bottom = ((maxY + paddingY) * scaleY).roundToInt().coerceIn(0, imageHeight - 1)
+                val normalizedRight = max(right, left + 1).coerceAtMost(imageWidth - 1)
+                val normalizedBottom = max(bottom, top + 1).coerceAtMost(imageHeight - 1)
+                Hold(
+                    points = listOf(
+                        HoldPoint(left, top),
+                        HoldPoint(normalizedRight, top),
+                        HoldPoint(normalizedRight, normalizedBottom),
+                        HoldPoint(left, normalizedBottom)
+                    )
+                )
+            }
         }
 
         private fun createComponentMask(): ComponentMask {
@@ -942,6 +969,136 @@ object BinaryHoldExtractor {
 
         return kept.distinct()
     }
+
+    private fun buildRoundedSilhouette(
+        points: List<FloatPoint>,
+        componentWidth: Int,
+        componentHeight: Int
+    ): List<FloatPoint> {
+        if (points.size < 3) return points.distinct()
+
+        val hull = buildConvexHull(points)
+        val padding = max(2f, min(componentWidth, componentHeight) * 0.12f)
+        val expanded = expandPolygonOutward(hull, padding)
+        val rounded = chaikinSmooth(expanded, iterations = 2)
+        val simplified = thinBoundaryPoints(
+            points = rounded,
+            minDistance = max(1.5f, min(componentWidth, componentHeight) * 0.04f)
+        )
+        return if (simplified.size >= 3) simplified else hull
+    }
+
+    private fun buildConvexHull(points: List<FloatPoint>): List<FloatPoint> {
+        val sorted = points
+            .distinct()
+            .sortedWith(compareBy<FloatPoint> { it.x }.thenBy { it.y })
+        if (sorted.size <= 3) return sorted
+
+        val lower = mutableListOf<FloatPoint>()
+        for (point in sorted) {
+            while (lower.size >= 2 && cross(lower[lower.size - 2], lower.last(), point) <= 0f) {
+                lower.removeAt(lower.lastIndex)
+            }
+            lower += point
+        }
+
+        val upper = mutableListOf<FloatPoint>()
+        for (index in sorted.indices.reversed()) {
+            val point = sorted[index]
+            while (upper.size >= 2 && cross(upper[upper.size - 2], upper.last(), point) <= 0f) {
+                upper.removeAt(upper.lastIndex)
+            }
+            upper += point
+        }
+
+        lower.removeAt(lower.lastIndex)
+        upper.removeAt(upper.lastIndex)
+        return (lower + upper).distinct()
+    }
+
+    private fun expandPolygonOutward(
+        points: List<FloatPoint>,
+        padding: Float
+    ): List<FloatPoint> {
+        if (points.size < 3) return points
+        val centroid = calculatePolygonCentroid(points)
+        return points.map { point ->
+            val dx = point.x - centroid.x
+            val dy = point.y - centroid.y
+            val distance = sqrt(dx * dx + dy * dy)
+            if (distance < 0.001f) {
+                point
+            } else {
+                val scale = (distance + padding) / distance
+                FloatPoint(
+                    x = centroid.x + dx * scale,
+                    y = centroid.y + dy * scale
+                )
+            }
+        }
+    }
+
+    private fun calculatePolygonCentroid(points: List<FloatPoint>): FloatPoint {
+        var signedArea = 0f
+        var centerX = 0f
+        var centerY = 0f
+        for (index in points.indices) {
+            val current = points[index]
+            val next = points[(index + 1) % points.size]
+            val cross = current.x * next.y - next.x * current.y
+            signedArea += cross
+            centerX += (current.x + next.x) * cross
+            centerY += (current.y + next.y) * cross
+        }
+
+        if (abs(signedArea) < 0.001f) {
+            return FloatPoint(
+                x = points.map { it.x }.average().toFloat(),
+                y = points.map { it.y }.average().toFloat()
+            )
+        }
+
+        val factor = 1f / (3f * signedArea)
+        return FloatPoint(
+            x = centerX * factor,
+            y = centerY * factor
+        )
+    }
+
+    private fun chaikinSmooth(
+        points: List<FloatPoint>,
+        iterations: Int
+    ): List<FloatPoint> {
+        var current = points
+        repeat(iterations.coerceAtLeast(0)) {
+            if (current.size < 3) return current
+            val refined = mutableListOf<FloatPoint>()
+            for (index in current.indices) {
+                val currentPoint = current[index]
+                val nextPoint = current[(index + 1) % current.size]
+                refined += FloatPoint(
+                    x = currentPoint.x * 0.75f + nextPoint.x * 0.25f,
+                    y = currentPoint.y * 0.75f + nextPoint.y * 0.25f
+                )
+                refined += FloatPoint(
+                    x = currentPoint.x * 0.25f + nextPoint.x * 0.75f,
+                    y = currentPoint.y * 0.25f + nextPoint.y * 0.75f
+                )
+            }
+            current = refined
+        }
+        return current
+    }
+
+    private fun cross(
+        origin: FloatPoint,
+        first: FloatPoint,
+        second: FloatPoint
+    ): Float {
+        return (first.x - origin.x) * (second.y - origin.y) -
+            (first.y - origin.y) * (second.x - origin.x)
+    }
+
     private fun isUsablePolygon(points: List<HoldPoint>): Boolean {
         if (points.size < 3) return false
 
