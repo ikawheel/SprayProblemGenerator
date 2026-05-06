@@ -1265,11 +1265,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 challengeOrderedHoldIndices = selectedOrderedIndices,
                 lastGeneratedIntermediateHoldIndices = selectedIndices
                     .filterNotTo(linkedSetOf()) { index -> index == startIndex || index == goalIndex },
-                challengeFlowStep = ChallengeFlowStep.RESULT,
-                challengeFlowBackStack = pushedChallengeFlowBackStack(
-                    state = state,
-                    targetStep = ChallengeFlowStep.RESULT
-                ),
                 selectedHoldIndex = null,
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
@@ -1343,11 +1338,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     .filterNotTo(linkedSetOf()) { index ->
                         index == generatedRoute.startIndex || index == generatedRoute.goalIndex
                     },
-                challengeFlowStep = ChallengeFlowStep.RESULT,
-                challengeFlowBackStack = pushedChallengeFlowBackStack(
-                    state = state,
-                    targetStep = ChallengeFlowStep.RESULT
-                ),
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
                 message = text(R.string.message_draw_generated_random_start_goal)
