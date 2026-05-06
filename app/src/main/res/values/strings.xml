@@ -194,12 +194,17 @@
     <string name="challenge_route_waviness_label">Route waviness</string>
     <string name="challenge_step_distance_variance_label">Intermediate hold variation</string>
     <string name="challenge_corridor_width_label">Route corridor width</string>
+    <string name="challenge_attempt_limits_label">Attempt counts</string>
+    <string name="challenge_start_goal_pair_limit_placeholder">Pairs</string>
+    <string name="challenge_route_generation_attempt_limit_placeholder">Attempts</string>
+    <string name="challenge_integer_setting_value">%1$d</string>
     <string name="challenge_exclude_previous_holds_label">Exclude holds from previous generation</string>
     <string name="challenge_exclude_previous_holds_description">When enabled, intermediate holds used in the previous automatic generation are excluded from the next candidates.</string>
     <string name="challenge_detour_strength_help">Adjust how far the route deviates from a straight line. Higher values make routes with larger detours or more L-shaped movement more likely.</string>
     <string name="challenge_route_waviness_help">Adjust how much the route bends or forms an S-shape. Higher values make routes that change direction along the way more likely.</string>
     <string name="challenge_step_distance_variance_help">Adjust the amount of variation in how intermediate holds are arranged. Higher values create more variation in distance and hold selection.</string>
     <string name="challenge_corridor_width_help">Adjust how widely holds around the route center line are included as candidates. Higher values make it easier to use holds that are slightly off the center line.</string>
+    <string name="challenge_attempt_limits_help">Maximum attempt counts for route generation.</string>
     <string name="challenge_exclude_previous_holds_help">When enabled, intermediate holds used in the previous automatic generation are excluded from the next candidates. This reduces the chance of generating similar challenges in a row.</string>
     <string name="reach_calibration_title">Set reach reference</string>
     <string name="reach_calibration_description">Set a reach reference used for challenge creation.</string>

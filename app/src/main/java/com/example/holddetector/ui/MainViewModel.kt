@@ -1137,6 +1137,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         updateRouteTuning { copy(excludePreviouslyGeneratedHolds = value) }
     }
 
+    fun onRandomStartGoalPairLimitChanged(value: Int) {
+        updateRouteTuning { copy(randomStartGoalPairLimit = value.coerceIn(1, 64)) }
+    }
+
+    fun onRouteGenerationAttemptLimitChanged(value: Int) {
+        updateRouteTuning { copy(routeGenerationAttemptLimit = value.coerceIn(1, 512)) }
+    }
+
     fun selectManualStartGoalChallengeMethod() {
         selectChallengeGenerationMethod(ChallengeGenerationMethod.MANUAL_START_GOAL)
     }

@@ -15,7 +15,7 @@ import com.example.holddetector.ui.AppTextColor
 
 @Composable
 fun AppContentDialog(
-    title: String,
+    title: String?,
     onDismissRequest: () -> Unit,
     dismissText: String,
     modifier: Modifier = Modifier,
@@ -23,13 +23,15 @@ fun AppContentDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = {
-            Text(
-                text = title,
-                color = AppTextColor,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
+        title = title?.let { resolvedTitle ->
+            {
+                Text(
+                    text = resolvedTitle,
+                    color = AppTextColor,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         },
         text = {
             Column(

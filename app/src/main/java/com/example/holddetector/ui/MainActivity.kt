@@ -168,6 +168,8 @@ class MainActivity : ComponentActivity() {
                         onStepDistanceVarianceChange = viewModel::onStepDistanceVarianceChanged,
                         onCorridorWidthChange = viewModel::onCorridorWidthChanged,
                         onExcludePreviouslyGeneratedHoldsChange = viewModel::onExcludePreviouslyGeneratedHoldsChanged,
+                        onRandomStartGoalPairLimitChange = viewModel::onRandomStartGoalPairLimitChanged,
+                        onRouteGenerationAttemptLimitChange = viewModel::onRouteGenerationAttemptLimitChanged,
                         onClearChallenge = viewModel::clearChallengeSelection,
                         onDismissDiscardDialog = viewModel::dismissDiscardDialog,
                         onDiscardChanges = viewModel::discardEditorAndReturnToList

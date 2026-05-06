@@ -381,7 +381,7 @@ internal fun generateChallengeRouteWithRetries(
     tuning: RouteGenerationTuning,
     reachCalibrationReference: ReachCalibrationReference?
 ): List<Int>? {
-    val maximumAttempts = 512
+    val maximumAttempts = tuning.routeGenerationAttemptLimit.coerceAtLeast(1)
 
     repeat(maximumAttempts) {
         ChallengeRouteGenerator.generate(
@@ -439,7 +439,7 @@ internal fun generateChallengeRouteWithRandomStartGoal(
 
     candidatePairs
         .shuffled(Random.Default)
-        .take(64)
+        .take(tuning.randomStartGoalPairLimit.coerceAtLeast(1))
         .forEach { (startIndex, goalIndex) ->
             val drawSourceIndices = selectionCandidateIndices.toMutableSet().apply {
                 if (tuning.excludePreviouslyGeneratedHolds) {

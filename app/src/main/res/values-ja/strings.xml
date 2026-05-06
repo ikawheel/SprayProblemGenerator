@@ -194,12 +194,17 @@
     <string name="challenge_route_waviness_label">ルートのうねり</string>
     <string name="challenge_step_distance_variance_label">途中ホールドのばらつき</string>
     <string name="challenge_corridor_width_label">ルート帯の太さ</string>
+    <string name="challenge_attempt_limits_label">試行回数</string>
+    <string name="challenge_start_goal_pair_limit_placeholder">候補数</string>
+    <string name="challenge_route_generation_attempt_limit_placeholder">試行数</string>
+    <string name="challenge_integer_setting_value">%1$d</string>
     <string name="challenge_exclude_previous_holds_label">前回使ったホールドを除外</string>
     <string name="challenge_exclude_previous_holds_description">ONにすると、前回の自動生成で使った中間ホールドを次回候補から外します。</string>
     <string name="challenge_detour_strength_help">ルートを直線からどれだけ外すかを調整します。高いほど、大きく回り込むルートやL字に近いルートが出やすくなります。</string>
     <string name="challenge_route_waviness_help">ルートの曲がりやS字っぽさを調整します。高いほど、途中で向きを変えるルートが出やすくなります。</string>
     <string name="challenge_step_distance_variance_help">途中ホールドの並びのばらつきを調整します。高いほど、距離や選ばれるホールドに変化が出やすくなります。</string>
     <string name="challenge_corridor_width_help">ルートの中心線の周囲を、どれだけ広く候補に含めるかを調整します。高いほど、中心線から少し外れたホールドも使われやすくなります。</string>
+    <string name="challenge_attempt_limits_help">ルート作成時の最大試行回数です。</string>
     <string name="challenge_exclude_previous_holds_help">ONにすると、前回の自動生成で使った中間ホールドを次回候補から外します。似た課題が続きにくくなります。</string>
     <string name="reach_calibration_title">リーチの目安設定</string>
     <string name="reach_calibration_description">課題作成で使うリーチの目安を設定します。</string>
