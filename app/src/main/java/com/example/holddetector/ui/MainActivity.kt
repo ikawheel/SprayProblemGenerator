@@ -90,8 +90,18 @@ class MainActivity : ComponentActivity() {
                     // ViewModel の状態を Compose 側へ接続します。
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+                    val isChallengeGenerationBusy =
+                        uiState.currentScreen == AppScreen.CHALLENGE_CREATOR && uiState.isBusy
+
+                    // 課題生成中はシステムバックを無効化します。
+                    BackHandler(enabled = isChallengeGenerationBusy) {
+                        Unit
+                    }
+
                     // 一覧以外ではシステムバックを ViewModel 側へ流します。
-                    BackHandler(enabled = uiState.currentScreen != AppScreen.LIST) {
+                    BackHandler(
+                        enabled = uiState.currentScreen != AppScreen.LIST && !isChallengeGenerationBusy
+                    ) {
                         viewModel.onBackPressed()
                     }
 
