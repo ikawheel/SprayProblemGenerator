@@ -117,6 +117,8 @@ fun HoldDetectorApp(
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
+    onRandomStartGoalPairLimitChange: (Int) -> Unit,
+    onRouteGenerationAttemptLimitChange: (Int) -> Unit,
     onClearChallenge: () -> Unit,
     onDismissDiscardDialog: () -> Unit,
     onDiscardChanges: () -> Unit
@@ -388,6 +390,8 @@ fun HoldDetectorApp(
                             onStepDistanceVarianceChange = onStepDistanceVarianceChange,
                             onCorridorWidthChange = onCorridorWidthChange,
                             onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
+                            onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
+                            onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

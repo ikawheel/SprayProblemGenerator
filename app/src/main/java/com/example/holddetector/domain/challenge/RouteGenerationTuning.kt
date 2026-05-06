@@ -5,5 +5,7 @@ data class RouteGenerationTuning(
     val routeWaviness: Float = 0.75f,
     val stepDistanceVariance: Float = 0.75f,
     val corridorWidth: Float = 0.75f,
-    val excludePreviouslyGeneratedHolds: Boolean = true
+    val excludePreviouslyGeneratedHolds: Boolean = true,
+    val randomStartGoalPairLimit: Int = 10,
+    val routeGenerationAttemptLimit: Int = 100
 )

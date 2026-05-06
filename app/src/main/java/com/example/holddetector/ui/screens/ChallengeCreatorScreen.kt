@@ -1,6 +1,7 @@
 package com.example.holddetector.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
@@ -12,11 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -34,10 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
@@ -79,6 +84,8 @@ fun ChallengeCreatorScreen(
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
+    onRandomStartGoalPairLimitChange: (Int) -> Unit,
+    onRouteGenerationAttemptLimitChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -200,7 +207,9 @@ fun ChallengeCreatorScreen(
                         onRouteWavinessChange = onRouteWavinessChange,
                         onStepDistanceVarianceChange = onStepDistanceVarianceChange,
                         onCorridorWidthChange = onCorridorWidthChange,
-                        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
+                        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
+                        onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
+                        onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
                     )
                 }
             }
@@ -209,7 +218,7 @@ fun ChallengeCreatorScreen(
 
     if (isTuningDialogOpen) {
         AppContentDialog(
-            title = stringResource(R.string.challenge_tuning_title),
+            title = null,
             onDismissRequest = { isTuningDialogOpen = false },
             dismissText = stringResource(R.string.close)
         ) {
@@ -219,7 +228,9 @@ fun ChallengeCreatorScreen(
                 onRouteWavinessChange = onRouteWavinessChange,
                 onStepDistanceVarianceChange = onStepDistanceVarianceChange,
                 onCorridorWidthChange = onCorridorWidthChange,
-                onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
+                onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
+                onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
+                onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
             )
         }
     }
@@ -492,7 +503,9 @@ private fun ChallengeTuningContent(
     onRouteWavinessChange: (Float) -> Unit,
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
-    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit
+    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
+    onRandomStartGoalPairLimitChange: (Int) -> Unit,
+    onRouteGenerationAttemptLimitChange: (Int) -> Unit
 ) {
     ChallengeTuningControls(
         state = state,
@@ -500,7 +513,9 @@ private fun ChallengeTuningContent(
         onRouteWavinessChange = onRouteWavinessChange,
         onStepDistanceVarianceChange = onStepDistanceVarianceChange,
         onCorridorWidthChange = onCorridorWidthChange,
-        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange
+        onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
+        onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
+        onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
     )
 }
 
@@ -511,7 +526,9 @@ private fun ChallengeTuningControls(
     onRouteWavinessChange: (Float) -> Unit,
     onStepDistanceVarianceChange: (Float) -> Unit,
     onCorridorWidthChange: (Float) -> Unit,
-    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit
+    onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
+    onRandomStartGoalPairLimitChange: (Int) -> Unit,
+    onRouteGenerationAttemptLimitChange: (Int) -> Unit
 ) {
     var helpDialogTitle by rememberSaveable { mutableStateOf<String?>(null) }
     var helpDialogBody by rememberSaveable { mutableStateOf<String?>(null) }
@@ -525,6 +542,16 @@ private fun ChallengeTuningControls(
     val corridorHelp = stringResource(R.string.challenge_corridor_width_help)
     val excludeLabel = stringResource(R.string.challenge_exclude_previous_holds_label)
     val excludeHelp = stringResource(R.string.challenge_exclude_previous_holds_help)
+    val attemptLimitsLabel = stringResource(R.string.challenge_attempt_limits_label)
+    val attemptLimitsHelp = stringResource(R.string.challenge_attempt_limits_help)
+    val initialPairLimit = state.routeTuning.randomStartGoalPairLimit.takeIf { it > 0 } ?: 10
+    val initialAttemptLimit = state.routeTuning.routeGenerationAttemptLimit.takeIf { it > 0 } ?: 100
+    var pairLimitInput by rememberSaveable(initialPairLimit) {
+        mutableStateOf(initialPairLimit.toString())
+    }
+    var attemptLimitInput by rememberSaveable(initialAttemptLimit) {
+        mutableStateOf(initialAttemptLimit.toString())
+    }
 
     ChallengeTuningSlider(
         label = detourLabel,
@@ -573,6 +600,58 @@ private fun ChallengeTuningControls(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        fun normalizeNumericInput(value: String, maxDigits: Int): String {
+            val filteredValue = value.filter(Char::isDigit).take(maxDigits)
+            val normalizedValue = filteredValue.trimStart('0')
+            return normalizedValue.ifEmpty { "0" }
+        }
+
+        SettingLabelWithHelp(
+            label = attemptLimitsLabel,
+            onHelpClick = {
+                helpDialogTitle = attemptLimitsLabel
+                helpDialogBody = attemptLimitsHelp
+            },
+            modifier = Modifier.weight(1f)
+        )
+
+        CompactNumericField(
+            value = pairLimitInput,
+            onValueChange = { changedValue ->
+                val normalizedValue = normalizeNumericInput(changedValue, maxDigits = 2)
+                pairLimitInput = normalizedValue
+                normalizedValue.toIntOrNull()?.let(onRandomStartGoalPairLimitChange)
+            },
+            width = 72.dp,
+            modifier = Modifier.height(32.dp)
+        )
+
+        Text(
+            text = "×",
+            color = AppSecondaryTextColor,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        CompactNumericField(
+            value = attemptLimitInput,
+            onValueChange = { changedValue ->
+                val normalizedValue = normalizeNumericInput(changedValue, maxDigits = 3)
+                attemptLimitInput = normalizedValue
+                normalizedValue.toIntOrNull()?.let(onRouteGenerationAttemptLimitChange)
+            },
+            width = 86.dp,
+            modifier = Modifier.height(32.dp)
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -602,6 +681,46 @@ private fun ChallengeTuningControls(
             dismissText = stringResource(R.string.close)
         )
     }
+}
+
+@Composable
+private fun CompactNumericField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    width: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.width(width),
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodySmall.copy(
+            color = AppTextColor,
+            textAlign = TextAlign.Center
+        ),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        cursorBrush = SolidColor(AppTextColor),
+        decorationBox = { innerTextField ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                innerTextField()
+            }
+        }
+    )
 }
 
 @Composable
