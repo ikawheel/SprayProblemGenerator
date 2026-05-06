@@ -509,6 +509,149 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         openSavedWallForChallenge(wallId, null)
     }
 
+    fun openSavedWallChallenges(wallId: String) {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            _uiState.value = currentState.copy(isBusy = true)
+            val wallDetail = withContext(Dispatchers.IO) { repository.loadWall(wallId) }
+            val savedChallenges = withContext(Dispatchers.IO) {
+                repository.loadChallengeSummaries(wallId)
+            }
+
+            if (wallDetail == null) {
+                _uiState.value = currentState.copy(
+                    isBusy = false,
+                    message = text(R.string.message_open_wall_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = currentState.copy(
+                currentScreen = AppScreen.SAVED_CHALLENGE_LIST,
+                screenBackStack = pushedScreenBackStack(
+                    state = currentState,
+                    targetScreen = AppScreen.SAVED_CHALLENGE_LIST
+                ),
+                currentWallId = wallDetail.id,
+                capturedBitmap = wallDetail.bitmap,
+                capturedOrientation = wallDetail.capturedOrientation,
+                capturedRotationDegrees = wallDetail.capturedRotationDegrees,
+                holds = wallDetail.holds,
+                reachCalibrationReference = wallDetail.reachCalibrationReference,
+                reachCalibrationLengthInput = wallDetail.reachCalibrationReference
+                    ?.referenceLengthCm
+                    ?.toString()
+                    ?: DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
+                savedChallenges = savedChallenges,
+                selectedHoldIndex = null,
+                isBusy = false,
+                message = null
+            )
+        }
+    }
+
+    fun openSavedChallenge(wallId: String, challengeId: String) {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            _uiState.value = currentState.copy(isBusy = true)
+
+            val wallDetail = withContext(Dispatchers.IO) { repository.loadWall(wallId) }
+            val challengeDetail = withContext(Dispatchers.IO) {
+                repository.loadChallenge(wallId, challengeId)
+            }
+
+            if (wallDetail == null || challengeDetail == null) {
+                val savedChallenges = withContext(Dispatchers.IO) {
+                    repository.loadChallengeSummaries(wallId)
+                }
+                _uiState.value = currentState.copy(
+                    currentScreen = AppScreen.SAVED_CHALLENGE_LIST,
+                    screenBackStack = currentState.screenBackStack,
+                    currentWallId = wallId,
+                    savedChallenges = savedChallenges,
+                    isBusy = false,
+                    message = text(R.string.message_open_saved_challenge_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = currentState.copy(
+                currentScreen = AppScreen.SAVED_CHALLENGE_DETAIL,
+                screenBackStack = pushedScreenBackStack(
+                    state = currentState,
+                    targetScreen = AppScreen.SAVED_CHALLENGE_DETAIL
+                ),
+                currentWallId = wallDetail.id,
+                capturedBitmap = wallDetail.bitmap,
+                capturedOrientation = wallDetail.capturedOrientation,
+                capturedRotationDegrees = wallDetail.capturedRotationDegrees,
+                holds = wallDetail.holds,
+                autoExtractedHolds = emptyList(),
+                reachCalibrationReference = wallDetail.reachCalibrationReference,
+                reachCalibrationLengthInput = wallDetail.reachCalibrationReference
+                    ?.referenceLengthCm
+                    ?.toString()
+                    ?: DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
+                pendingReachCalibrationPoint = null,
+                isReachCalibrationSelectionMode = false,
+                reachCalibrationReturnToHoldEditor = false,
+                reachCalibrationReturnToAutoExtraction = false,
+                selectedHoldIndex = null,
+                challengeHoldIndices = challengeDetail.challengeHoldIndices,
+                challengeOrderedHoldIndices = challengeDetail.challengeOrderedHoldIndices,
+                challengeGenerationMethod = challengeDetail.generationMethodName
+                    ?.let { methodName ->
+                        runCatching { ChallengeGenerationMethod.valueOf(methodName) }.getOrNull()
+                    },
+                challengeFlowBackStack = emptyList(),
+                drawTargetHoldIndices = emptySet(),
+                hasDrawTargetSelection = false,
+                startHoldIndex = challengeDetail.startHoldIndex,
+                goalHoldIndex = challengeDetail.goalHoldIndex,
+                routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
+                isBusy = false,
+                message = null
+            )
+        }
+    }
+
+    fun deleteSavedChallenge(challengeId: String) {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            val wallId = currentState.currentWallId
+            if (wallId.isNullOrBlank()) {
+                _uiState.value = currentState.copy(
+                    message = text(R.string.message_delete_saved_challenge_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = currentState.copy(isBusy = true)
+
+            val savedChallenges = withContext(Dispatchers.IO) {
+                runCatching {
+                    repository.deleteChallenge(wallId, challengeId)
+                    repository.loadChallengeSummaries(wallId)
+                }.getOrNull()
+            }
+
+            if (savedChallenges == null) {
+                _uiState.value = currentState.copy(
+                    isBusy = false,
+                    message = text(R.string.message_delete_saved_challenge_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = currentState.copy(
+                savedChallenges = savedChallenges,
+                isBusy = false,
+                message = text(R.string.message_saved_challenge_deleted)
+            )
+        }
+    }
+
     fun openSavedWallForManualStartGoalChallenge(wallId: String) {
         openSavedWallForChallenge(wallId, ChallengeGenerationMethod.MANUAL_START_GOAL)
     }
@@ -563,6 +706,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 reachCalibrationReturnToHoldEditor = false,
                 reachCalibrationReturnToAutoExtraction = false,
                 selectedHoldIndex = null,
+                savedChallenges = emptyList(),
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
                 lastGeneratedIntermediateHoldIndices = emptySet(),
@@ -579,6 +723,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isBusy = false,
                 showDiscardDialog = false,
                 message = text(R.string.message_open_challenge_creator)
+            )
+        }
+    }
+
+    fun saveCurrentChallenge() {
+        val state = _uiState.value
+        val wallId = state.currentWallId
+        val startHoldIndex = state.startHoldIndex
+        val goalHoldIndex = state.goalHoldIndex
+        if (wallId.isNullOrBlank()) {
+            _uiState.value = state.copy(message = text(R.string.message_save_challenge_failed))
+            return
+        }
+        if (startHoldIndex == null || goalHoldIndex == null || state.challengeOrderedHoldIndices.isEmpty()) {
+            _uiState.value = state.copy(message = text(R.string.message_no_generated_challenge_to_save))
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = state.copy(isBusy = true)
+            val savedChallenge = withContext(Dispatchers.IO) {
+                runCatching {
+                    repository.saveChallenge(
+                        wallId = wallId,
+                        generationMethodName = state.challengeGenerationMethod?.name,
+                        startHoldIndex = startHoldIndex,
+                        goalHoldIndex = goalHoldIndex,
+                        challengeHoldIndices = state.challengeHoldIndices,
+                        challengeOrderedHoldIndices = state.challengeOrderedHoldIndices
+                    )
+                }.getOrNull()
+            }
+
+            _uiState.value = state.copy(
+                isBusy = false,
+                message = if (savedChallenge != null) {
+                    text(R.string.message_saved_challenge)
+                } else {
+                    text(R.string.message_save_challenge_failed)
+                }
             )
         }
     }
@@ -1513,6 +1697,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentScreen = AppScreen.LIST,
             screenBackStack = emptyList(),
             savedWalls = savedWalls,
+            savedChallenges = emptyList(),
             drawCountInput = source.drawCountInput,
             holdTapAreaSize = source.holdTapAreaSize,
             displayColorSettings = source.displayColorSettings,
@@ -1673,6 +1858,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     currentState.holdEditorTool
                 },
+                savedChallenges = emptyList(),
                 challengeHoldIndices = emptySet(),
                 challengeOrderedHoldIndices = emptyList(),
                 lastGeneratedIntermediateHoldIndices = emptySet(),

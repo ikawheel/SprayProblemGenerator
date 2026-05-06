@@ -52,6 +52,9 @@ fun HoldDetectorApp(
     onOpenSavedWallForHoldAttributeEditor: (String) -> Unit,
     onOpenSavedWallForHoldScoring: (String) -> Unit,
     onOpenSavedWallForChallenge: (String) -> Unit,
+    onOpenSavedWallChallenges: (String) -> Unit,
+    onOpenSavedChallenge: (String, String) -> Unit,
+    onDeleteSavedChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     onOpenDisplayColorSettings: () -> Unit,
     onOpenLicenses: () -> Unit,
@@ -110,6 +113,7 @@ fun HoldDetectorApp(
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onRerunCurrentChallengeGeneration: () -> Unit,
+    onSaveCurrentChallenge: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
     onDetourStrengthChange: (Float) -> Unit,
@@ -230,6 +234,7 @@ fun HoldDetectorApp(
                             onOpenSavedWallForHoldAttributeEditor = onOpenSavedWallForHoldAttributeEditor,
                             onOpenSavedWallForHoldScoring = onOpenSavedWallForHoldScoring,
                             onOpenSavedWallForChallenge = onOpenSavedWallForChallenge,
+                            onOpenSavedWallChallenges = onOpenSavedWallChallenges,
                             onDeleteSavedWall = onDeleteSavedWall,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -247,6 +252,28 @@ fun HoldDetectorApp(
 
                     AppScreen.LICENSES -> {
                         LicensesScreen(
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    AppScreen.SAVED_CHALLENGE_LIST -> {
+                        SavedChallengeListScreen(
+                            savedChallenges = state.savedChallenges,
+                            bitmap = state.capturedBitmap,
+                            holds = state.holds,
+                            onOpenSavedChallenge = { challengeId ->
+                                state.currentWallId?.let { wallId ->
+                                    onOpenSavedChallenge(wallId, challengeId)
+                                }
+                            },
+                            onDeleteSavedChallenge = onDeleteSavedChallenge,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    AppScreen.SAVED_CHALLENGE_DETAIL -> {
+                        SavedChallengeDetailScreen(
+                            state = state,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -383,6 +410,7 @@ fun HoldDetectorApp(
                             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                             onDrawClick = onDrawClick,
                             onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration,
+                            onSaveChallenge = onSaveCurrentChallenge,
                             onDrawCountChange = onDrawCountChange,
                             onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
                             onDetourStrengthChange = onDetourStrengthChange,

@@ -16,9 +16,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +57,7 @@ fun WallListScreen(
     onOpenSavedWallForHoldAttributeEditor: (String) -> Unit,
     onOpenSavedWallForHoldScoring: (String) -> Unit,
     onOpenSavedWallForChallenge: (String) -> Unit,
+    onOpenSavedWallChallenges: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -114,6 +117,7 @@ fun WallListScreen(
                             wall = wall,
                             onEdit = { editingWallId = wall.id },
                             onCreateChallenge = { onOpenSavedWallForChallenge(wall.id) },
+                            onViewSavedChallenges = { onOpenSavedWallChallenges(wall.id) },
                             onDelete = { deletingWallId = wall.id }
                         )
                     }
@@ -227,8 +231,11 @@ private fun SavedWallCard(
     wall: SavedWallSummary,
     onEdit: () -> Unit,
     onCreateChallenge: () -> Unit,
+    onViewSavedChallenges: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val compactButtonPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppSurfaceColor)
@@ -271,25 +278,45 @@ private fun SavedWallCard(
             }
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                AppButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                AppButton(
+                    onClick = onEdit,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = compactButtonPadding,
+                    minHeight = 24.dp
+                ) {
                     Text(stringResource(R.string.edit_holds))
                 }
-                AppButton(onClick = onCreateChallenge, modifier = Modifier.weight(1f)) {
+                AppButton(
+                    onClick = onCreateChallenge,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = compactButtonPadding,
+                    minHeight = 24.dp
+                ) {
                     Text(stringResource(R.string.create_challenge))
                 }
-            }
-            AppOutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.delete))
+                AppButton(
+                    onClick = onViewSavedChallenges,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = compactButtonPadding,
+                    minHeight = 24.dp
+                ) {
+                    Text(stringResource(R.string.open_saved_challenges))
+                }
+                AppOutlinedButton(
+                    onClick = onDelete,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = compactButtonPadding,
+                    minHeight = 24.dp
+                ) {
+                    Text(stringResource(R.string.delete))
+                }
             }
         }
     }
