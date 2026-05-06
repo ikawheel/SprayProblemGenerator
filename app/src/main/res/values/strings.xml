@@ -46,6 +46,8 @@
     <string name="hold_count_label">Hold count: %1$d</string>
     <string name="edit_holds">Edit holds</string>
     <string name="create_challenge">Create challenge</string>
+    <string name="open_saved_challenges">Challenge list</string>
+    <string name="open_saved_challenge">Open challenge</string>
     <string name="no_image">No image</string>
     <string name="camera_title">Add wall image</string>
     <string name="camera_subtitle">Take a photo with the standard camera or choose an image from your device. After that, crop the area you want to use.</string>
@@ -165,6 +167,7 @@
     <string name="challenge_result_heading">Generated result</string>
     <string name="challenge_result_description">Check the generated result. Tap holds to adjust it if needed.</string>
     <string name="challenge_regenerate">Generate again</string>
+    <string name="save_challenge">Save challenge</string>
     <string name="challenge_back_to_settings">Back to common settings</string>
     <string name="start_goal_select">Select start/goal</string>
     <string name="selecting_start">Selecting start</string>
@@ -206,6 +209,12 @@
     <string name="challenge_corridor_width_help">Adjust how widely holds around the route center line are included as candidates. Higher values make it easier to use holds that are slightly off the center line.</string>
     <string name="challenge_attempt_limits_help">Maximum attempt counts for route generation.</string>
     <string name="challenge_exclude_previous_holds_help">When enabled, intermediate holds used in the previous automatic generation are excluded from the next candidates. This reduces the chance of generating similar challenges in a row.</string>
+    <string name="saved_challenges_empty">There are no saved challenges yet</string>
+    <string name="saved_challenge_summary">Hold count: %1$d / %2$s</string>
+    <string name="saved_challenge_generation_method_unknown">Unknown creation method</string>
+    <string name="saved_challenge_hold_count_label">Hold count: %1$d</string>
+    <string name="delete_saved_challenge_title">Delete challenge</string>
+    <string name="delete_saved_challenge_message">Delete this saved challenge?</string>
     <string name="reach_calibration_title">Set reach reference</string>
     <string name="reach_calibration_description">Set a reach reference used for challenge creation.</string>
     <string name="reach_calibration_recommendation">Use your height or arm span as a guide, and select two points on the wall that correspond to roughly the same distance.</string>
@@ -277,6 +286,12 @@
     <string name="message_unable_generate">Could not automatically generate a challenge</string>
     <string name="message_draw_generated">Challenge generated</string>
     <string name="message_draw_generated_random_start_goal">Generated a challenge with automatically chosen start and goal</string>
+    <string name="message_saved_challenge">Challenge saved</string>
+    <string name="message_saved_challenge_deleted">Deleted the saved challenge</string>
+    <string name="message_save_challenge_failed">Could not save the challenge</string>
+    <string name="message_delete_saved_challenge_failed">Could not delete the saved challenge</string>
+    <string name="message_no_generated_challenge_to_save">There is no generated challenge to save yet</string>
+    <string name="message_open_saved_challenge_failed">Could not open the saved challenge</string>
     <string name="message_draw_target_instruction">Trace the drawing range freehand</string>
     <string name="message_draw_target_empty_after_filter">No holds were found in the drawing target</string>
     <string name="message_draw_target_selected_count">Set %1$d holds as the drawing target</string>

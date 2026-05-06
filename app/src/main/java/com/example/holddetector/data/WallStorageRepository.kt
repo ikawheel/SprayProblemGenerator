@@ -11,6 +11,8 @@ import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.ReachCalibrationReference
+import com.example.holddetector.model.SavedChallengeDetail
+import com.example.holddetector.model.SavedChallengeSummary
 import com.example.holddetector.model.SavedWallDetail
 import com.example.holddetector.model.SavedWallSummary
 import org.json.JSONArray
@@ -24,10 +26,12 @@ class WallStorageRepository(context: Context) {
     private val rootDir = File(context.filesDir, "saved_routes")
     private val imageDir = File(rootDir, "images")
     private val metadataDir = File(rootDir, "metadata")
+    private val challengeDir = File(rootDir, "challenges")
 
     init {
         imageDir.mkdirs()
         metadataDir.mkdirs()
+        challengeDir.mkdirs()
     }
 
     fun loadAllSummaries(): List<SavedWallSummary> {
@@ -110,6 +114,25 @@ class WallStorageRepository(context: Context) {
         )
     }
 
+    fun loadChallengeSummaries(wallId: String): List<SavedChallengeSummary> {
+        val challengeFiles = wallChallengeDir(wallId)
+            .listFiles { file -> file.extension == "json" }
+            ?.sortedByDescending { it.lastModified() }
+            ?: emptyList()
+
+        return challengeFiles.mapNotNull { file ->
+            runCatching { parseChallengeSummary(file.readText()) }.getOrNull()
+        }.sortedByDescending { it.updatedAt }
+    }
+
+    fun loadChallenge(wallId: String, challengeId: String): SavedChallengeDetail? {
+        val challengeFile = challengeFile(wallId, challengeId)
+        if (!challengeFile.exists()) return null
+
+        val json = runCatching { JSONObject(challengeFile.readText()) }.getOrNull() ?: return null
+        return parseChallengeDetail(json)
+    }
+
     fun saveWall(
         wallId: String?,
         bitmap: Bitmap,
@@ -177,6 +200,52 @@ class WallStorageRepository(context: Context) {
         )
     }
 
+    fun saveChallenge(
+        wallId: String,
+        generationMethodName: String?,
+        startHoldIndex: Int,
+        goalHoldIndex: Int,
+        challengeHoldIndices: Set<Int>,
+        challengeOrderedHoldIndices: List<Int>
+    ): SavedChallengeSummary {
+        val now = System.currentTimeMillis()
+        val challengeId = UUID.randomUUID().toString()
+        val resolvedHoldIndices = challengeHoldIndices.toSortedSet()
+        val resolvedOrderedIndices = challengeOrderedHoldIndices
+            .filter { it in resolvedHoldIndices }
+            .ifEmpty { resolvedHoldIndices.toList() }
+
+        val challengeJson = JSONObject().apply {
+            put(KEY_ID, challengeId)
+            put(KEY_WALL_ID, wallId)
+            put(KEY_GENERATION_METHOD_NAME, generationMethodName)
+            put(KEY_START_HOLD_INDEX, startHoldIndex)
+            put(KEY_GOAL_HOLD_INDEX, goalHoldIndex)
+            put(KEY_CHALLENGE_HOLD_INDICES, JSONArray().apply {
+                resolvedHoldIndices.forEach { put(it) }
+            })
+            put(KEY_CHALLENGE_ORDERED_HOLD_INDICES, JSONArray().apply {
+                resolvedOrderedIndices.forEach { put(it) }
+            })
+            put(KEY_CREATED_AT, now)
+            put(KEY_UPDATED_AT, now)
+        }
+
+        challengeFile(wallId, challengeId).writeText(challengeJson.toString(2))
+
+        return SavedChallengeSummary(
+            id = challengeId,
+            wallId = wallId,
+            holdCount = resolvedHoldIndices.size,
+            startHoldIndex = startHoldIndex,
+            goalHoldIndex = goalHoldIndex,
+            challengeHoldIndices = resolvedHoldIndices,
+            generationMethodName = generationMethodName,
+            createdAt = now,
+            updatedAt = now
+        )
+    }
+
     fun deleteWall(wallId: String) {
         val metadataFile = metadataFile(wallId)
         val imagePath = if (metadataFile.exists()) {
@@ -187,9 +256,22 @@ class WallStorageRepository(context: Context) {
 
         metadataFile.delete()
         imagePath?.takeIf { it.isNotBlank() }?.let { File(it).delete() }
+        wallChallengeDir(wallId).deleteRecursively()
+    }
+
+    fun deleteChallenge(wallId: String, challengeId: String) {
+        challengeFile(wallId, challengeId).delete()
     }
 
     private fun metadataFile(wallId: String): File = File(metadataDir, "$wallId.json")
+
+    private fun wallChallengeDir(wallId: String): File {
+        return File(challengeDir, wallId).apply { mkdirs() }
+    }
+
+    private fun challengeFile(wallId: String, challengeId: String): File {
+        return File(wallChallengeDir(wallId), "$challengeId.json")
+    }
 
     private fun saveBitmap(bitmap: Bitmap, file: File) {
         FileOutputStream(file).use { output ->
@@ -207,6 +289,56 @@ class WallStorageRepository(context: Context) {
             createdAt = json.optLong(KEY_CREATED_AT),
             updatedAt = json.optLong(KEY_UPDATED_AT)
         )
+    }
+
+    private fun parseChallengeSummary(rawJson: String): SavedChallengeSummary {
+        val json = JSONObject(rawJson)
+        return SavedChallengeSummary(
+            id = json.optString(KEY_ID),
+            wallId = json.optString(KEY_WALL_ID),
+            holdCount = json.optJSONArray(KEY_CHALLENGE_HOLD_INDICES)?.length() ?: 0,
+            startHoldIndex = json.optInt(KEY_START_HOLD_INDEX, -1).takeIf { it >= 0 },
+            goalHoldIndex = json.optInt(KEY_GOAL_HOLD_INDEX, -1).takeIf { it >= 0 },
+            challengeHoldIndices = json.optJSONArray(KEY_CHALLENGE_HOLD_INDICES)
+                ?.toIntList()
+                ?.toSet()
+                ?: emptySet(),
+            generationMethodName = json.optString(KEY_GENERATION_METHOD_NAME).ifBlank { null },
+            createdAt = json.optLong(KEY_CREATED_AT),
+            updatedAt = json.optLong(KEY_UPDATED_AT)
+        )
+    }
+
+    private fun parseChallengeDetail(json: JSONObject): SavedChallengeDetail {
+        val holdIndices = json.optJSONArray(KEY_CHALLENGE_HOLD_INDICES)
+            ?.toIntList()
+            ?.toSet()
+            ?: emptySet()
+        val orderedIndices = json.optJSONArray(KEY_CHALLENGE_ORDERED_HOLD_INDICES)
+            ?.toIntList()
+            ?.filter { it in holdIndices }
+            ?: emptyList()
+
+        return SavedChallengeDetail(
+            id = json.optString(KEY_ID),
+            wallId = json.optString(KEY_WALL_ID),
+            holdCount = holdIndices.size,
+            generationMethodName = json.optString(KEY_GENERATION_METHOD_NAME).ifBlank { null },
+            startHoldIndex = json.optInt(KEY_START_HOLD_INDEX, -1).takeIf { it >= 0 },
+            goalHoldIndex = json.optInt(KEY_GOAL_HOLD_INDEX, -1).takeIf { it >= 0 },
+            challengeHoldIndices = holdIndices,
+            challengeOrderedHoldIndices = orderedIndices,
+            createdAt = json.optLong(KEY_CREATED_AT),
+            updatedAt = json.optLong(KEY_UPDATED_AT)
+        )
+    }
+
+    private fun JSONArray.toIntList(): List<Int> {
+        return buildList {
+            for (i in 0 until length()) {
+                add(optInt(i))
+            }
+        }
     }
 
     private fun parseCapturedRotationDegrees(
@@ -286,6 +418,12 @@ class WallStorageRepository(context: Context) {
         private const val KEY_CAPTURED_ROTATION_DEGREES = "capturedRotationDegrees"
         private const val KEY_REACH_CALIBRATION_REFERENCE = "reachCalibrationReference"
         private const val KEY_HOLDS = "holds"
+        private const val KEY_WALL_ID = "wallId"
+        private const val KEY_GENERATION_METHOD_NAME = "generationMethodName"
+        private const val KEY_START_HOLD_INDEX = "startHoldIndex"
+        private const val KEY_GOAL_HOLD_INDEX = "goalHoldIndex"
+        private const val KEY_CHALLENGE_HOLD_INDICES = "challengeHoldIndices"
+        private const val KEY_CHALLENGE_ORDERED_HOLD_INDICES = "challengeOrderedHoldIndices"
         private const val KEY_DIFFICULTY_SCORE = "difficultyScore"
         private const val KEY_IS_START_CANDIDATE = "isStartCandidate"
         private const val KEY_IS_GOAL_CANDIDATE = "isGoalCandidate"

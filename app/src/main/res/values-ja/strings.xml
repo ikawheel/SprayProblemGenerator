@@ -46,6 +46,8 @@
     <string name="hold_count_label">ホールド数: %1$d</string>
     <string name="edit_holds">ホールド編集</string>
     <string name="create_challenge">課題作成</string>
+    <string name="open_saved_challenges">課題一覧</string>
+    <string name="open_saved_challenge">課題を見る</string>
     <string name="no_image">画像なし</string>
     <string name="camera_title">壁画像を追加</string>
     <string name="camera_subtitle">標準カメラで撮影するか、端末内の画像を選んでください。取得後、必要な範囲を切り抜きます。</string>
@@ -165,6 +167,7 @@
     <string name="challenge_result_heading">生成結果</string>
     <string name="challenge_result_description">生成結果を確認してください。必要に応じてホールドをタップして調整できます。</string>
     <string name="challenge_regenerate">もう一度生成</string>
+    <string name="save_challenge">課題を保存</string>
     <string name="challenge_back_to_settings">共通設定へ戻る</string>
     <string name="start_goal_select">スタート/ゴール選択</string>
     <string name="selecting_start">スタート選択中</string>
@@ -206,6 +209,12 @@
     <string name="challenge_corridor_width_help">ルートの中心線の周囲を、どれだけ広く候補に含めるかを調整します。高いほど、中心線から少し外れたホールドも使われやすくなります。</string>
     <string name="challenge_attempt_limits_help">ルート作成時の最大試行回数です。</string>
     <string name="challenge_exclude_previous_holds_help">ONにすると、前回の自動生成で使った中間ホールドを次回候補から外します。似た課題が続きにくくなります。</string>
+    <string name="saved_challenges_empty">保存済みの課題はありません。</string>
+    <string name="saved_challenge_summary">ホールド数: %1$d / %2$s</string>
+    <string name="saved_challenge_generation_method_unknown">作成方法不明</string>
+    <string name="saved_challenge_hold_count_label">ホールド数: %1$d</string>
+    <string name="delete_saved_challenge_title">課題を削除</string>
+    <string name="delete_saved_challenge_message">この保存済み課題を削除しますか？</string>
     <string name="reach_calibration_title">リーチの目安設定</string>
     <string name="reach_calibration_description">課題作成で使うリーチの目安を設定します。</string>
     <string name="reach_calibration_recommendation">身長や両手を広げた長さを参考に、壁上で同じくらいの距離になる2点を選んでください。</string>
@@ -277,6 +286,12 @@
     <string name="message_unable_generate">課題を自動生成できませんでした</string>
     <string name="message_draw_generated">課題を生成しました</string>
     <string name="message_draw_generated_random_start_goal">スタートとゴールをおまかせで選んで課題を生成しました</string>
+    <string name="message_saved_challenge">課題を保存しました</string>
+    <string name="message_saved_challenge_deleted">保存済み課題を削除しました</string>
+    <string name="message_save_challenge_failed">課題を保存できませんでした</string>
+    <string name="message_delete_saved_challenge_failed">保存済み課題を削除できませんでした</string>
+    <string name="message_no_generated_challenge_to_save">保存できる課題がまだありません</string>
+    <string name="message_open_saved_challenge_failed">保存済み課題を開けませんでした</string>
     <string name="message_draw_target_instruction">フリーハンドで抽選範囲をなぞってください</string>
     <string name="message_draw_target_empty_after_filter">抽選対象に入るホールドが見つかりませんでした</string>
     <string name="message_draw_target_selected_count">抽選対象を%1$d個のホールドに設定しました</string>

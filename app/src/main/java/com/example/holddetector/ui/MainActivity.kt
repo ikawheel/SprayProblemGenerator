@@ -2,6 +2,7 @@ package com.example.holddetector.ui
 
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +23,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.example.holddetector.R
 import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.ui.canvas.loadCorrectedBitmap
 import com.example.holddetector.ui.screens.HoldDetectorApp
@@ -90,6 +93,18 @@ class MainActivity : ComponentActivity() {
                     // ViewModel の状態を Compose 側へ接続します。
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+                    val savedChallengeMessage = getString(R.string.message_saved_challenge)
+                    LaunchedEffect(uiState.message) {
+                        if (uiState.message == savedChallengeMessage) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                savedChallengeMessage,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.clearMessage()
+                        }
+                    }
+
                     val isChallengeGenerationBusy =
                         uiState.currentScreen == AppScreen.CHALLENGE_CREATOR && uiState.isBusy
 
@@ -113,6 +128,9 @@ class MainActivity : ComponentActivity() {
                         onOpenSavedWallForHoldAttributeEditor = viewModel::openSavedWallForHoldAttributeEditor,
                         onOpenSavedWallForHoldScoring = viewModel::openSavedWallForHoldScoring,
                         onOpenSavedWallForChallenge = viewModel::openSavedWallForChallenge,
+                        onOpenSavedWallChallenges = viewModel::openSavedWallChallenges,
+                        onOpenSavedChallenge = viewModel::openSavedChallenge,
+                        onDeleteSavedChallenge = viewModel::deleteSavedChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
                         onOpenDisplayColorSettings = viewModel::openDisplayColorSettings,
                         onOpenLicenses = viewModel::openLicenses,
@@ -171,6 +189,7 @@ class MainActivity : ComponentActivity() {
                         onDrawTargetSelectionCompleted = viewModel::applyDrawTargetSelection,
                         onDrawClick = viewModel::drawRandomChallengeHolds,
                         onRerunCurrentChallengeGeneration = viewModel::rerunCurrentChallengeGeneration,
+                        onSaveCurrentChallenge = viewModel::saveCurrentChallenge,
                         onDrawCountChange = viewModel::onDrawCountChanged,
                         onChallengeDifficultyRangeChange = viewModel::onChallengeDifficultyRangeChanged,
                         onDetourStrengthChange = viewModel::onDetourStrengthChanged,

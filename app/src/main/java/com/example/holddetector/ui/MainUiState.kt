@@ -11,12 +11,15 @@ import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
 import com.example.holddetector.model.ReachCalibrationReference
+import com.example.holddetector.model.SavedChallengeSummary
 import com.example.holddetector.model.SavedWallSummary
 
 enum class AppScreen {
     LIST,
     DISPLAY_COLOR_SETTINGS,
     LICENSES,
+    SAVED_CHALLENGE_LIST,
+    SAVED_CHALLENGE_DETAIL,
     CAMERA,
     IMAGE_CROP,
     HOLD_REGISTRATION_METHOD,
@@ -65,6 +68,7 @@ data class MainUiState(
     val currentScreen: AppScreen = AppScreen.LIST,
     val screenBackStack: List<AppScreen> = emptyList(),
     val savedWalls: List<SavedWallSummary> = emptyList(),
+    val savedChallenges: List<SavedChallengeSummary> = emptyList(),
     val isBusy: Boolean = false,
     val currentWallId: String? = null,
     val capturedBitmap: Bitmap? = null,

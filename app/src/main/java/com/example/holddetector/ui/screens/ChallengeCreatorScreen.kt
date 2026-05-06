@@ -77,6 +77,7 @@ fun ChallengeCreatorScreen(
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawClick: () -> Unit,
     onRerunCurrentChallengeGeneration: () -> Unit,
+    onSaveChallenge: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
     onDetourStrengthChange: (Float) -> Unit,
@@ -120,6 +121,7 @@ fun ChallengeCreatorScreen(
                         onChallengeHoldTapped = onChallengeHoldTapped,
                         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
                         onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration,
+                        onSaveChallenge = onSaveChallenge,
                         navigationBarBottomPadding = navigationBarBottomPadding
                     )
                 }
@@ -463,6 +465,7 @@ private fun ChallengeResultContent(
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onRerunCurrentChallengeGeneration: () -> Unit,
+    onSaveChallenge: () -> Unit,
     navigationBarBottomPadding: androidx.compose.ui.unit.Dp
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -476,6 +479,15 @@ private fun ChallengeResultContent(
                 .weight(1f),
             useAspectRatio = false
         )
+
+        AppButton(
+            onClick = onSaveChallenge,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        ) {
+            Text(stringResource(R.string.save_challenge))
+        }
 
         AppButton(
             onClick = onRerunCurrentChallengeGeneration,
