@@ -1,40 +1,46 @@
 package com.example.holddetector.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.holddetector.R
 import com.example.holddetector.model.SavedWallSummary
 import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSurfaceColor
+import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppIconButton
@@ -45,6 +51,8 @@ import com.example.holddetector.ui.components.BottomActionBar
 import com.example.holddetector.ui.components.ScreenHeader
 import com.example.holddetector.ui.components.WallThumbnail
 import com.example.holddetector.ui.selectors.formatWallTimestamp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun WallListScreen(
@@ -62,7 +70,7 @@ fun WallListScreen(
     modifier: Modifier = Modifier
 ) {
     var deletingWallId by remember { mutableStateOf<String?>(null) }
-    var editingWallId by remember { mutableStateOf<String?>(null) }
+    var optionWallId by remember { mutableStateOf<String?>(null) }
     var isImageSourceDialogOpen by remember { mutableStateOf(false) }
     val footerOverlayPadding = 136.dp
 
@@ -115,10 +123,9 @@ fun WallListScreen(
                     items(savedWalls, key = { it.id }) { wall ->
                         SavedWallCard(
                             wall = wall,
-                            onEdit = { editingWallId = wall.id },
                             onCreateChallenge = { onOpenSavedWallForChallenge(wall.id) },
                             onViewSavedChallenges = { onOpenSavedWallChallenges(wall.id) },
-                            onDelete = { deletingWallId = wall.id }
+                            onOpenOptions = { optionWallId = wall.id }
                         )
                     }
                 }
@@ -139,15 +146,15 @@ fun WallListScreen(
         }
     }
 
-    editingWallId?.let { wallId ->
+    optionWallId?.let { wallId ->
         AppContentDialog(
-            title = stringResource(R.string.edit_menu_title),
-            onDismissRequest = { editingWallId = null },
+            title = null,
+            onDismissRequest = { optionWallId = null },
             dismissText = stringResource(R.string.cancel)
         ) {
             AppButton(
                 onClick = {
-                    editingWallId = null
+                    optionWallId = null
                     onOpenSavedWallForReachCalibration(wallId)
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -156,7 +163,7 @@ fun WallListScreen(
             }
             AppButton(
                 onClick = {
-                    editingWallId = null
+                    optionWallId = null
                     onOpenSavedWallForHoldEditor(wallId)
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -165,7 +172,7 @@ fun WallListScreen(
             }
             AppButton(
                 onClick = {
-                    editingWallId = null
+                    optionWallId = null
                     onOpenSavedWallForHoldAttributeEditor(wallId)
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -174,12 +181,21 @@ fun WallListScreen(
             }
             AppButton(
                 onClick = {
-                    editingWallId = null
+                    optionWallId = null
                     onOpenSavedWallForHoldScoring(wallId)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.edit_menu_hold_scoring))
+            }
+            AppOutlinedButton(
+                onClick = {
+                    optionWallId = null
+                    deletingWallId = wallId
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.delete))
             }
         }
     }
@@ -229,34 +245,24 @@ fun WallListScreen(
 @Composable
 private fun SavedWallCard(
     wall: SavedWallSummary,
-    onEdit: () -> Unit,
     onCreateChallenge: () -> Unit,
     onViewSavedChallenges: () -> Unit,
-    onDelete: () -> Unit
+    onOpenOptions: () -> Unit
 ) {
-    val compactButtonPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppSurfaceColor)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            WallThumbnail(
-                imageFilePath = wall.imageFilePath,
-                modifier = Modifier
-                    .width(110.dp)
-                    .aspectRatio(1f)
-            )
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = stringResource(
@@ -268,56 +274,88 @@ private fun SavedWallCard(
                         )
                     ),
                     color = AppSecondaryTextColor,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = stringResource(R.string.hold_count_label, wall.holdCount),
-                    color = AppTextColor,
                     style = MaterialTheme.typography.bodyMedium
                 )
-            }
-        }
 
-        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-            Column(
+                WallListOptionCell(onClick = onOpenOptions)
+            }
+
+            WallThumbnail(
+                imageFilePath = wall.imageFilePath,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                    .aspectRatio(1f)
+            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 AppButton(
-                    onClick = onEdit,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = compactButtonPadding,
-                    minHeight = 24.dp
-                ) {
-                    Text(stringResource(R.string.edit_holds))
-                }
-                AppButton(
-                    onClick = onCreateChallenge,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = compactButtonPadding,
-                    minHeight = 24.dp
-                ) {
-                    Text(stringResource(R.string.create_challenge))
-                }
-                AppButton(
                     onClick = onViewSavedChallenges,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = compactButtonPadding,
-                    minHeight = 24.dp
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.open_saved_challenges))
                 }
-                AppOutlinedButton(
-                    onClick = onDelete,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = compactButtonPadding,
-                    minHeight = 24.dp
+                AppButton(
+                    onClick = onCreateChallenge,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.delete))
+                    Text(stringResource(R.string.create_challenge))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WallListOptionCell(
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scope = rememberCoroutineScope()
+    val currentOnClick by rememberUpdatedState(onClick)
+    val shape = RoundedCornerShape(12.dp)
+    var showTapFlash by remember { mutableStateOf(false) }
+    var isHandlingTap by remember { mutableStateOf(false) }
+
+    val wrappedOnClick: () -> Unit = click@{
+        if (isHandlingTap) return@click
+        isHandlingTap = true
+        showTapFlash = true
+        scope.launch {
+            try {
+                delay(80)
+                currentOnClick()
+            } finally {
+                showTapFlash = false
+                isHandlingTap = false
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .background(
+                color = if (isPressed || showTapFlash) AppSubtleSurfaceColor else Color.Transparent,
+                shape = shape
+            )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = wrappedOnClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "\u22EE",
+            modifier = Modifier.fillMaxWidth(),
+            color = AppTextColor,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
     }
 }
