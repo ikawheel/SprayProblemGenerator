@@ -65,11 +65,11 @@
     <string name="auto_hold_extraction_description">Specify the wall color and adjust extraction conditions to detect hold candidates. This is not fully automatic; it is a tool to assist manual registration.</string>
     <string name="auto_hold_extraction_count">Candidates: %1$d</string>
     <string name="auto_hold_extraction_empty">No hold candidates were found</string>
-    <string name="auto_hold_extraction_wall_sample_count">Wall color samples: %1$d</string>
-    <string name="auto_hold_extraction_wall_sample_hint">Tap the wall color at about 3 to 10 places. These points are used as the background color instead of the holds.</string>
-    <string name="auto_hold_extraction_wall_sample_mode_active">Tap to add wall color samples. We recommend specifying about 3 to 10 points.</string>
-    <string name="auto_hold_extraction_wall_sample_start">Add wall color samples</string>
-    <string name="auto_hold_extraction_wall_sample_stop">Finish adding samples</string>
+    <string name="auto_hold_extraction_wall_sample_count">Wall color samples: %1$d / %2$d</string>
+    <string name="auto_hold_extraction_wall_sample_hint">If the detection result looks unnatural, tap 5 wall points. They are used to improve detection accuracy.</string>
+    <string name="auto_hold_extraction_wall_sample_mode_active">Tap 5 wall points. Including both bright and dark areas will improve detection accuracy.</string>
+    <string name="auto_hold_extraction_wall_sample_start">Tap wall points</string>
+    <string name="auto_hold_extraction_wall_sample_stop">Cancel selection</string>
     <string name="auto_hold_extraction_wall_sample_clear">Clear samples</string>
     <string name="auto_hold_extraction_tuning_open">Advanced settings</string>
     <string name="auto_hold_extraction_tuning_title">Advanced extraction settings</string>
@@ -104,7 +104,7 @@
     <string name="auto_hold_extraction_smoothing_value">Smoothing: %1$d%%</string>
     <string name="auto_hold_extraction_smoothing_label">Strength of smoothing rough contours and small holes.</string>
     <string name="auto_hold_extraction_back">Back to registration method</string>
-    <string name="auto_hold_extraction_apply">Continue with this result</string>
+    <string name="auto_hold_extraction_apply">Continue</string>
     <string name="camera_permission_missing">Camera permission is not granted</string>
     <string name="allow_permission">Allow permission</string>
     <string name="capture">Capture</string>
@@ -255,7 +255,7 @@
     <string name="message_auto_hold_extraction_completed">Found %1$d candidates with auto extraction</string>
     <string name="message_auto_hold_extraction_empty">No candidates were found with auto extraction</string>
     <string name="message_auto_hold_extraction_applied">Imported the extraction results. Adjust the holds if needed.</string>
-    <string name="message_auto_hold_extraction_wall_sample_mode">Tap the wall color at about 3 to 10 places</string>
+    <string name="message_auto_hold_extraction_wall_sample_mode">Tap 5 wall color points</string>
     <string name="message_auto_hold_extraction_wall_sample_added">Added %1$d wall color sample(s)</string>
     <string name="message_auto_hold_extraction_wall_sample_cleared">Cleared wall color samples</string>
     <string name="message_image_crop_failed">Failed to crop image</string>

@@ -65,11 +65,11 @@
     <string name="auto_hold_extraction_description">壁色を指定し、抽出条件を調整しながらホールド候補を抽出します。完全自動ではなく、手動登録を補助する機能です。</string>
     <string name="auto_hold_extraction_count">抽出候補: %1$d件</string>
     <string name="auto_hold_extraction_empty">抽出候補が見つかりませんでした</string>
-    <string name="auto_hold_extraction_wall_sample_count">壁色サンプル: %1$d点</string>
-    <string name="auto_hold_extraction_wall_sample_hint">壁の色を3〜10か所ほどタップしてください。ホールド以外の背景色として使います。</string>
-    <string name="auto_hold_extraction_wall_sample_mode_active">壁の色をタップして追加してください。3〜10か所ほど指定するのがおすすめです。</string>
-    <string name="auto_hold_extraction_wall_sample_start">壁色サンプルを追加</string>
-    <string name="auto_hold_extraction_wall_sample_stop">サンプル追加を終了</string>
+    <string name="auto_hold_extraction_wall_sample_count">壁色サンプル: %1$d / %2$d</string>
+    <string name="auto_hold_extraction_wall_sample_hint">検出結果が不自然な場合は、壁部分を5か所タップしてください。検出精度の調整に使います。</string>
+    <string name="auto_hold_extraction_wall_sample_mode_active">壁部分を5か所タップしてください。明るい場所と暗い場所を含めると、より検出精度が上がります。</string>
+    <string name="auto_hold_extraction_wall_sample_start">壁をタップする</string>
+    <string name="auto_hold_extraction_wall_sample_stop">選択を中止</string>
     <string name="auto_hold_extraction_wall_sample_clear">サンプルをクリア</string>
     <string name="auto_hold_extraction_tuning_open">詳細設定</string>
     <string name="auto_hold_extraction_tuning_title">抽出の詳細設定</string>
@@ -104,7 +104,7 @@
     <string name="auto_hold_extraction_smoothing_value">スムージング: %1$d%%</string>
     <string name="auto_hold_extraction_smoothing_label">輪郭の荒れや小さな穴をならす強さです。</string>
     <string name="auto_hold_extraction_back">登録方法へ戻る</string>
-    <string name="auto_hold_extraction_apply">この結果で進む</string>
+    <string name="auto_hold_extraction_apply">次に進む</string>
     <string name="camera_permission_missing">カメラ権限がありません</string>
     <string name="allow_permission">権限を許可</string>
     <string name="capture">撮影</string>
@@ -255,7 +255,7 @@
     <string name="message_auto_hold_extraction_completed">自動抽出で%1$d件の候補を見つけました</string>
     <string name="message_auto_hold_extraction_empty">自動抽出で候補を見つけられませんでした</string>
     <string name="message_auto_hold_extraction_applied">抽出結果を取り込みました。必要に応じてホールドを調整してください。</string>
-    <string name="message_auto_hold_extraction_wall_sample_mode">壁の色を3〜10か所ほどタップしてください</string>
+    <string name="message_auto_hold_extraction_wall_sample_mode">壁部分を5か所タップしてください</string>
     <string name="message_auto_hold_extraction_wall_sample_added">壁色サンプルを%1$d点追加しました</string>
     <string name="message_auto_hold_extraction_wall_sample_cleared">壁色サンプルをクリアしました</string>
     <string name="message_image_crop_failed">画像を切り抜けませんでした</string>
