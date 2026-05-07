@@ -253,12 +253,34 @@ private fun cropChallengeThumbnail(
     val horizontalPadding = maxOf(24, (width * 0.2f).roundToInt())
     val verticalPadding = maxOf(24, (height * 0.2f).roundToInt())
 
-    val cropLeft = (minX - horizontalPadding).coerceAtLeast(0)
-    val cropTop = (minY - verticalPadding).coerceAtLeast(0)
-    val cropRight = (maxX + horizontalPadding).coerceAtMost(bitmap.width)
-    val cropBottom = (maxY + verticalPadding).coerceAtMost(bitmap.height)
-    val cropWidth = (cropRight - cropLeft).coerceAtLeast(1)
-    val cropHeight = (cropBottom - cropTop).coerceAtLeast(1)
+    val paddedLeft = (minX - horizontalPadding).coerceAtLeast(0)
+    val paddedTop = (minY - verticalPadding).coerceAtLeast(0)
+    val paddedRight = (maxX + horizontalPadding).coerceAtMost(bitmap.width)
+    val paddedBottom = (maxY + verticalPadding).coerceAtMost(bitmap.height)
+    val paddedWidth = (paddedRight - paddedLeft).coerceAtLeast(1)
+    val paddedHeight = (paddedBottom - paddedTop).coerceAtLeast(1)
+
+    val squareSize = maxOf(paddedWidth, paddedHeight)
+        .coerceAtMost(minOf(bitmap.width, bitmap.height))
+        .coerceAtLeast(1)
+    val centeredLeft = ((paddedLeft + paddedRight - squareSize) / 2f).roundToInt()
+    val centeredTop = ((paddedTop + paddedBottom - squareSize) / 2f).roundToInt()
+    val cropLeft = if (bitmap.width > squareSize) {
+        val minAllowedLeft = (paddedRight - squareSize).coerceAtLeast(0)
+        val maxAllowedLeft = paddedLeft.coerceAtMost(bitmap.width - squareSize)
+        centeredLeft.coerceIn(minAllowedLeft, maxAllowedLeft)
+    } else {
+        0
+    }
+    val cropTop = if (bitmap.height > squareSize) {
+        val minAllowedTop = (paddedBottom - squareSize).coerceAtLeast(0)
+        val maxAllowedTop = paddedTop.coerceAtMost(bitmap.height - squareSize)
+        centeredTop.coerceIn(minAllowedTop, maxAllowedTop)
+    } else {
+        0
+    }
+    val cropWidth = squareSize.coerceAtMost(bitmap.width - cropLeft).coerceAtLeast(1)
+    val cropHeight = squareSize.coerceAtMost(bitmap.height - cropTop).coerceAtLeast(1)
     val croppedBitmap = Bitmap.createBitmap(bitmap, cropLeft, cropTop, cropWidth, cropHeight)
     val resultBitmap = Bitmap.createBitmap(cropWidth, cropHeight, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(resultBitmap)
