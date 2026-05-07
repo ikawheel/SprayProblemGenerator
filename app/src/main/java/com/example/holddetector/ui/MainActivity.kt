@@ -149,7 +149,6 @@ class MainActivity : ComponentActivity() {
                         onStartAutoExtractionWallSampling = viewModel::startAutoExtractionWallSampling,
                         onStopAutoExtractionWallSampling = viewModel::stopAutoExtractionWallSampling,
                         onAutoExtractionWallSamplePointSelected = viewModel::onAutoExtractionWallSamplePointSelected,
-                        onClearAutoExtractionWallSamplePoints = viewModel::clearAutoExtractionWallSamplePoints,
                         onAutoExtractionTuningChange = viewModel::onAutoExtractionTuningChanged,
                         onApplyAutoExtractedHoldsAndContinue = viewModel::applyAutoExtractedHoldsAndContinue,
                         onBackToList = viewModel::requestBackToList,

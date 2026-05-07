@@ -73,7 +73,6 @@ fun HoldDetectorApp(
     onStartAutoExtractionWallSampling: () -> Unit,
     onStopAutoExtractionWallSampling: () -> Unit,
     onAutoExtractionWallSamplePointSelected: (HoldPoint) -> Unit,
-    onClearAutoExtractionWallSamplePoints: () -> Unit,
     onAutoExtractionTuningChange: (AutoExtractionTuning) -> Unit,
     onApplyAutoExtractedHoldsAndContinue: () -> Unit,
     onBackToList: () -> Unit,
@@ -322,7 +321,6 @@ fun HoldDetectorApp(
                             onStartWallSampling = onStartAutoExtractionWallSampling,
                             onStopWallSampling = onStopAutoExtractionWallSampling,
                             onWallSamplePointSelected = onAutoExtractionWallSamplePointSelected,
-                            onClearWallSamplePoints = onClearAutoExtractionWallSamplePoints,
                             onTuningChange = onAutoExtractionTuningChange,
                             onApplyExtraction = onApplyAutoExtractedHoldsAndContinue,
                             modifier = Modifier.fillMaxSize()

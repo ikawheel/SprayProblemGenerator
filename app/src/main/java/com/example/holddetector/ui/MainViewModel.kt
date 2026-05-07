@@ -306,21 +306,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         val bitmap = state.capturedBitmap ?: return
         if (state.currentScreen != AppScreen.AUTO_HOLD_EXTRACTION) return
+        if (!state.isAutoExtractionWallSamplingMode) return
+
+        val updatedPoints = (state.autoExtractionWallSamplePoints + point)
+            .distinct()
+            .take(AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT)
 
         _uiState.value = buildAutoExtractionWallSamplePointSelectedState(
             state = state,
             point = point,
             message = text(
                 R.string.message_auto_hold_extraction_wall_sample_added,
-                ((state.autoExtractionWallSamplePoints + point).distinct().take(10)).size
+                updatedPoints.size
             )
         )
 
-        runAutoHoldExtraction(
-            bitmap = bitmap,
-            tuning = state.autoExtractionTuning,
-            wallSamplePoints = _uiState.value.autoExtractionWallSamplePoints
-        )
+        if (updatedPoints.size == AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT) {
+            runAutoHoldExtraction(
+                bitmap = bitmap,
+                tuning = state.autoExtractionTuning,
+                wallSamplePoints = updatedPoints
+            )
+        }
     }
 
     fun clearAutoExtractionWallSamplePoints() {
@@ -341,11 +348,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun applyAutoExtractedHoldsAndContinue() {
         val state = _uiState.value
-        if (state.autoExtractedHolds.isEmpty()) {
-            _uiState.value = state.copy(message = text(R.string.message_auto_hold_extraction_empty))
-            return
-        }
-
         _uiState.value = buildHoldEditorStateFromAutoExtractedHolds(
             state = state,
             pushedScreenBackStack = ::pushedScreenBackStack,

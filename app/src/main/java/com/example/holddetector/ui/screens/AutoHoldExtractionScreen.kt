@@ -35,11 +35,11 @@ import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppTextColor
+import com.example.holddetector.ui.AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT
 import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.canvas.AutoExtractionCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppContentDialog
-import com.example.holddetector.ui.components.AppOutlinedButton
 import kotlin.math.roundToInt
 
 @Composable
@@ -55,7 +55,6 @@ fun AutoHoldExtractionScreen(
     onStartWallSampling: () -> Unit,
     onStopWallSampling: () -> Unit,
     onWallSamplePointSelected: (HoldPoint) -> Unit,
-    onClearWallSamplePoints: () -> Unit,
     onTuningChange: (AutoExtractionTuning) -> Unit,
     onApplyExtraction: () -> Unit,
     modifier: Modifier = Modifier
@@ -110,17 +109,6 @@ fun AutoHoldExtractionScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        Text(
-            text = if (extractedHolds.isEmpty()) {
-                stringResource(R.string.auto_hold_extraction_empty)
-            } else {
-                stringResource(R.string.auto_hold_extraction_count, extractedHolds.size)
-            },
-            color = AppTextColor,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-        )
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -165,14 +153,17 @@ fun AutoHoldExtractionScreen(
             Column(
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
             ) {
-                Text(
-                    text = stringResource(
-                        R.string.auto_hold_extraction_wall_sample_count,
-                        wallSamplePoints.size
-                    ),
-                    color = AppTextColor,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                if (isWallSamplingMode) {
+                    Text(
+                        text = stringResource(
+                            R.string.auto_hold_extraction_wall_sample_count,
+                            wallSamplePoints.size,
+                            AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT
+                        ),
+                        color = AppTextColor,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
                 Text(
                     text = if (isWallSamplingMode) {
@@ -200,16 +191,6 @@ fun AutoHoldExtractionScreen(
                     )
                 }
 
-                AppOutlinedButton(
-                    onClick = onClearWallSamplePoints,
-                    enabled = wallSamplePoints.isNotEmpty(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp)
-                ) {
-                    Text(stringResource(R.string.auto_hold_extraction_wall_sample_clear))
-                }
-
                 AppButton(
                     onClick = { isTuningDialogOpen = true },
                     modifier = Modifier
@@ -221,7 +202,6 @@ fun AutoHoldExtractionScreen(
 
                 AppButton(
                     onClick = onApplyExtraction,
-                    enabled = extractedHolds.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 16.dp)

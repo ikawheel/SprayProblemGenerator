@@ -8,6 +8,8 @@ import com.example.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
 import com.example.holddetector.model.Hold
 import com.example.holddetector.model.HoldPoint
 
+internal const val AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT = 5
+
 internal fun buildBackToHoldRegistrationMethodState(
     state: MainUiState,
     popScreenState: (MainUiState) -> MainUiState,
@@ -37,6 +39,7 @@ internal fun buildAutoExtractionWallSamplingStartedState(
     message: String
 ): MainUiState {
     return state.copy(
+        autoExtractionWallSamplePoints = emptyList(),
         isAutoExtractionWallSamplingMode = true,
         message = message
     )
@@ -56,8 +59,8 @@ internal fun buildAutoExtractionWallSamplePointSelectedState(
 ): MainUiState {
     val updatedPoints = (state.autoExtractionWallSamplePoints + point)
         .distinct()
-        .take(10)
-    val keepSampling = updatedPoints.size < 10
+        .take(AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT)
+    val keepSampling = updatedPoints.size < AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT
     return state.copy(
         autoExtractionWallSamplePoints = updatedPoints,
         isAutoExtractionWallSamplingMode = keepSampling,
