@@ -1334,7 +1334,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectRandomStartGoalChallengeMethod() {
+        val shouldGenerateImmediately =
+            _uiState.value.challengeFlowStep == ChallengeFlowStep.COMMON_SETTINGS
         selectChallengeGenerationMethod(ChallengeGenerationMethod.RANDOM_START_GOAL)
+        if (shouldGenerateImmediately) {
+            drawRandomChallengeWithRandomStartGoal()
+        }
     }
 
     fun openChallengeMethodSelection() {
