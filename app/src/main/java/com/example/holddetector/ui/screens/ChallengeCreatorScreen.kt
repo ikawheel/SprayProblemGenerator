@@ -24,8 +24,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +56,8 @@ import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppContentDialog
 import com.example.holddetector.ui.components.AppMessageDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
+import com.example.holddetector.ui.components.CompactRangeSlider
+import com.example.holddetector.ui.components.CompactSlider
 import com.example.holddetector.ui.selectors.DrawTargetStatus
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import java.util.Locale
@@ -925,7 +925,7 @@ private fun HoldDifficultyRangeSlider(
             )
         }
 
-        RangeSlider(
+        CompactRangeSlider(
             value = startValue..endValue,
             onValueChange = { range ->
                 onValueChange(range.start, range.endInclusive)
@@ -969,7 +969,7 @@ private fun ChallengeTuningSlider(
             )
         }
 
-        Slider(
+        CompactSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = 0f..1f,

@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +39,7 @@ import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.canvas.AutoExtractionCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppContentDialog
+import com.example.holddetector.ui.components.CompactSlider
 import kotlin.math.roundToInt
 
 @Composable
@@ -236,7 +236,7 @@ private fun AutoExtractionTuningControls(
         modifier = Modifier.padding(top = 12.dp)
     )
 
-    Slider(
+    CompactSlider(
         value = localHueTolerance,
         valueRange = 8f..180f,
         onValueChange = onHueToleranceChange,
@@ -260,7 +260,7 @@ private fun AutoExtractionTuningControls(
         modifier = Modifier.padding(top = 16.dp)
     )
 
-    Slider(
+    CompactSlider(
         value = localValueTolerance,
         valueRange = 0.08f..1f,
         onValueChange = onValueToleranceChange,
@@ -284,7 +284,7 @@ private fun AutoExtractionTuningControls(
         modifier = Modifier.padding(top = 16.dp)
     )
 
-    Slider(
+    CompactSlider(
         value = localSaturationMin,
         valueRange = 0f..1f,
         onValueChange = onSaturationMinChange,
@@ -308,7 +308,7 @@ private fun AutoExtractionTuningControls(
         modifier = Modifier.padding(top = 16.dp)
     )
 
-    Slider(
+    CompactSlider(
         value = localBackgroundDistanceThreshold,
         valueRange = 0f..1f,
         onValueChange = onBackgroundDistanceThresholdChange,

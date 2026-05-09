@@ -19,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,6 +39,7 @@ import com.example.holddetector.ui.DisplayColorTarget
 import com.example.holddetector.ui.EditableRgbColor
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.BottomActionBar
+import com.example.holddetector.ui.components.CompactSlider
 import kotlin.math.roundToInt
 
 @Composable
@@ -203,7 +203,7 @@ private fun StrokeWidthSlider(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold
         )
-        Slider(
+        CompactSlider(
             value = strokeWidth.toFloat(),
             onValueChange = { onStrokeWidthChange(it.roundToInt().coerceIn(1, 5)) },
             valueRange = 1f..5f,
