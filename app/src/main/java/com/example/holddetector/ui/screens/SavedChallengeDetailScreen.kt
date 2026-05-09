@@ -75,6 +75,7 @@ fun SavedChallengeDetailScreen(
                 coreChallengeHoldIndex = uiModel.coreChallengeHoldIndex,
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
+                useDefaultChallengeHoldOutlineColor = true,
                 displayColorSettings = state.displayColorSettings,
                 onHoldTapped = {},
                 onDrawTargetSelectionCompleted = {},

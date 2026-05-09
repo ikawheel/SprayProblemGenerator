@@ -42,6 +42,7 @@ import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
+import com.example.holddetector.ui.DisplayColorSettings
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppConfirmDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
@@ -55,6 +56,7 @@ fun SavedChallengeListScreen(
     savedChallenges: List<SavedChallengeSummary>,
     bitmap: Bitmap?,
     holds: List<Hold>,
+    displayColorSettings: DisplayColorSettings,
     onOpenSavedChallenge: (String) -> Unit,
     onDeleteSavedChallenge: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -91,6 +93,7 @@ fun SavedChallengeListScreen(
                 challenge = challenge,
                 bitmap = bitmap,
                 holds = holds,
+                displayColorSettings = displayColorSettings,
                 onOpenSavedChallenge = { onOpenSavedChallenge(challenge.id) },
                 onDeleteSavedChallenge = { deletingChallengeId = challenge.id }
             )
@@ -117,6 +120,7 @@ private fun SavedChallengeCard(
     challenge: SavedChallengeSummary,
     bitmap: Bitmap?,
     holds: List<Hold>,
+    displayColorSettings: DisplayColorSettings,
     onOpenSavedChallenge: () -> Unit,
     onDeleteSavedChallenge: () -> Unit
 ) {
@@ -141,6 +145,7 @@ private fun SavedChallengeCard(
             SavedChallengeThumbnail(
                 bitmap = bitmap,
                 holds = holds,
+                displayColorSettings = displayColorSettings,
                 startHoldIndex = challenge.startHoldIndex,
                 goalHoldIndex = challenge.goalHoldIndex,
                 challengeHoldIndices = challenge.challengeHoldIndices,
@@ -169,6 +174,7 @@ private fun SavedChallengeCard(
 private fun SavedChallengeThumbnail(
     bitmap: Bitmap?,
     holds: List<Hold>,
+    displayColorSettings: DisplayColorSettings,
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     challengeHoldIndices: Set<Int>,
@@ -187,6 +193,7 @@ private fun SavedChallengeThumbnail(
                 cropChallengeThumbnail(
                     bitmap = it,
                     holds = holds,
+                    displayColorSettings = displayColorSettings,
                     startHoldIndex = startHoldIndex,
                     goalHoldIndex = goalHoldIndex,
                     challengeHoldIndices = challengeHoldIndices
@@ -210,7 +217,7 @@ private fun SavedChallengeThumbnail(
                     bitmap = thumbnail!!.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Fit
                 )
             } else {
                 Text(
@@ -226,22 +233,17 @@ private fun SavedChallengeThumbnail(
 private fun cropChallengeThumbnail(
     bitmap: Bitmap,
     holds: List<Hold>,
+    displayColorSettings: DisplayColorSettings,
     startHoldIndex: Int?,
     goalHoldIndex: Int?,
     challengeHoldIndices: Set<Int>
 ): Bitmap {
-    val startHold = startHoldIndex?.let(holds::getOrNull)
-    val goalHold = goalHoldIndex?.let(holds::getOrNull)
     val challengeHolds = challengeHoldIndices.mapNotNull(holds::getOrNull)
     if (challengeHolds.isEmpty()) {
         return bitmap
     }
 
-    val cropHolds = if (startHold != null && goalHold != null) {
-        listOf(startHold, goalHold)
-    } else {
-        challengeHolds
-    }
+    val cropHolds = challengeHolds
 
     val minX = cropHolds.minOf { it.minX }
     val maxX = cropHolds.maxOf { it.maxX }
@@ -257,30 +259,10 @@ private fun cropChallengeThumbnail(
     val paddedTop = (minY - verticalPadding).coerceAtLeast(0)
     val paddedRight = (maxX + horizontalPadding).coerceAtMost(bitmap.width)
     val paddedBottom = (maxY + verticalPadding).coerceAtMost(bitmap.height)
-    val paddedWidth = (paddedRight - paddedLeft).coerceAtLeast(1)
-    val paddedHeight = (paddedBottom - paddedTop).coerceAtLeast(1)
-
-    val squareSize = maxOf(paddedWidth, paddedHeight)
-        .coerceAtMost(minOf(bitmap.width, bitmap.height))
-        .coerceAtLeast(1)
-    val centeredLeft = ((paddedLeft + paddedRight - squareSize) / 2f).roundToInt()
-    val centeredTop = ((paddedTop + paddedBottom - squareSize) / 2f).roundToInt()
-    val cropLeft = if (bitmap.width > squareSize) {
-        val minAllowedLeft = (paddedRight - squareSize).coerceAtLeast(0)
-        val maxAllowedLeft = paddedLeft.coerceAtMost(bitmap.width - squareSize)
-        centeredLeft.coerceIn(minAllowedLeft, maxAllowedLeft)
-    } else {
-        0
-    }
-    val cropTop = if (bitmap.height > squareSize) {
-        val minAllowedTop = (paddedBottom - squareSize).coerceAtLeast(0)
-        val maxAllowedTop = paddedTop.coerceAtMost(bitmap.height - squareSize)
-        centeredTop.coerceIn(minAllowedTop, maxAllowedTop)
-    } else {
-        0
-    }
-    val cropWidth = squareSize.coerceAtMost(bitmap.width - cropLeft).coerceAtLeast(1)
-    val cropHeight = squareSize.coerceAtMost(bitmap.height - cropTop).coerceAtLeast(1)
+    val cropLeft = paddedLeft
+    val cropTop = paddedTop
+    val cropWidth = (paddedRight - paddedLeft).coerceAtLeast(1)
+    val cropHeight = (paddedBottom - paddedTop).coerceAtLeast(1)
     val croppedBitmap = Bitmap.createBitmap(bitmap, cropLeft, cropTop, cropWidth, cropHeight)
     val resultBitmap = Bitmap.createBitmap(cropWidth, cropHeight, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(resultBitmap)
@@ -303,12 +285,33 @@ private fun cropChallengeThumbnail(
     canvas.drawBitmap(croppedBitmap, 0f, 0f, bitmapPaint)
     canvas.restore()
 
-    val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = AndroidColor.YELLOW
+    val holdOutlineColor = displayColorSettings.holdOutline
+    val startGoalOutlineColor = displayColorSettings.startGoalHold
+    val defaultOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = AndroidColor.rgb(
+            holdOutlineColor.normalizedRed,
+            holdOutlineColor.normalizedGreen,
+            holdOutlineColor.normalizedBlue
+        )
         style = Paint.Style.STROKE
-        strokeWidth = 3f
+        strokeWidth = displayColorSettings.normalizedHoldOutlineStrokeWidth.toFloat() + 2f
     }
-    challengeHolds.forEach { hold ->
+    val startGoalOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = AndroidColor.rgb(
+            startGoalOutlineColor.normalizedRed,
+            startGoalOutlineColor.normalizedGreen,
+            startGoalOutlineColor.normalizedBlue
+        )
+        style = Paint.Style.STROKE
+        strokeWidth = displayColorSettings.normalizedStartGoalHoldStrokeWidth.toFloat() + 2f
+    }
+    challengeHoldIndices.forEach { holdIndex ->
+        val hold = holds.getOrNull(holdIndex) ?: return@forEach
+        val outlinePaint = if (holdIndex == startHoldIndex || holdIndex == goalHoldIndex) {
+            startGoalOutlinePaint
+        } else {
+            defaultOutlinePaint
+        }
         canvas.drawPath(
             hold.toAndroidPath(offsetX = cropLeft, offsetY = cropTop),
             outlinePaint
