@@ -47,7 +47,7 @@
     <string name="edit_holds">ホールド編集</string>
     <string name="create_challenge">課題作成</string>
     <string name="open_saved_challenges">課題一覧</string>
-    <string name="open_saved_challenge">課題を見る</string>
+    <string name="open_saved_challenge">課題詳細</string>
     <string name="save_challenge_image">ギャラリーに保存</string>
     <string name="no_image">画像なし</string>
     <string name="camera_title">壁画像を追加</string>

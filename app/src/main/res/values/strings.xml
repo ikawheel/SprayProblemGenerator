@@ -47,7 +47,7 @@
     <string name="edit_holds">Edit holds</string>
     <string name="create_challenge">Create challenge</string>
     <string name="open_saved_challenges">Challenge list</string>
-    <string name="open_saved_challenge">Open challenge</string>
+    <string name="open_saved_challenge">Challenge details</string>
     <string name="save_challenge_image">Save to gallery</string>
     <string name="no_image">No image</string>
     <string name="camera_title">Add wall image</string>
