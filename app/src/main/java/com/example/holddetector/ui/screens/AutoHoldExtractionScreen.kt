@@ -84,7 +84,7 @@ fun AutoHoldExtractionScreen(
 
     if (isTuningDialogOpen) {
         AppContentDialog(
-            title = stringResource(R.string.auto_hold_extraction_tuning_title),
+            title = null,
             onDismissRequest = { isTuningDialogOpen = false },
             dismissText = stringResource(R.string.close)
         ) {
