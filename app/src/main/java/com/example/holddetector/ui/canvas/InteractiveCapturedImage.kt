@@ -259,6 +259,7 @@ fun ChallengeCanvasScreen(
     routeSelectionMode: RouteSelectionMode,
     isDrawTargetSelectionMode: Boolean,
     useDefaultChallengeHoldOutlineColor: Boolean = false,
+    showChallengeOrderLabels: Boolean = true,
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
@@ -281,6 +282,7 @@ fun ChallengeCanvasScreen(
         isReachCalibrationSelectionMode = false,
         displayColorSettings = displayColorSettings,
         useDefaultChallengeHoldOutlineColor = useDefaultChallengeHoldOutlineColor,
+        showChallengeOrderLabels = showChallengeOrderLabels,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.CHALLENGE,
         onHoldTapped = onHoldTapped,
@@ -345,6 +347,7 @@ private fun InteractiveCapturedImage(
     isReachCalibrationSelectionMode: Boolean = false,
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     useDefaultChallengeHoldOutlineColor: Boolean = false,
+    showChallengeOrderLabels: Boolean = true,
     wallColorSamplePoints: List<HoldPoint> = emptyList(),
     isWallColorSamplingMode: Boolean = false,
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
@@ -1193,7 +1196,7 @@ private fun InteractiveCapturedImage(
                             if (mode == CanvasMode.CHALLENGE) {
                                 if (index == startHoldIndex) add(startMarkerLabel)
                                 if (index == goalHoldIndex) add(goalMarkerLabel)
-                                if (challengeHoldIndices.contains(index)) {
+                                if (showChallengeOrderLabels && challengeHoldIndices.contains(index)) {
                                     challengeOrderLabels[index]?.let(::add)
                                 }
                             }

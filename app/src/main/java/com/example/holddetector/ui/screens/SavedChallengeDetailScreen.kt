@@ -76,6 +76,7 @@ fun SavedChallengeDetailScreen(
                 routeSelectionMode = RouteSelectionMode.NONE,
                 isDrawTargetSelectionMode = false,
                 useDefaultChallengeHoldOutlineColor = true,
+                showChallengeOrderLabels = false,
                 displayColorSettings = state.displayColorSettings,
                 onHoldTapped = {},
                 onDrawTargetSelectionCompleted = {},
