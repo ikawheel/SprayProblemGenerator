@@ -1,5 +1,6 @@
 package com.example.holddetector.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,27 +14,41 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.view.drawToBitmap
 import com.example.holddetector.R
 import com.example.holddetector.ui.AppSecondaryTextColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.RouteSelectionMode
+import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.canvas.ChallengeCanvasScreen
 import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
+import kotlin.math.roundToInt
 
 @Composable
 fun SavedChallengeDetailScreen(
     state: MainUiState,
+    onSaveChallengeImage: (Bitmap?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
     val uiModel = deriveChallengeCreatorUiModel(state)
     val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val rootView = LocalView.current
+    var challengeBounds by remember { mutableStateOf<Rect?>(null) }
 
     Column(
         modifier = modifier
@@ -61,6 +76,9 @@ fun SavedChallengeDetailScreen(
                 .weight(1f)
                 .background(AppSubtleSurfaceColor, MaterialTheme.shapes.large)
                 .clipToBounds()
+                .onGloballyPositioned { coordinates ->
+                    challengeBounds = coordinates.boundsInRoot()
+                }
         ) {
             ChallengeCanvasScreen(
                 bitmap = bitmap,
@@ -89,5 +107,43 @@ fun SavedChallengeDetailScreen(
             color = AppSecondaryTextColor,
             style = MaterialTheme.typography.bodyMedium
         )
+
+        AppButton(
+            onClick = {
+                val capturedBitmap = challengeBounds?.let { bounds ->
+                    captureChallengeAreaBitmap(
+                        rootBitmap = rootView.drawToBitmap(),
+                        bounds = bounds
+                    )
+                }
+                onSaveChallengeImage(capturedBitmap)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.save_challenge_image))
+        }
     }
+}
+
+private fun captureChallengeAreaBitmap(
+    rootBitmap: Bitmap,
+    bounds: Rect
+): Bitmap? {
+    if (rootBitmap.width <= 0 || rootBitmap.height <= 0) {
+        return null
+    }
+
+    val left = bounds.left.roundToInt().coerceIn(0, rootBitmap.width)
+    val top = bounds.top.roundToInt().coerceIn(0, rootBitmap.height)
+    val right = bounds.right.roundToInt().coerceIn(0, rootBitmap.width)
+    val bottom = bounds.bottom.roundToInt().coerceIn(0, rootBitmap.height)
+    val width = (right - left).coerceAtLeast(1)
+    val height = (bottom - top).coerceAtLeast(1)
+    val safeWidth = width.coerceAtMost(rootBitmap.width - left)
+    val safeHeight = height.coerceAtMost(rootBitmap.height - top)
+    if (safeWidth <= 0 || safeHeight <= 0) {
+        return null
+    }
+
+    return Bitmap.createBitmap(rootBitmap, left, top, safeWidth, safeHeight)
 }

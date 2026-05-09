@@ -48,6 +48,7 @@
     <string name="create_challenge">課題作成</string>
     <string name="open_saved_challenges">課題一覧</string>
     <string name="open_saved_challenge">課題を見る</string>
+    <string name="save_challenge_image">ギャラリーに保存</string>
     <string name="no_image">画像なし</string>
     <string name="camera_title">壁画像を追加</string>
     <string name="camera_subtitle">標準カメラで撮影するか、端末内の画像を選んでください。取得後、必要な範囲を切り抜きます。</string>
@@ -287,8 +288,10 @@
     <string name="message_draw_generated">課題を生成しました</string>
     <string name="message_draw_generated_random_start_goal">スタートとゴールをおまかせで選んで課題を生成しました</string>
     <string name="message_saved_challenge">課題を保存しました</string>
+    <string name="message_saved_challenge_image">課題画像を保存しました</string>
     <string name="message_saved_challenge_deleted">保存済み課題を削除しました</string>
     <string name="message_save_challenge_failed">課題を保存できませんでした</string>
+    <string name="message_save_challenge_image_failed">課題画像を保存できませんでした</string>
     <string name="message_delete_saved_challenge_failed">保存済み課題を削除できませんでした</string>
     <string name="message_no_generated_challenge_to_save">保存できる課題がまだありません</string>
     <string name="message_open_saved_challenge_failed">保存済み課題を開けませんでした</string>

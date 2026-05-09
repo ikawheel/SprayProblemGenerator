@@ -54,6 +54,7 @@ fun HoldDetectorApp(
     onOpenSavedWallForChallenge: (String) -> Unit,
     onOpenSavedWallChallenges: (String) -> Unit,
     onOpenSavedChallenge: (String, String) -> Unit,
+    onSaveSavedChallengeImage: (android.graphics.Bitmap?) -> Unit,
     onDeleteSavedChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
     onOpenDisplayColorSettings: () -> Unit,
@@ -274,6 +275,7 @@ fun HoldDetectorApp(
                     AppScreen.SAVED_CHALLENGE_DETAIL -> {
                         SavedChallengeDetailScreen(
                             state = state,
+                            onSaveChallengeImage = onSaveSavedChallengeImage,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

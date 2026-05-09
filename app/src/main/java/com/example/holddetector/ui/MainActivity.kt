@@ -1,7 +1,11 @@
 package com.example.holddetector.ui
 
+import android.content.ContentValues
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -28,6 +32,7 @@ import com.example.holddetector.model.CapturedOrientation
 import com.example.holddetector.ui.canvas.loadCorrectedBitmap
 import com.example.holddetector.ui.screens.HoldDetectorApp
 import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -130,6 +135,7 @@ class MainActivity : ComponentActivity() {
                         onOpenSavedWallForChallenge = viewModel::openSavedWallForChallenge,
                         onOpenSavedWallChallenges = viewModel::openSavedWallChallenges,
                         onOpenSavedChallenge = viewModel::openSavedChallenge,
+                        onSaveSavedChallengeImage = ::saveSavedChallengeImageToGallery,
                         onDeleteSavedChallenge = viewModel::deleteSavedChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
                         onOpenDisplayColorSettings = viewModel::openDisplayColorSettings,
@@ -261,6 +267,72 @@ class MainActivity : ComponentActivity() {
             )
         } catch (_: Throwable) {
             null
+        }
+    }
+
+    private fun saveSavedChallengeImageToGallery(bitmap: android.graphics.Bitmap?) {
+        if (bitmap == null) {
+            Toast.makeText(
+                this,
+                getString(R.string.message_save_challenge_image_failed),
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        lifecycleScope.launch {
+            val saved = withContext(Dispatchers.IO) {
+                runCatching { saveBitmapToGallery(bitmap) }.isSuccess
+            }
+            Toast.makeText(
+                this@MainActivity,
+                getString(
+                    if (saved) {
+                        R.string.message_saved_challenge_image
+                    } else {
+                        R.string.message_save_challenge_image_failed
+                    }
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun saveBitmapToGallery(bitmap: android.graphics.Bitmap) {
+        val fileName = "hold-detector-challenge-${System.currentTimeMillis()}.png"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/HoldDetector"
+                )
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+
+        val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val itemUri = contentResolver.insert(collection, contentValues)
+            ?: throw IOException("Could not create MediaStore entry")
+
+        try {
+            contentResolver.openOutputStream(itemUri)?.use { outputStream ->
+                if (!bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, outputStream)) {
+                    throw IOException("Could not compress bitmap")
+                }
+            } ?: throw IOException("Could not open output stream")
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val completedValues = ContentValues().apply {
+                    put(MediaStore.Images.Media.IS_PENDING, 0)
+                }
+                contentResolver.update(itemUri, completedValues, null, null)
+            }
+        } catch (throwable: Throwable) {
+            contentResolver.delete(itemUri, null, null)
+            throw throwable
         }
     }
 }
