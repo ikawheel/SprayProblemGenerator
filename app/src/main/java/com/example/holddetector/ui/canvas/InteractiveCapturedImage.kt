@@ -258,6 +258,7 @@ fun ChallengeCanvasScreen(
     coreChallengeHoldIndex: Int?,
     routeSelectionMode: RouteSelectionMode,
     isDrawTargetSelectionMode: Boolean,
+    useDefaultChallengeHoldOutlineColor: Boolean = false,
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
@@ -279,6 +280,7 @@ fun ChallengeCanvasScreen(
         pendingReachCalibrationPoint = null,
         isReachCalibrationSelectionMode = false,
         displayColorSettings = displayColorSettings,
+        useDefaultChallengeHoldOutlineColor = useDefaultChallengeHoldOutlineColor,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.CHALLENGE,
         onHoldTapped = onHoldTapped,
@@ -342,6 +344,7 @@ private fun InteractiveCapturedImage(
     pendingReachCalibrationPoint: HoldPoint? = null,
     isReachCalibrationSelectionMode: Boolean = false,
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
+    useDefaultChallengeHoldOutlineColor: Boolean = false,
     wallColorSamplePoints: List<HoldPoint> = emptyList(),
     isWallColorSamplingMode: Boolean = false,
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
@@ -1160,7 +1163,12 @@ private fun InteractiveCapturedImage(
                             index == startHoldIndex -> startGoalHoldColor
                             index == goalHoldIndex -> startGoalHoldColor
                             index == selectedIndex -> selectedHoldColor
-                            challengeHoldIndices.contains(index) -> Color.Yellow
+                            challengeHoldIndices.contains(index) ->
+                                if (useDefaultChallengeHoldOutlineColor) {
+                                    holdOutlineColor
+                                } else {
+                                    Color.Yellow
+                                }
                             selectionCandidateIndices.contains(index) -> rangeSelectionColor
                             else -> holdOutlineColor
                         }

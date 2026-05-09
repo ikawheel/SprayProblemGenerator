@@ -260,6 +260,7 @@ fun HoldDetectorApp(
                             savedChallenges = state.savedChallenges,
                             bitmap = state.capturedBitmap,
                             holds = state.holds,
+                            displayColorSettings = state.displayColorSettings,
                             onOpenSavedChallenge = { challengeId ->
                                 state.currentWallId?.let { wallId ->
                                     onOpenSavedChallenge(wallId, challengeId)
