@@ -48,6 +48,7 @@
     <string name="create_challenge">Create challenge</string>
     <string name="open_saved_challenges">Challenge list</string>
     <string name="open_saved_challenge">Open challenge</string>
+    <string name="save_challenge_image">Save to gallery</string>
     <string name="no_image">No image</string>
     <string name="camera_title">Add wall image</string>
     <string name="camera_subtitle">Take a photo with the standard camera or choose an image from your device. After that, crop the area you want to use.</string>
@@ -287,8 +288,10 @@
     <string name="message_draw_generated">Challenge generated</string>
     <string name="message_draw_generated_random_start_goal">Generated a challenge with automatically chosen start and goal</string>
     <string name="message_saved_challenge">Challenge saved</string>
+    <string name="message_saved_challenge_image">Challenge image saved</string>
     <string name="message_saved_challenge_deleted">Deleted the saved challenge</string>
     <string name="message_save_challenge_failed">Could not save the challenge</string>
+    <string name="message_save_challenge_image_failed">Could not save the challenge image</string>
     <string name="message_delete_saved_challenge_failed">Could not delete the saved challenge</string>
     <string name="message_no_generated_challenge_to_save">There is no generated challenge to save yet</string>
     <string name="message_open_saved_challenge_failed">Could not open the saved challenge</string>
