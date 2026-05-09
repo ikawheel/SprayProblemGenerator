@@ -217,8 +217,8 @@
     <string name="delete_saved_challenge_title">Delete challenge</string>
     <string name="delete_saved_challenge_message">Delete this saved challenge?</string>
     <string name="reach_calibration_title">Set reach reference</string>
-    <string name="reach_calibration_description">Set a reach reference used for challenge creation.</string>
-    <string name="reach_calibration_recommendation">Use your height or arm span as a guide, and select two points on the wall that correspond to roughly the same distance.</string>
+    <string name="reach_calibration_description">Tap two points and enter the distance between them to calculate the wall size.</string>
+    <string name="reach_calibration_recommendation">Tap two points and enter the distance between them to calculate the wall size.</string>
     <string name="reach_calibration_first_point">Select the first point</string>
     <string name="reach_calibration_second_point">Select the second point</string>
     <string name="reach_calibration_configured">Reach reference is set (%1$dcm)</string>

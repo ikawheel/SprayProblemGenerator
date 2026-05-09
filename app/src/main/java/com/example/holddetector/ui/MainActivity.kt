@@ -90,14 +90,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
                 SideEffect {
                     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
                 }
 
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    // ViewModel の状態を Compose 側へ接続します。
-                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
                     val savedChallengeMessage = getString(R.string.message_saved_challenge)
                     LaunchedEffect(uiState.message) {
                         if (uiState.message == savedChallengeMessage) {
