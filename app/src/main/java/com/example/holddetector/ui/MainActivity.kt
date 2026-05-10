@@ -22,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -100,7 +99,6 @@ class MainActivity : ComponentActivity() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         window.isNavigationBarContrastEnforced = false
                     }
-                    window.navigationBarColor = AppSurfaceColor.toArgb()
                 }
 
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -118,15 +116,19 @@ class MainActivity : ComponentActivity() {
 
                     val isChallengeGenerationBusy =
                         uiState.currentScreen == AppScreen.CHALLENGE_CREATOR && uiState.isBusy
+                    val isAutoHoldExtractionBusy =
+                        uiState.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && uiState.isBusy
+                    val isBusyBackBlocked =
+                        isChallengeGenerationBusy || isAutoHoldExtractionBusy
 
                     // 課題生成中はシステムバックを無効化します。
-                    BackHandler(enabled = isChallengeGenerationBusy) {
+                    BackHandler(enabled = isBusyBackBlocked) {
                         Unit
                     }
 
                     // 一覧以外ではシステムバックを ViewModel 側へ流します。
                     BackHandler(
-                        enabled = uiState.currentScreen != AppScreen.LIST && !isChallengeGenerationBusy
+                        enabled = uiState.currentScreen != AppScreen.LIST && !isBusyBackBlocked
                     ) {
                         viewModel.onBackPressed()
                     }

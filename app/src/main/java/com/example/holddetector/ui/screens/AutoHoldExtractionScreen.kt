@@ -38,6 +38,7 @@ fun AutoHoldExtractionScreen(
     selectedHoldIndex: Int?,
     wallSamplePoints: List<HoldPoint>,
     isWallSamplingMode: Boolean,
+    isBusy: Boolean,
     displayColorSettings: DisplayColorSettings,
     onHoldTapped: (Int?) -> Unit,
     onStartWallSampling: () -> Unit,
@@ -144,6 +145,7 @@ fun AutoHoldExtractionScreen(
 
             AppButton(
                 onClick = if (isWallSamplingMode) onStopWallSampling else onStartWallSampling,
+                enabled = !isBusy,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp)
@@ -159,6 +161,7 @@ fun AutoHoldExtractionScreen(
 
             AppButton(
                 onClick = { isTuningDialogOpen = true },
+                enabled = !isBusy,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp)
@@ -169,6 +172,7 @@ fun AutoHoldExtractionScreen(
         footerContent = {
             AppButton(
                 onClick = onApplyExtraction,
+                enabled = !isBusy,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.auto_hold_extraction_apply))
