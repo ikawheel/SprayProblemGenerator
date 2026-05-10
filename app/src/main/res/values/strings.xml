@@ -56,7 +56,7 @@
     <string name="camera_pick_photo">Choose image from device</string>
     <string name="image_crop_title">Crop image</string>
     <string name="image_crop_description">Crop the image to the area of the wall you want to use. Drag inside the frame to move it, and drag the corners to resize it.</string>
-    <string name="image_crop_apply">Crop</string>
+    <string name="image_crop_apply">Next</string>
     <string name="registration_method_title">How to register holds</string>
     <string name="registration_method_description">Choose how to register holds from this photo. Manual registration goes directly to hold editing, while auto extraction imports candidates first and then lets you fine-tune them manually.</string>
     <string name="registration_method_back_to_camera">Back to image selection</string>
@@ -105,7 +105,7 @@
     <string name="auto_hold_extraction_smoothing_value">Smoothing: %1$d%%</string>
     <string name="auto_hold_extraction_smoothing_label">Strength of smoothing rough contours and small holes.</string>
     <string name="auto_hold_extraction_back">Back to registration method</string>
-    <string name="auto_hold_extraction_apply">Continue</string>
+    <string name="auto_hold_extraction_apply">Next</string>
     <string name="camera_permission_missing">Camera permission is not granted</string>
     <string name="allow_permission">Allow permission</string>
     <string name="capture">Capture</string>
@@ -121,7 +121,7 @@
     <string name="hold_attribute_editor_help">Choose a mode and tap holds to set start candidates and goal candidates. You can also remove attributes.</string>
     <string name="open_hold_attribute_editor">Go to attribute settings</string>
     <string name="hold_attribute_back">Back to hold registration</string>
-    <string name="hold_attribute_open_scoring">Go to scoring</string>
+    <string name="hold_attribute_open_scoring">Next</string>
     <string name="hold_attribute_mode_start">Start candidate mode</string>
     <string name="hold_attribute_mode_goal">Goal candidate mode</string>
     <string name="hold_attribute_mode_clear">Remove attribute mode</string>
@@ -218,6 +218,12 @@
     <string name="delete_saved_challenge_message">Delete this saved challenge?</string>
     <string name="reach_calibration_title">Set reach reference</string>
     <string name="reach_calibration_description">Tap two points and enter the distance between them to calculate the wall size.</string>
+    <string name="registration_step_crop_title">Crop the wall</string>
+    <string name="registration_step_auto_extraction_title">Auto-extract holds</string>
+    <string name="registration_step_hold_editor_title">Adjust holds manually</string>
+    <string name="registration_step_reach_calibration_title">Set distance reference</string>
+    <string name="registration_step_hold_attribute_title">Set start and goal</string>
+    <string name="registration_step_hold_scoring_title">Assign hold scores</string>
     <string name="reach_calibration_recommendation">Tap two points and enter the distance between them to calculate the wall size.</string>
     <string name="reach_calibration_first_point">Select the first point</string>
     <string name="reach_calibration_second_point">Select the second point</string>
@@ -229,10 +235,10 @@
     <string name="reach_calibration_back">Back</string>
     <string name="reach_calibration_back_to_list">Back to list</string>
     <string name="reach_calibration_clear">Clear</string>
-    <string name="reach_calibration_continue">Go to attribute settings</string>
+    <string name="reach_calibration_continue">Next</string>
     <string name="hold_editor_reach_status_configured">Reach reference: %1$dcm</string>
     <string name="hold_editor_reach_status_unset">Reach reference: not set</string>
-    <string name="open_reach_calibration">Go to reach settings</string>
+    <string name="open_reach_calibration">Next</string>
     <string name="open_hold_scoring">Go to scoring</string>
     <string name="hold_scoring_title">Assign hold scores</string>
     <string name="hold_scoring_description">Score each hold from the top-left in order, using 1 to 5 points.</string>

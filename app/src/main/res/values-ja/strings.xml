@@ -56,7 +56,7 @@
     <string name="camera_pick_photo">端末の画像を選択</string>
     <string name="image_crop_title">画像を切り抜く</string>
     <string name="image_crop_description">使う壁の範囲に合わせて画像を切り抜きます。枠の内側をドラッグすると移動でき、四隅をドラッグすると大きさを調整できます。</string>
-    <string name="image_crop_apply">切り抜く</string>
+    <string name="image_crop_apply">次へ</string>
     <string name="registration_method_title">ホールドの登録方法</string>
     <string name="registration_method_description">この写真からホールドを登録する方法を選んでください。手動登録ではそのままホールド編集へ進み、自動抽出では候補を取り込んだあと手動で調整します。</string>
     <string name="registration_method_back_to_camera">画像取得へ戻る</string>
@@ -105,7 +105,7 @@
     <string name="auto_hold_extraction_smoothing_value">スムージング: %1$d%%</string>
     <string name="auto_hold_extraction_smoothing_label">輪郭の荒れや小さな穴をならす強さです。</string>
     <string name="auto_hold_extraction_back">登録方法へ戻る</string>
-    <string name="auto_hold_extraction_apply">次に進む</string>
+    <string name="auto_hold_extraction_apply">次へ</string>
     <string name="camera_permission_missing">カメラ権限がありません</string>
     <string name="allow_permission">権限を許可</string>
     <string name="capture">撮影</string>
@@ -121,7 +121,7 @@
     <string name="hold_attribute_editor_help">モードを選び、ホールドをタップしてスタート候補・ゴール候補を設定します。属性の削除もできます。</string>
     <string name="open_hold_attribute_editor">属性設定へ</string>
     <string name="hold_attribute_back">ホールド登録へ</string>
-    <string name="hold_attribute_open_scoring">点数付けへ</string>
+    <string name="hold_attribute_open_scoring">次へ</string>
     <string name="hold_attribute_mode_start">スタート候補モード</string>
     <string name="hold_attribute_mode_goal">ゴール候補モード</string>
     <string name="hold_attribute_mode_clear">属性削除モード</string>
@@ -218,6 +218,12 @@
     <string name="delete_saved_challenge_message">この保存済み課題を削除しますか？</string>
     <string name="reach_calibration_title">リーチの目安設定</string>
     <string name="reach_calibration_description">壁サイズの推定に利用するため、両手を広げた長さなどを参考に、実際の長さが分かる2点をタップしてください。</string>
+    <string name="registration_step_crop_title">画像を切り抜く</string>
+    <string name="registration_step_auto_extraction_title">ホールドの自動抽出</string>
+    <string name="registration_step_hold_editor_title">ホールドの手動調整</string>
+    <string name="registration_step_reach_calibration_title">壁サイズの算出</string>
+    <string name="registration_step_hold_attribute_title">スタート・ゴールの設定</string>
+    <string name="registration_step_hold_scoring_title">ホールドの採点</string>
     <string name="reach_calibration_recommendation">壁サイズの推定に利用するため、両手を広げた長さなどを参考に、実際の長さが分かる2点をタップしてください。</string>
     <string name="reach_calibration_first_point">1点目を選んでください</string>
     <string name="reach_calibration_second_point">2点目を選んでください</string>
@@ -229,10 +235,10 @@
     <string name="reach_calibration_back">戻る</string>
     <string name="reach_calibration_back_to_list">一覧へ戻る</string>
     <string name="reach_calibration_clear">クリア</string>
-    <string name="reach_calibration_continue">属性設定へ</string>
+    <string name="reach_calibration_continue">次へ</string>
     <string name="hold_editor_reach_status_configured">リーチの目安: %1$dcm</string>
     <string name="hold_editor_reach_status_unset">リーチの目安: 未設定</string>
-    <string name="open_reach_calibration">リーチ設定へ</string>
+    <string name="open_reach_calibration">次へ</string>
     <string name="open_hold_scoring">点数付けへ</string>
     <string name="hold_scoring_title">ホールドの点数付け</string>
     <string name="hold_scoring_description">左上のホールドから順に、1〜5点で採点してください。</string>
