@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.model.Hold
 import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSectionSurfaceColor
 import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.HoldEditorTool
@@ -46,7 +44,7 @@ import com.example.holddetector.ui.canvas.HoldCanvasScreen
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppConfirmDialog
 import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.BottomActionBar
+import com.example.holddetector.ui.components.WallRegistrationStepScaffold
 
 private data class HoldEditorSnapshot(
     val holds: List<Hold>,
@@ -63,6 +61,14 @@ fun HoldEditorScreen(
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap ?: return
+    val imageAspectRatio = if (bitmap.height > 0) {
+        wallImageDisplayAspectRatio(
+            imageWidth = bitmap.width,
+            imageHeight = bitmap.height
+        )
+    } else {
+        null
+    }
     val isEditingExistingWall = state.currentWallId != null
     var activeTool by remember { mutableStateOf(HoldEditorTool.ADD) }
     var draftHolds by remember(state.holds) { mutableStateOf(state.holds) }
@@ -104,17 +110,13 @@ fun HoldEditorScreen(
         onSaveEditedHolds(draftHolds, selectedIndex)
     }
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(start = 16.dp, top = 8.dp, end = 16.dp)
-                .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
-                .clipToBounds()
-        ) {
+    WallRegistrationStepScaffold(
+        modifier = modifier,
+        headerText = stringResource(R.string.registration_step_hold_editor_title),
+        imageAspectRatio = imageAspectRatio,
+        bodyCardPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 20.dp),
+        bodyCardContentPadding = PaddingValues(0.dp),
+        imageContent = {
             HoldCanvasScreen(
                 bitmap = bitmap,
                 holds = draftHolds,
@@ -172,21 +174,18 @@ fun HoldEditorScreen(
                 },
                 modifier = Modifier.fillMaxSize()
             )
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(compactSpacing)
-        ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = AppSectionSurfaceColor,
-                shape = RoundedCornerShape(16.dp)
+        },
+        bodyContent = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(compactSpacing)
             ) {
                 Column(
-                    modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 0.dp),
                     verticalArrangement = Arrangement.spacedBy(compactControlSpacing)
                 ) {
                     Row(
@@ -306,37 +305,32 @@ fun HoldEditorScreen(
                     ) {
                         Text(stringResource(R.string.undo))
                     }
-
                 }
             }
-        }
-
-        if (isEditingExistingWall) {
-            BottomActionBar {
+        },
+        footerContent = {
+            if (isEditingExistingWall) {
                 AppButton(
                     onClick = { saveDraft() },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.save))
                 }
-            }
-        } else {
-            AppButton(
-                onClick = {
-                    if (hasUnsavedDraftChanges) {
-                        saveDraft()
-                    }
-                    onOpenReachCalibration()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 20.dp)
-            ) {
-                Text(stringResource(R.string.open_reach_calibration))
+            } else {
+                AppButton(
+                    onClick = {
+                        if (hasUnsavedDraftChanges) {
+                            saveDraft()
+                        }
+                        onOpenReachCalibration()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.open_reach_calibration))
+                }
             }
         }
-    }
+    )
 
     if (showDiscardDialog) {
         AppConfirmDialog(

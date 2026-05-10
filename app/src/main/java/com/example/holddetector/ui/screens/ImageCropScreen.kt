@@ -3,20 +3,10 @@ package com.example.holddetector.ui.screens
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,15 +24,15 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.holddetector.R
-import com.example.holddetector.ui.AppSubtleSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.components.AppButton
+import com.example.holddetector.ui.components.WallRegistrationStepScaffold
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -80,6 +70,14 @@ fun ImageCropScreen(
     var cropBottom by rememberSaveable { mutableStateOf(0.92f) }
     var displayedImageSize by remember { mutableStateOf(IntSize.Zero) }
     val imageBitmap = remember(bitmap) { bitmap?.asImageBitmap() }
+    val imageAspectRatio = if (bitmap != null && bitmap.height > 0) {
+        wallImageDisplayAspectRatio(
+            imageWidth = bitmap.width,
+            imageHeight = bitmap.height
+        )
+    } else {
+        null
+    }
 
     fun currentCropRect(): NormalizedCropRect {
         return NormalizedCropRect(
@@ -90,137 +88,100 @@ fun ImageCropScreen(
         )
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .align(Alignment.Center)
-            ) {
-                val imageAspectRatio = if (bitmap != null && bitmap.height > 0) {
-                    bitmap.width.toFloat() / bitmap.height.toFloat()
-                } else {
-                    1f
-                }
-                val containerAspectRatio = if (maxHeight.value > 0f) {
-                    maxWidth.value / maxHeight.value
-                } else {
-                    imageAspectRatio
-                }
-                val imageModifier = if (imageAspectRatio >= containerAspectRatio) {
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(imageAspectRatio)
-                } else {
-                    Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(imageAspectRatio)
-                }
-
-                Box(
-                    modifier = imageModifier
-                        .align(Alignment.Center)
-                        .background(AppSubtleSurfaceColor, RoundedCornerShape(16.dp))
-                        .clipToBounds()
-                ) {
-                    if (bitmap != null && imageBitmap != null) {
-                        Image(
-                            bitmap = imageBitmap,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .onSizeChanged { displayedImageSize = it }
-                                .pointerInput(bitmap, displayedImageSize) {
-                                    awaitEachGesture {
-                                        var down = awaitPointerEvent().changes.firstOrNull { it.pressed }
-                                        while (down == null) {
-                                            down = awaitPointerEvent().changes.firstOrNull { it.pressed }
-                                        }
-                                        if (displayedImageSize.width <= 0 || displayedImageSize.height <= 0) {
-                                            return@awaitEachGesture
-                                        }
-
-                                        val activeDragTarget = resolveCropDragTarget(
-                                            touchOffset = down.position,
-                                            imageSize = displayedImageSize,
-                                            cropRect = currentCropRect()
-                                        )
-
-                                        if (activeDragTarget == CropDragTarget.NONE) {
-                                            return@awaitEachGesture
-                                        }
-
-                                        down.consume()
-                                        drag(down.id) { change ->
-                                            val dragAmount = change.positionChange()
-                                            if (dragAmount == Offset.Zero) {
-                                                return@drag
-                                            }
-
-                                            val updatedCropRect = applyCropDrag(
-                                                cropRect = currentCropRect(),
-                                                dragTarget = activeDragTarget,
-                                                deltaX = dragAmount.x / displayedImageSize.width.toFloat(),
-                                                deltaY = dragAmount.y / displayedImageSize.height.toFloat()
-                                            )
-
-                                            cropLeft = updatedCropRect.left
-                                            cropTop = updatedCropRect.top
-                                            cropRight = updatedCropRect.right
-                                            cropBottom = updatedCropRect.bottom
-                                            change.consume()
-                                        }
-                                    }
+    WallRegistrationStepScaffold(
+        modifier = modifier,
+        headerText = stringResource(R.string.registration_step_crop_title),
+        imageAspectRatio = imageAspectRatio,
+        imageContent = {
+            if (bitmap != null && imageBitmap != null) {
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .onSizeChanged { displayedImageSize = it }
+                        .pointerInput(bitmap, displayedImageSize) {
+                            awaitEachGesture {
+                                var down = awaitPointerEvent().changes.firstOrNull { it.pressed }
+                                while (down == null) {
+                                    down = awaitPointerEvent().changes.firstOrNull { it.pressed }
                                 }
-                        )
+                                if (displayedImageSize.width <= 0 || displayedImageSize.height <= 0) {
+                                    return@awaitEachGesture
+                                }
 
-                        CropOverlay(
-                            cropRect = NormalizedCropRect(
-                                left = cropLeft,
-                                top = cropTop,
-                                right = cropRight,
-                                bottom = cropBottom
-                            ),
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
+                                val activeDragTarget = resolveCropDragTarget(
+                                    touchOffset = down.position,
+                                    imageSize = displayedImageSize,
+                                    cropRect = currentCropRect()
+                                )
+
+                                if (activeDragTarget == CropDragTarget.NONE) {
+                                    return@awaitEachGesture
+                                }
+
+                                down.consume()
+                                drag(down.id) { change ->
+                                    val dragAmount = change.positionChange()
+                                    if (dragAmount == Offset.Zero) {
+                                        return@drag
+                                    }
+
+                                    val updatedCropRect = applyCropDrag(
+                                        cropRect = currentCropRect(),
+                                        dragTarget = activeDragTarget,
+                                        deltaX = dragAmount.x / displayedImageSize.width.toFloat(),
+                                        deltaY = dragAmount.y / displayedImageSize.height.toFloat()
+                                    )
+
+                                    cropLeft = updatedCropRect.left
+                                    cropTop = updatedCropRect.top
+                                    cropRight = updatedCropRect.right
+                                    cropBottom = updatedCropRect.bottom
+                                    change.consume()
+                                }
+                            }
+                        }
+                )
+
+                CropOverlay(
+                    cropRect = NormalizedCropRect(
+                        left = cropLeft,
+                        top = cropTop,
+                        right = cropRight,
+                        bottom = cropBottom
+                    ),
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        },
+        bodyContent = if (!message.isNullOrBlank()) {
+            {
+                Text(
+                    text = message,
+                    color = AppTextColor,
+                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
+                )
+            }
+        } else {
+            null
+        },
+        footerContent = {
+            AppButton(
+                onClick = {
+                    onApplyCropAuto(cropLeft, cropTop, cropRight, cropBottom)
+                },
+                enabled = bitmap != null,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.image_crop_apply),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
-
-        if (!message.isNullOrBlank()) {
-            Text(
-                text = message,
-                color = AppTextColor,
-                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        AppButton(
-            onClick = {
-                onApplyCropAuto(cropLeft, cropTop, cropRight, cropBottom)
-            },
-            enabled = bitmap != null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-        ) {
-            Text(
-                text = stringResource(R.string.image_crop_apply),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
+    )
 }
 
 @Composable
