@@ -71,6 +71,7 @@ fun ReachCalibrationScreen(
         modifier = modifier,
         headerText = stringResource(R.string.registration_step_reach_calibration_title),
         imageAspectRatio = imageAspectRatio,
+        useFullImageViewport = true,
         applyStatusBarsPadding = true,
         applyImePadding = true,
         imageContent = {

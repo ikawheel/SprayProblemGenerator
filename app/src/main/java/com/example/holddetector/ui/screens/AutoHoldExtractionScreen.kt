@@ -102,6 +102,7 @@ fun AutoHoldExtractionScreen(
         modifier = modifier,
         headerText = stringResource(R.string.registration_step_auto_extraction_title),
         imageAspectRatio = imageAspectRatio,
+        useFullImageViewport = true,
         imageContent = {
             if (bitmap != null) {
                 AutoExtractionCanvasScreen(

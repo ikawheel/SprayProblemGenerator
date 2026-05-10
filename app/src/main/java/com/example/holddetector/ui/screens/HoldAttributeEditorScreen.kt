@@ -82,6 +82,7 @@ fun HoldAttributeEditorScreen(
         modifier = modifier,
         headerText = stringResource(R.string.registration_step_hold_attribute_title),
         imageAspectRatio = imageAspectRatio,
+        useFullImageViewport = true,
         imageContent = {
             if (bitmap != null) {
                 HoldAttributeCanvasScreen(

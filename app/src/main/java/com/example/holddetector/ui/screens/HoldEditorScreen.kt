@@ -114,6 +114,7 @@ fun HoldEditorScreen(
         modifier = modifier,
         headerText = stringResource(R.string.registration_step_hold_editor_title),
         imageAspectRatio = imageAspectRatio,
+        useFullImageViewport = true,
         bodyCardPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 20.dp),
         bodyCardContentPadding = PaddingValues(0.dp),
         imageContent = {
