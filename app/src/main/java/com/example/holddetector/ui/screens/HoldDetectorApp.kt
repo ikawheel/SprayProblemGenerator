@@ -2,6 +2,8 @@ package com.example.holddetector.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
@@ -322,6 +325,7 @@ fun HoldDetectorApp(
                             selectedHoldIndex = state.selectedHoldIndex,
                             wallSamplePoints = state.autoExtractionWallSamplePoints,
                             isWallSamplingMode = state.isAutoExtractionWallSamplingMode,
+                            isBusy = state.isBusy,
                             displayColorSettings = state.displayColorSettings,
                             onHoldTapped = onAutoExtractedHoldTapped,
                             onStartWallSampling = onStartAutoExtractionWallSampling,
@@ -438,6 +442,25 @@ fun HoldDetectorApp(
                     ) {
                         CircularProgressIndicator()
                     }
+                }
+
+                if (state.isBusy || isExternalBusy) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(state.isBusy, isExternalBusy) {
+                                awaitEachGesture {
+                                    awaitFirstDown(requireUnconsumed = false).consume()
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        event.changes.forEach { it.consume() }
+                                        if (event.changes.none { it.pressed }) {
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+                    )
                 }
             }
 
