@@ -52,7 +52,7 @@
     <string name="no_image">画像なし</string>
     <string name="camera_title">壁画像を追加</string>
     <string name="camera_subtitle">標準カメラで撮影するか、端末内の画像を選んでください。取得後、必要な範囲を切り抜きます。</string>
-    <string name="camera_take_photo">標準カメラで撮影</string>
+    <string name="camera_take_photo">カメラで撮影</string>
     <string name="camera_pick_photo">端末の画像を選択</string>
     <string name="image_crop_title">画像を切り抜く</string>
     <string name="image_crop_description">使う壁の範囲に合わせて画像を切り抜きます。枠の内側をドラッグすると移動でき、四隅をドラッグすると大きさを調整できます。</string>
