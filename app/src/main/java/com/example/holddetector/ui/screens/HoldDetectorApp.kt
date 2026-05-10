@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,6 +34,7 @@ import com.example.holddetector.model.HoldPoint
 import com.example.holddetector.ui.AppBackgroundColor
 import com.example.holddetector.ui.AppBusyOverlayColor
 import com.example.holddetector.ui.AppScreen
+import com.example.holddetector.ui.AppSurfaceColor
 import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.DisplayColorTarget
 import com.example.holddetector.ui.EditableRgbColor
@@ -131,6 +133,7 @@ fun HoldDetectorApp(
     val backgroundColor = AppBackgroundColor
     val primaryColor = MaterialTheme.colorScheme.primary
     val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val drawerScope = rememberCoroutineScope()
 
@@ -437,6 +440,14 @@ fun HoldDetectorApp(
                     }
                 }
             }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(navigationBarBottomPadding)
+                    .background(AppSurfaceColor)
+            )
         }
     }
 
