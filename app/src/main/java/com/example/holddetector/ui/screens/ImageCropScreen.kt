@@ -71,10 +71,7 @@ fun ImageCropScreen(
     var displayedImageSize by remember { mutableStateOf(IntSize.Zero) }
     val imageBitmap = remember(bitmap) { bitmap?.asImageBitmap() }
     val imageAspectRatio = if (bitmap != null && bitmap.height > 0) {
-        wallImageDisplayAspectRatio(
-            imageWidth = bitmap.width,
-            imageHeight = bitmap.height
-        )
+        bitmap.width.toFloat() / bitmap.height.toFloat()
     } else {
         null
     }
