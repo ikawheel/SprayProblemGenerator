@@ -1,10 +1,12 @@
 package com.example.holddetector.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,19 +15,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.holddetector.R
 import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppTextColor
 import com.example.holddetector.ui.MainUiState
 import com.example.holddetector.ui.components.AppButton
 import com.example.holddetector.ui.components.AppOutlinedButton
 import com.example.holddetector.ui.components.WallRegistrationStepScaffold
-import com.example.holddetector.ui.selectors.deriveHoldEditorUiModel
 import com.example.holddetector.ui.stringResourceByName
 import com.example.holddetector.ui.canvas.HoldAttributeCanvasScreen
 
@@ -48,7 +45,6 @@ fun HoldAttributeEditorScreen(
     modifier: Modifier = Modifier
 ) {
     val bitmap = state.capturedBitmap
-    val uiModel = deriveHoldEditorUiModel(state)
     val isEditingExistingWall = state.currentWallId != null
     var editModeName by rememberSaveable {
         mutableStateOf(HoldAttributeEditMode.START.name)
@@ -60,23 +56,29 @@ fun HoldAttributeEditorScreen(
     val goalCandidateIndices = state.holds.withIndex()
         .filter { it.value.isGoalCandidate }
         .mapTo(linkedSetOf()) { it.index }
+    val highlightedStartCandidateIndices = when (editMode) {
+        HoldAttributeEditMode.START, HoldAttributeEditMode.CLEAR -> startCandidateIndices
+        HoldAttributeEditMode.GOAL -> emptySet()
+    }
+    val highlightedGoalCandidateIndices = when (editMode) {
+        HoldAttributeEditMode.GOAL, HoldAttributeEditMode.CLEAR -> goalCandidateIndices
+        HoldAttributeEditMode.START -> emptySet()
+    }
     val imageAspectRatio = bitmap?.takeIf { it.height > 0 }?.let {
         wallImageDisplayAspectRatio(
             imageWidth = it.width,
             imageHeight = it.height
         )
     }
-
-    val attributeSummaryResId = when {
-        !uiModel.hasSelectedHold -> R.string.hold_editor_attribute_none_selected
-        uiModel.selectedHoldIsStartCandidate && uiModel.selectedHoldIsGoalCandidate ->
-            R.string.hold_editor_attribute_summary_both
-        uiModel.selectedHoldIsStartCandidate ->
-            R.string.hold_editor_attribute_summary_start
-        uiModel.selectedHoldIsGoalCandidate ->
-            R.string.hold_editor_attribute_summary_goal
-        else -> R.string.hold_editor_attribute_summary_none
+    val modeDescriptionResId = when (editMode) {
+        HoldAttributeEditMode.START -> R.string.hold_attribute_mode_description_start
+        HoldAttributeEditMode.GOAL -> R.string.hold_attribute_mode_description_goal
+        HoldAttributeEditMode.CLEAR -> R.string.hold_attribute_mode_description_clear
     }
+    val modeButtonContentPadding = PaddingValues(
+        horizontal = 7.dp,
+        vertical = ButtonDefaults.ContentPadding.calculateTopPadding()
+    )
 
     WallRegistrationStepScaffold(
         modifier = modifier,
@@ -88,9 +90,9 @@ fun HoldAttributeEditorScreen(
                 HoldAttributeCanvasScreen(
                     bitmap = bitmap,
                     holds = state.holds,
-                    selectedIndex = state.selectedHoldIndex,
-                    startCandidateHoldIndices = startCandidateIndices,
-                    goalCandidateHoldIndices = goalCandidateIndices,
+                    selectedIndex = null,
+                    startCandidateHoldIndices = highlightedStartCandidateIndices,
+                    goalCandidateHoldIndices = highlightedGoalCandidateIndices,
                     displayColorSettings = state.displayColorSettings,
                     onHoldTapped = { index ->
                         when (editMode) {
@@ -105,9 +107,9 @@ fun HoldAttributeEditorScreen(
         },
         bodyContent = {
             Text(
-                text = stringResource(R.string.hold_editor_attribute_title),
-                color = AppTextColor,
-                style = MaterialTheme.typography.bodyMedium
+                text = stringResource(R.string.hold_attribute_editor_help),
+                color = AppSecondaryTextColor,
+                style = MaterialTheme.typography.bodySmall
             )
 
             Row(
@@ -119,54 +121,78 @@ fun HoldAttributeEditorScreen(
                 if (editMode == HoldAttributeEditMode.START) {
                     AppButton(
                         onClick = { editModeName = HoldAttributeEditMode.START.name },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        contentPadding = modeButtonContentPadding
                     ) {
-                        Text(stringResource(R.string.hold_attribute_mode_start))
+                        Text(
+                            text = stringResource(R.string.hold_attribute_mode_start),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 } else {
                     AppOutlinedButton(
                         onClick = { editModeName = HoldAttributeEditMode.START.name },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        contentPadding = modeButtonContentPadding
                     ) {
-                        Text(stringResource(R.string.hold_attribute_mode_start))
+                        Text(
+                            text = stringResource(R.string.hold_attribute_mode_start),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 }
 
                 if (editMode == HoldAttributeEditMode.GOAL) {
                     AppButton(
                         onClick = { editModeName = HoldAttributeEditMode.GOAL.name },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        contentPadding = modeButtonContentPadding
                     ) {
-                        Text(stringResource(R.string.hold_attribute_mode_goal))
+                        Text(
+                            text = stringResource(R.string.hold_attribute_mode_goal),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 } else {
                     AppOutlinedButton(
                         onClick = { editModeName = HoldAttributeEditMode.GOAL.name },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        contentPadding = modeButtonContentPadding
                     ) {
-                        Text(stringResource(R.string.hold_attribute_mode_goal))
+                        Text(
+                            text = stringResource(R.string.hold_attribute_mode_goal),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 }
 
                 if (editMode == HoldAttributeEditMode.CLEAR) {
                     AppButton(
                         onClick = { editModeName = HoldAttributeEditMode.CLEAR.name },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        contentPadding = modeButtonContentPadding
                     ) {
-                        Text(stringResource(R.string.hold_attribute_mode_clear))
+                        Text(
+                            text = stringResource(R.string.hold_attribute_mode_clear),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 } else {
                     AppOutlinedButton(
                         onClick = { editModeName = HoldAttributeEditMode.CLEAR.name },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        contentPadding = modeButtonContentPadding
                     ) {
-                        Text(stringResource(R.string.hold_attribute_mode_clear))
+                        Text(
+                            text = stringResource(R.string.hold_attribute_mode_clear),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 }
             }
 
             Text(
-                text = stringResource(attributeSummaryResId),
+                text = stringResource(modeDescriptionResId),
                 color = AppSecondaryTextColor,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 12.dp)
