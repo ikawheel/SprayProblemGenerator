@@ -109,7 +109,7 @@ fun AutoHoldExtractionScreen(
                 AutoExtractionCanvasScreen(
                     bitmap = bitmap,
                     holds = extractedHolds,
-                    selectedIndex = selectedHoldIndex,
+                    selectedIndex = null,
                     wallSamplePoints = wallSamplePoints,
                     isWallSamplingMode = isWallSamplingMode,
                     displayColorSettings = displayColorSettings,
