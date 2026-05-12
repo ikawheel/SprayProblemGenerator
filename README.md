@@ -2,194 +2,127 @@
 
 [日本語版はこちら](./README.ja.md)
 
-Spray Problem Generator is an Android app for registering climbing hold information from a bouldering wall photo and generating problems based on that data.
+Spray Problem Generator is an Android app that lets you register hold information from a spray wall photo and automatically generate climbing problems from that data.
 
-The app allows users to register hold positions, hold attributes, scores, and reach reference settings on a wall image. The registered hold data can then be used to create spray wall problems.
+It is designed for spray walls such as gym spray walls and home walls. You can register holds on a wall image, then generate problems based on conditions such as start and goal holds or the number of holds to use.  
+Generated problems can be saved and reviewed later from a list or a detail screen.
 
-## Overview
+The app also includes automatic hold extraction, but it is not intended to register holds perfectly by itself.  
+Automatic extraction is meant to assist with creating candidates, and final adjustments are expected to be done manually by the user.
 
-This app is designed for spray walls in bouldering gyms, home walls, and similar climbing walls.
+## Main Features
 
-Main use cases include:
+- Register wall images
+  - Take a photo with the camera
+  - Select an image from the device
+- Crop wall images
+- Automatically extract hold candidates
+- Manually adjust hold shapes
+- Set a reference used to estimate wall size
+- Set start / goal candidates
+- Set hold difficulty scores
+- Generate problems from saved walls
+- Save generated problems
+- View saved problems in a list and detail screen
+- Save problem images to the device
+- Customize display colors
+- View licenses
 
-- Registering a wall image
-- Automatically detecting hold candidates
-- Manually editing hold information
-- Setting a reach reference
-- Assigning start and goal candidate attributes
-- Setting scores for each hold
-- Generating problems from registered holds
+## Basic Usage
 
-The automatic detection feature is intended as a support tool, not as a fully automatic final detection system.  
-Detected holds are expected to be reviewed and adjusted manually by the user.
+### 1. Register a Wall
 
-## Features
+Take a photo with the camera or select an image from the device to register a wall image for problem generation.
 
-### Wall Registration
+You can crop the image as needed to adjust the area used as the wall.
 
-Users can add a new wall from the wall list screen.
+### 2. Register Holds
 
-The registration flow is as follows:
+Register holds on the wall image.
 
-1. Take a photo or select an image from the device
-2. Crop the wall image
-3. Automatically detect hold candidates
-4. Manually edit holds
-5. Set reach reference
-6. Set hold attributes
-7. Set hold scores
-8. Save the wall
+After generating candidates with automatic extraction, you can add, modify, or remove holds manually as needed.  
+Small holds or holds that are difficult to extract can also be registered through manual adjustment.
 
-### Automatic Hold Detection
+### 3. Set Problem-Generation Information
 
-The user manually selects wall color samples on the image.  
-The app uses those colors as the background reference and extracts hold candidates based on the difference from the background.
+You can set supporting information used for problem generation.
 
-Adjustable parameters include:
+- Reference for wall-size estimation
+- Start candidates
+- Goal candidates
+- Difficulty score for each hold
 
-- Color range
-- Brightness range
-- Minimum saturation
-- Background difference threshold
+Start / goal candidates and hold difficulty scores are optional.  
+Problems can still be generated even if they are not set.
 
-After automatic detection, users can manually add, remove, or edit holds.
+### 4. Generate Problems
 
-### Hold Editing
+Generate problems using the registered wall data.
 
-The hold editing feature supports the following operations:
+You can either specify the start and goal yourself, or let the app choose them automatically.
 
-- Add holds
-- Add to existing holds
-- Erase parts of holds
-- Delete holds
+Generated problems can be saved and reviewed later.
 
-Adding and appending are handled in the same editing mode.  
-When the user draws over an existing hold, the app can either append the drawn area to that hold or create a new hold, depending on the selected setting.
-
-If erasing a hold splits it into multiple separate regions, each separated region is kept as an individual hold.
-
-### Reach Reference
-
-Users can select two points on the image and enter the real-world distance between them.  
-This setting is used as a reference for distance and reach calculations during problem generation.
-
-### Hold Attributes
-
-Each hold can be assigned the following attributes:
-
-- Start candidate
-- Goal candidate
-
-These attributes can be used when selecting start and goal holds during problem generation.
-
-### Hold Scores
-
-Each hold can be assigned a score.
-
-Scores are used for filtering, difficulty adjustment, and problem generation settings.
-
-### Problem Generation
-
-Users can generate problems from registered wall data.
-
-Problem generation supports the following modes:
-
-- Specify start and goal holds
-- Let the app choose start and goal holds
-
-Common generation settings include:
-
-- Hold selection range
-- Score range
-- Maximum number of holds
-- Additional route generation parameters
-
-Generated problems are highlighted on the wall image, and users can regenerate problems using the same settings.
-
-### Display Color Settings
-
-Users can customize app-wide display colors.
-
-Configurable colors include:
-
-- Hold outline color
-- Selection color
-- Range selection color
-- Start / goal color
-
-These settings are shared across the entire app and are preserved after restarting the app.
-
-## Screen Flow
+## Screen Structure
 
 The main screen flow is as follows:
 
 ```text
 Wall List
- ├─ Add New Wall
+ ├─ Add Wall
  │   └─ Select Image / Take Photo
  │       └─ Crop Image
- │           └─ Automatic Hold Detection
- │               └─ Hold Editing
- │                   └─ Reach Reference
- │                       └─ Hold Attributes
- │                           └─ Hold Scores
- │                               └─ Save
+ │           └─ Hold Registration / Adjustment
+ │               └─ Problem-Generation Settings
+ │                   └─ Save Wall
  │
- ├─ Edit Existing Wall
- │   ├─ Hold Editing
- │   ├─ Reach Reference
- │   ├─ Hold Attributes
- │   └─ Hold Scores
+ ├─ Edit Wall
+ │   ├─ Hold Adjustment
+ │   ├─ Wall Size Settings
+ │   ├─ Start / Goal Settings
+ │   └─ Hold Difficulty Settings
  │
- ├─ Generate Problem
- │   └─ Common Settings
- │       ├─ Specify Start / Goal
- │       └─ Auto Select Start / Goal
+ ├─ Problem Generation
+ ├─ Problem List
+ │   └─ Problem Details
  │
- └─ Display Color Settings
+ ├─ Display Settings
+ └─ Licenses
 ```
 
-## Saved Data
+## Data That Can Be Saved
 
-### Data Saved Per Wall
+This app mainly saves the following kinds of data.
+
+### Wall Data
 
 - Wall image
-- Hold shapes
-- Hold attributes
-- Hold scores
-- Reach reference settings
+- Hold information
+- Reference for wall-size estimation
+- Start / goal candidates
+- Hold difficulty scores
 
-### App-Wide Saved Data
+### Problem Data
 
-- Display color settings
+- Wall used for the problem
+- Start / goal
+- Holds used in the problem
+- Hold order
+- Creation timestamp
+
+### App Settings
+
+- Hold display color
+- Start / goal display color
+- Display settings such as stroke width
 
 ## Tech Stack
 
 - Android
 - Kotlin
 - Jetpack Compose
-- MVVM architecture
-
-## Development Policy
-
-This app prioritizes manual adjustability over fully automatic hold recognition.
-
-Automatic hold detection is designed to create initial candidates only.  
-Final hold data is expected to be refined through manual editing.
-
-Because the app requires detailed editing on wall images, screens such as hold editing, reach reference setting, and problem generation support image zooming.
-
-## Possible Future Features
-
-- Saving generated problems
-- Problem history management
-- Improved difficulty estimation
-- Improved automatic hold detection
-- Chalk and shadow correction
-- Hold color-based detection settings
+- MVVM
 
 ## License
 
-This repository is intended to be released under the Unlicense.
-
-See the `LICENSE` file for details.
+See `LICENSE` for details.
