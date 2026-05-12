@@ -218,7 +218,7 @@
     <string name="delete_saved_challenge_message">この保存済み課題を削除しますか？</string>
     <string name="reach_calibration_title">リーチの目安設定</string>
     <string name="reach_calibration_description">壁サイズの推定に利用するため、両手を広げた長さなどを参考に、実際の長さが分かる2点をタップしてください。</string>
-    <string name="registration_step_crop_title">画像を切り抜く</string>
+    <string name="registration_step_crop_title">画像の切り抜き</string>
     <string name="registration_step_auto_extraction_title">ホールドの自動抽出</string>
     <string name="registration_step_hold_editor_title">ホールドの調整</string>
     <string name="registration_step_reach_calibration_title">壁サイズの算出</string>
