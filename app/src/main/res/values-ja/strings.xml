@@ -223,7 +223,7 @@
     <string name="registration_step_hold_editor_title">ホールドの調整</string>
     <string name="registration_step_reach_calibration_title">壁サイズの算出</string>
     <string name="registration_step_hold_attribute_title">スタート・ゴールの設定（任意）</string>
-    <string name="registration_step_hold_scoring_title">ホールドの採点</string>
+    <string name="registration_step_hold_scoring_title">ホールドの点数設定（任意）</string>
     <string name="reach_calibration_recommendation">壁サイズの推定に利用するため、両手を広げた長さなどを参考に、実際の長さが分かる2点をタップしてください。</string>
     <string name="reach_calibration_first_point">1点目を選んでください</string>
     <string name="reach_calibration_second_point">2点目を選んでください</string>
@@ -240,14 +240,16 @@
     <string name="hold_editor_reach_status_unset">リーチの目安: 未設定</string>
     <string name="open_reach_calibration">次へ</string>
     <string name="open_hold_scoring">点数付けへ</string>
-    <string name="hold_scoring_title">ホールドの点数付け</string>
-    <string name="hold_scoring_description">左上のホールドから順に、1〜5点で採点してください。</string>
+    <string name="hold_scoring_title">ホールドの点数設定（任意）</string>
+    <string name="hold_scoring_description">ホールドの持ちやすさを点数で設定できます。\nこの点数は自動課題作成時に利用されます。\n（デフォルトでは全て3点になっています。）</string>
     <string name="hold_scoring_empty">採点できるホールドがありません</string>
     <string name="hold_scoring_completed">採点が完了しました</string>
     <string name="hold_scoring_back">属性設定へ</string>
     <string name="hold_scoring_open_challenge">課題作成へ</string>
     <string name="hold_scoring_progress">対象 %1$d / %2$d</string>
     <string name="hold_scoring_current_score">現在の点数: %1$d点</string>
+    <string name="hold_scoring_easy">易</string>
+    <string name="hold_scoring_hard">難</string>
     <string name="message_open_wall_failed">壁データを開けませんでした</string>
     <string name="message_open_challenge_creator">課題作成を開きました</string>
     <string name="message_hold_added">ホールドを%1$d個追加しました</string>

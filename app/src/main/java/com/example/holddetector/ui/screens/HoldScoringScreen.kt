@@ -62,18 +62,26 @@ fun HoldScoringScreen(
             }
         },
         bodyContent = {
+            Text(
+                text = stringResource(R.string.hold_scoring_description),
+                color = AppSecondaryTextColor,
+                style = MaterialTheme.typography.bodySmall
+            )
+
             if (uiModel.totalCount == 0) {
                 Text(
                     text = stringResourceByName("hold_scoring_empty"),
                     color = AppTextColor,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 12.dp)
                 )
             } else if (uiModel.isCompleted) {
                 Text(
                     text = stringResourceByName("hold_scoring_completed"),
                     color = AppTextColor,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 12.dp)
                 )
             } else {
                 Text(
@@ -84,7 +92,8 @@ fun HoldScoringScreen(
                     ),
                     color = AppTextColor,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 12.dp)
                 )
 
                 Text(
@@ -125,6 +134,27 @@ fun HoldScoringScreen(
                                 )
                             }
                         }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    (1..5).forEach { score ->
+                        Text(
+                            text = when (score) {
+                                1 -> stringResource(R.string.hold_scoring_easy)
+                                5 -> stringResource(R.string.hold_scoring_hard)
+                                else -> ""
+                            },
+                            color = AppSecondaryTextColor,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
