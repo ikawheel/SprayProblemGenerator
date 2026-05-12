@@ -223,7 +223,7 @@
     <string name="registration_step_hold_editor_title">Adjust holds manually</string>
     <string name="registration_step_reach_calibration_title">Set distance reference</string>
     <string name="registration_step_hold_attribute_title">Set start and goal (optional)</string>
-    <string name="registration_step_hold_scoring_title">Assign hold scores</string>
+    <string name="registration_step_hold_scoring_title">Set hold scores (optional)</string>
     <string name="reach_calibration_recommendation">Tap two points and enter the distance between them to calculate the wall size.</string>
     <string name="reach_calibration_first_point">Select the first point</string>
     <string name="reach_calibration_second_point">Select the second point</string>
@@ -240,14 +240,16 @@
     <string name="hold_editor_reach_status_unset">Reach reference: not set</string>
     <string name="open_reach_calibration">Next</string>
     <string name="open_hold_scoring">Go to scoring</string>
-    <string name="hold_scoring_title">Assign hold scores</string>
-    <string name="hold_scoring_description">Score each hold from the top-left in order, using 1 to 5 points.</string>
+    <string name="hold_scoring_title">Set hold scores (optional)</string>
+    <string name="hold_scoring_description">You can set scores based on how easy each hold is to grip.\nThese scores are used during automatic challenge creation.\nAll holds default to 3 points.</string>
     <string name="hold_scoring_empty">There are no holds to score</string>
     <string name="hold_scoring_completed">Scoring is complete</string>
     <string name="hold_scoring_back">Back to attribute settings</string>
     <string name="hold_scoring_open_challenge">Go to challenge creation</string>
     <string name="hold_scoring_progress">Target %1$d / %2$d</string>
     <string name="hold_scoring_current_score">Current score: %1$d points</string>
+    <string name="hold_scoring_easy">Easy</string>
+    <string name="hold_scoring_hard">Hard</string>
     <string name="message_open_wall_failed">Failed to open wall data</string>
     <string name="message_open_challenge_creator">Opened challenge creation</string>
     <string name="message_hold_added">Added %1$d hold(s)</string>
