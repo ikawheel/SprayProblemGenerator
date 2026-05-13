@@ -7,8 +7,9 @@ Spray Problem Generator is an Android app that lets you register hold informatio
 It is designed for spray walls such as gym spray walls and home walls. You can register holds on a wall image, then generate problems based on conditions such as start and goal holds or the number of holds to use.  
 Generated problems can be saved and reviewed later from a list or a detail screen.
 
-The app also includes automatic hold extraction, but it is not intended to register holds perfectly by itself.  
-Automatic extraction is meant to assist with creating candidates, and final adjustments are expected to be done manually by the user.
+https://github.com/user-attachments/assets/ab455a4d-bdb2-4269-8319-6d0531f99a5f
+
+https://github.com/user-attachments/assets/4a26d5af-e9c3-43cd-98bf-5c071fc32b0a
 
 ## Main Features
 
