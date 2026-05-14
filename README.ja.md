@@ -44,7 +44,7 @@ https://github.com/user-attachments/assets/b3b3502b-5cba-4562-bbd8-9bca9be353a0
 自動抽出で候補を作成したあと、必要に応じて手動で追加・修正・削除できます。  
 小さいホールドや抽出しづらいホールドも、手動調整によって登録できます。
 
-
+https://github.com/user-attachments/assets/037db7de-7e66-4da4-94c0-c3b9103a6cfa
 
 https://github.com/user-attachments/assets/55b3c814-50ae-44fe-bd47-2580860611b4
 
