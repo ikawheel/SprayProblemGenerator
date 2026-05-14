@@ -35,12 +35,19 @@ https://github.com/user-attachments/assets/e17beeda-572c-4c67-8dab-d3de9626d67d
 
 必要に応じて画像を切り抜き、壁として使う範囲を調整します。
 
+https://github.com/user-attachments/assets/b3b3502b-5cba-4562-bbd8-9bca9be353a0
+
 ### 2. ホールドを登録する
 
 壁画像上のホールドを登録します。
 
 自動抽出で候補を作成したあと、必要に応じて手動で追加・修正・削除できます。  
 小さいホールドや抽出しづらいホールドも、手動調整によって登録できます。
+
+
+
+https://github.com/user-attachments/assets/55b3c814-50ae-44fe-bd47-2580860611b4
+
 
 ### 3. 課題作成用の情報を設定する
 
@@ -53,6 +60,13 @@ https://github.com/user-attachments/assets/e17beeda-572c-4c67-8dab-d3de9626d67d
 
 スタート / ゴール候補やホールド難易度は任意設定です。  
 未設定でも課題作成はできます。
+
+https://github.com/user-attachments/assets/07a70a82-6129-427e-9ff5-c0cfefe24729
+
+https://github.com/user-attachments/assets/4803184a-b666-4649-8c5f-694044095a6a
+
+https://github.com/user-attachments/assets/577b5b8f-d1ad-4a5f-a39c-bf593a807ba1
+
 
 ### 4. 課題を作成する
 
