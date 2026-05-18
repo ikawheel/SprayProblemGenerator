@@ -63,6 +63,9 @@ import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import java.util.Locale
 import kotlin.math.roundToInt
 
+// Temporarily hide the challenge debug UI so it can be restored easily later.
+private const val SHOW_CHALLENGE_DEBUG_UI = false
+
 @Composable
 fun ChallengeCreatorScreen(
     state: MainUiState,
@@ -493,18 +496,27 @@ private fun ChallengeResultContent(
             onClick = onRerunCurrentChallengeGeneration,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp)
+                .padding(
+                    top = 12.dp,
+                    bottom = if (SHOW_CHALLENGE_DEBUG_UI) {
+                        0.dp
+                    } else {
+                        navigationBarBottomPadding
+                    }
+                )
         ) {
             Text(stringResource(R.string.challenge_regenerate))
         }
 
-        ChallengeDebugSummarySection(
-            state = state,
-            uiModel = uiModel,
-            isExpanded = isDebugSummaryExpanded,
-            onExpandedChange = onDebugSummaryExpandedChange,
-            modifier = Modifier.padding(bottom = navigationBarBottomPadding)
-        )
+        if (SHOW_CHALLENGE_DEBUG_UI) {
+            ChallengeDebugSummarySection(
+                state = state,
+                uiModel = uiModel,
+                isExpanded = isDebugSummaryExpanded,
+                onExpandedChange = onDebugSummaryExpandedChange,
+                modifier = Modifier.padding(bottom = navigationBarBottomPadding)
+            )
+        }
     }
 }
 

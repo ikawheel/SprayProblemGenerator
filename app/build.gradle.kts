@@ -6,6 +6,18 @@ plugins {
 
 }
 
+val versionMajor = 1
+val versionMinor = 0
+val versionPatch = 0
+val versionBuild = 1
+
+val computedVersionCode = versionMajor * 1_000_000 +
+    versionMinor * 10_000 +
+    versionPatch * 100 +
+    versionBuild
+
+val computedVersionName = "$versionMajor.$versionMinor.$versionPatch"
+
 android {
     namespace = "com.example.holddetector"
     compileSdk = 36
@@ -14,8 +26,8 @@ android {
         applicationId = "com.example.holddetector"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = computedVersionCode
+        versionName = computedVersionName
     }
 
     buildFeatures {
