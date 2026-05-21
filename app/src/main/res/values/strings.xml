@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">HoldDetector</string>
+    <string name="app_name">SprayProblemGenerator</string>
     <string name="back_to_list">Back to list</string>
     <string name="discard_dialog_message">You have unsaved hold edits. Return to the list without saving?</string>
     <string name="discard_dialog_confirm">Return without saving</string>

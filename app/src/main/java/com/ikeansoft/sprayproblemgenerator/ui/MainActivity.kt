@@ -30,7 +30,7 @@ import androidx.lifecycle.lifecycleScope
 import com.ikeansoft.sprayproblemgenerator.R
 import com.ikeansoft.sprayproblemgenerator.model.CapturedOrientation
 import com.ikeansoft.sprayproblemgenerator.ui.canvas.loadCorrectedBitmap
-import com.ikeansoft.sprayproblemgenerator.ui.screens.HoldDetectorApp
+import com.ikeansoft.sprayproblemgenerator.ui.screens.SprayProblemGeneratorApp
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -133,7 +133,7 @@ class MainActivity : ComponentActivity() {
                         viewModel.onBackPressed()
                     }
 
-                    HoldDetectorApp(
+                    SprayProblemGeneratorApp(
                         state = uiState,
                         isExternalBusy = isCaptureProcessing.value,
                         onOpenSavedWallForReachCalibration = viewModel::openSavedWallForReachCalibration,
@@ -315,7 +315,7 @@ class MainActivity : ComponentActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(
                     MediaStore.Images.Media.RELATIVE_PATH,
-                    "${Environment.DIRECTORY_PICTURES}/HoldDetector"
+                    "${Environment.DIRECTORY_PICTURES}/SprayProblemGenerator"
                 )
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }

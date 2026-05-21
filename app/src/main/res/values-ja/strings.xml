@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">HoldDetector</string>
+    <string name="app_name">SprayProblemGenerator</string>
     <string name="back_to_list">一覧へ戻る</string>
     <string name="discard_dialog_message">未保存のホールド編集があります。保存せずに一覧へ戻りますか？</string>
     <string name="discard_dialog_confirm">保存せずに戻る</string>

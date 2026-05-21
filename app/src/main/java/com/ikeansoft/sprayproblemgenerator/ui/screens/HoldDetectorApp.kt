@@ -49,7 +49,7 @@ import com.ikeansoft.sprayproblemgenerator.ui.components.AppConfirmDialog
 import kotlinx.coroutines.launch
 
 @Composable
-fun HoldDetectorApp(
+fun SprayProblemGeneratorApp(
     state: MainUiState,
     isExternalBusy: Boolean,
     onOpenSavedWallForReachCalibration: (String) -> Unit,

@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "HoldDetector"
+rootProject.name = "SprayProblemGenerator"
 include(":app")
