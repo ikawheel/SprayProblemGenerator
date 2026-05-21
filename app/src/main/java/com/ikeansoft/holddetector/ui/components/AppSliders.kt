@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.components
+package com.ikeansoft.holddetector.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth

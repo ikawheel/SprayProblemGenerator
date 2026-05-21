@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,21 +36,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.example.holddetector.R
-import com.example.holddetector.model.SavedWallSummary
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSurfaceColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppIconButton
-import com.example.holddetector.ui.components.AppConfirmDialog
-import com.example.holddetector.ui.components.AppContentDialog
-import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.BottomActionBar
-import com.example.holddetector.ui.components.ScreenHeader
-import com.example.holddetector.ui.components.WallThumbnail
-import com.example.holddetector.ui.selectors.formatWallTimestamp
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.model.SavedWallSummary
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.components.AppIconButton
+import com.ikeansoft.holddetector.ui.components.AppConfirmDialog
+import com.ikeansoft.holddetector.ui.components.AppContentDialog
+import com.ikeansoft.holddetector.ui.components.AppOutlinedButton
+import com.ikeansoft.holddetector.ui.components.BottomActionBar
+import com.ikeansoft.holddetector.ui.components.ScreenHeader
+import com.ikeansoft.holddetector.ui.components.WallThumbnail
+import com.ikeansoft.holddetector.ui.selectors.formatWallTimestamp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
@@ -29,10 +29,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
-import com.example.holddetector.R
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.WallRegistrationStepScaffold
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.components.WallRegistrationStepScaffold
 import kotlin.math.abs
 import kotlin.math.max
 

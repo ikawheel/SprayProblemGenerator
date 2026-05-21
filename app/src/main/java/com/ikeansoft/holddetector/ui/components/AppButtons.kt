@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.components
+package com.ikeansoft.holddetector.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -28,9 +28,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

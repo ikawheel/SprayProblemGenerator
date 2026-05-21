@@ -1,9 +1,9 @@
-package com.example.holddetector.domain.hold
+package com.ikeansoft.holddetector.domain.hold
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.HoldPoint
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2

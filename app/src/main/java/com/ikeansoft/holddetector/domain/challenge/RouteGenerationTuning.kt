@@ -1,4 +1,4 @@
-package com.example.holddetector.domain.challenge
+package com.ikeansoft.holddetector.domain.challenge
 
 data class RouteGenerationTuning(
     val detourStrength: Float = 0.75f,

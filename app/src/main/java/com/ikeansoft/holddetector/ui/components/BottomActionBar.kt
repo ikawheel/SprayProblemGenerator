@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.components
+package com.ikeansoft.holddetector.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,7 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
 
 @Composable
 fun BottomActionBar(

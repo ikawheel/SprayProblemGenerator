@@ -1,4 +1,4 @@
-package com.example.holddetector.domain.hold
+package com.ikeansoft.holddetector.domain.hold
 
 enum class HoldColorCategory(
     val hueCenter: Float?,

@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,19 +15,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.domain.hold.AutoExtractionTuning
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT
-import com.example.holddetector.ui.DisplayColorSettings
-import com.example.holddetector.ui.canvas.AutoExtractionCanvasScreen
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppContentDialog
-import com.example.holddetector.ui.components.CompactSlider
-import com.example.holddetector.ui.components.WallRegistrationStepScaffold
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.domain.hold.AutoExtractionTuning
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.AUTO_EXTRACTION_WALL_SAMPLE_TARGET_COUNT
+import com.ikeansoft.holddetector.ui.DisplayColorSettings
+import com.ikeansoft.holddetector.ui.canvas.AutoExtractionCanvasScreen
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.components.AppContentDialog
+import com.ikeansoft.holddetector.ui.components.CompactSlider
+import com.ikeansoft.holddetector.ui.components.WallRegistrationStepScaffold
 import kotlin.math.roundToInt
 
 @Composable

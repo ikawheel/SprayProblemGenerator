@@ -1,8 +1,8 @@
-package com.example.holddetector.ui.selectors
+package com.ikeansoft.holddetector.ui.selectors
 
 import androidx.annotation.StringRes
-import com.example.holddetector.R
-import com.example.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.ui.MainUiState
 
 internal data class HoldEditorUiModel(
     @StringRes val titleResId: Int,

@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.components
+package com.ikeansoft.holddetector.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.AppTextColor
 
 @Composable
 fun AppContentDialog(

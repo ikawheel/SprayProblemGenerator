@@ -1,6 +1,6 @@
-package com.example.holddetector.domain.challenge
+package com.ikeansoft.holddetector.domain.challenge
 
-import com.example.holddetector.model.ReachCalibrationReference
+import com.ikeansoft.holddetector.model.ReachCalibrationReference
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min

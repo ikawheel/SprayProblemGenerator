@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -35,18 +35,18 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.SavedChallengeSummary
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSurfaceColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.DisplayColorSettings
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppConfirmDialog
-import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.selectors.formatWallTimestamp
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.SavedChallengeSummary
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.DisplayColorSettings
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.components.AppConfirmDialog
+import com.ikeansoft.holddetector.ui.components.AppOutlinedButton
+import com.ikeansoft.holddetector.ui.selectors.formatWallTimestamp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt

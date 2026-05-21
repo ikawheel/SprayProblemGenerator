@@ -1,6 +1,6 @@
-package com.example.holddetector.domain.challenge
+package com.ikeansoft.holddetector.domain.challenge
 
-import com.example.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.Hold
 
 fun normalizeChallengeRouteOrder(
     challengeIndices: Set<Int>,

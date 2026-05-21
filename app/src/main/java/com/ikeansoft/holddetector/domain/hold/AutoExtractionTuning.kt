@@ -1,4 +1,4 @@
-package com.example.holddetector.domain.hold
+package com.ikeansoft.holddetector.domain.hold
 
 data class AutoExtractionTuning(
     val hueTolerance: Float = 150f,

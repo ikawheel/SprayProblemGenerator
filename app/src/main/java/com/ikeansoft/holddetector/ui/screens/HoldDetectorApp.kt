@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -30,22 +30,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.domain.hold.AutoExtractionTuning
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.ui.AppBackgroundColor
-import com.example.holddetector.ui.AppBusyOverlayColor
-import com.example.holddetector.ui.AppScreen
-import com.example.holddetector.ui.AppSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.DisplayColorTarget
-import com.example.holddetector.ui.EditableRgbColor
-import com.example.holddetector.ui.HoldEditorTool
-import com.example.holddetector.ui.HoldTapAreaSize
-import com.example.holddetector.ui.MainUiState
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppConfirmDialog
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.domain.hold.AutoExtractionTuning
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.ui.AppBackgroundColor
+import com.ikeansoft.holddetector.ui.AppBusyOverlayColor
+import com.ikeansoft.holddetector.ui.AppScreen
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.DisplayColorTarget
+import com.ikeansoft.holddetector.ui.EditableRgbColor
+import com.ikeansoft.holddetector.ui.HoldEditorTool
+import com.ikeansoft.holddetector.ui.HoldTapAreaSize
+import com.ikeansoft.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.components.AppConfirmDialog
 import kotlinx.coroutines.launch
 
 @Composable

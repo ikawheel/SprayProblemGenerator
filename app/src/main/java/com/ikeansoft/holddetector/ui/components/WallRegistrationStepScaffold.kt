@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.components
+package com.ikeansoft.holddetector.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,9 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
 
 @Composable
 fun WallRegistrationStepScaffold(

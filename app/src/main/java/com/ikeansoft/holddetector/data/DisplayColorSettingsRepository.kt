@@ -1,8 +1,8 @@
-package com.example.holddetector.data
+package com.ikeansoft.holddetector.data
 
 import android.content.Context
-import com.example.holddetector.ui.DisplayColorSettings
-import com.example.holddetector.ui.EditableRgbColor
+import com.ikeansoft.holddetector.ui.DisplayColorSettings
+import com.ikeansoft.holddetector.ui.EditableRgbColor
 
 class DisplayColorSettingsRepository(context: Context) {
 

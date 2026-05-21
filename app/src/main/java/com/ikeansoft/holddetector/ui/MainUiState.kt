@@ -1,18 +1,18 @@
-package com.example.holddetector.ui
+package com.ikeansoft.holddetector.ui
 
 import android.graphics.Bitmap
-import com.example.holddetector.domain.hold.AutoExtractionTuning
-import com.example.holddetector.domain.challenge.RouteGenerationTuning
-import com.example.holddetector.model.CapturedOrientation
-import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
-import com.example.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
-import com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
-import com.example.holddetector.model.ReachCalibrationReference
-import com.example.holddetector.model.SavedChallengeSummary
-import com.example.holddetector.model.SavedWallSummary
+import com.ikeansoft.holddetector.domain.hold.AutoExtractionTuning
+import com.ikeansoft.holddetector.domain.challenge.RouteGenerationTuning
+import com.ikeansoft.holddetector.model.CapturedOrientation
+import com.ikeansoft.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
+import com.ikeansoft.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
+import com.ikeansoft.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE
+import com.ikeansoft.holddetector.model.ReachCalibrationReference
+import com.ikeansoft.holddetector.model.SavedChallengeSummary
+import com.ikeansoft.holddetector.model.SavedWallSummary
 
 enum class AppScreen {
     LIST,

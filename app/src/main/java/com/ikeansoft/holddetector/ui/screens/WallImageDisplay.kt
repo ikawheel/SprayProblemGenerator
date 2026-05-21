@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 internal fun wallImageDisplayAspectRatio(
     imageWidth: Int,

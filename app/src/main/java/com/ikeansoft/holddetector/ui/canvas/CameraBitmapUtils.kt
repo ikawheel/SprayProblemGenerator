@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.canvas
+package com.ikeansoft.holddetector.ui.canvas
 
 import android.content.ContentResolver
 import android.graphics.Bitmap

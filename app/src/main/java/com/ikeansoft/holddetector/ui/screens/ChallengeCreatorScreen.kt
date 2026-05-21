@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,23 +43,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.ui.AppCoreHighlightBackgroundColor
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.ChallengeFlowStep
-import com.example.holddetector.ui.ChallengeGenerationMethod
-import com.example.holddetector.ui.MainUiState
-import com.example.holddetector.ui.canvas.ChallengeCanvasScreen
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppContentDialog
-import com.example.holddetector.ui.components.AppMessageDialog
-import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.CompactRangeSlider
-import com.example.holddetector.ui.components.CompactSlider
-import com.example.holddetector.ui.selectors.DrawTargetStatus
-import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.ui.AppCoreHighlightBackgroundColor
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.ChallengeFlowStep
+import com.ikeansoft.holddetector.ui.ChallengeGenerationMethod
+import com.ikeansoft.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.ui.canvas.ChallengeCanvasScreen
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.components.AppContentDialog
+import com.ikeansoft.holddetector.ui.components.AppMessageDialog
+import com.ikeansoft.holddetector.ui.components.AppOutlinedButton
+import com.ikeansoft.holddetector.ui.components.CompactRangeSlider
+import com.ikeansoft.holddetector.ui.components.CompactSlider
+import com.ikeansoft.holddetector.ui.selectors.DrawTargetStatus
+import com.ikeansoft.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -293,7 +293,7 @@ private fun ChallengeMethodSelectionContent(
 @Composable
 private fun ChallengeCommonSettingsContent(
     state: MainUiState,
-    uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
+    uiModel: com.ikeansoft.holddetector.ui.selectors.ChallengeCreatorUiModel,
     onOpenChallengeGeneration: () -> Unit,
     onShowTuningDialog: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
@@ -381,7 +381,7 @@ private fun ChallengeCommonSettingsContent(
 @Composable
 private fun ChallengeManualGenerationContent(
     state: MainUiState,
-    uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
+    uiModel: com.ikeansoft.holddetector.ui.selectors.ChallengeCreatorUiModel,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onStartGoalSelection: () -> Unit,
@@ -429,7 +429,7 @@ private fun ChallengeManualGenerationContent(
 @Composable
 private fun ChallengeRandomGenerationContent(
     state: MainUiState,
-    uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
+    uiModel: com.ikeansoft.holddetector.ui.selectors.ChallengeCreatorUiModel,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     onDrawWithRandomStartGoal: () -> Unit,
@@ -462,7 +462,7 @@ private fun ChallengeRandomGenerationContent(
 @Composable
 private fun ChallengeResultContent(
     state: MainUiState,
-    uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
+    uiModel: com.ikeansoft.holddetector.ui.selectors.ChallengeCreatorUiModel,
     isDebugSummaryExpanded: Boolean,
     onDebugSummaryExpandedChange: (Boolean) -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
@@ -750,7 +750,7 @@ private fun CompactNumericField(
 @Composable
 private fun ChallengeCanvasSection(
     state: MainUiState,
-    uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
+    uiModel: com.ikeansoft.holddetector.ui.selectors.ChallengeCreatorUiModel,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     modifier: Modifier = Modifier,
@@ -803,7 +803,7 @@ private fun ChallengeCanvasSection(
 @Composable
 private fun ChallengeDebugSummarySection(
     state: MainUiState,
-    uiModel: com.example.holddetector.ui.selectors.ChallengeCreatorUiModel,
+    uiModel: com.ikeansoft.holddetector.ui.selectors.ChallengeCreatorUiModel,
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier

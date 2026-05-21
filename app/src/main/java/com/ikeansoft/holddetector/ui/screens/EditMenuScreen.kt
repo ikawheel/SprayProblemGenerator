@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,10 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.MainUiState
-import com.example.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.ui.components.AppButton
 
 @Composable
 fun EditMenuScreen(

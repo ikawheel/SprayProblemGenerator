@@ -1,4 +1,4 @@
-package com.example.holddetector.ui
+package com.ikeansoft.holddetector.ui
 
 import android.content.ContentValues
 import android.net.Uri
@@ -27,10 +27,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.example.holddetector.R
-import com.example.holddetector.model.CapturedOrientation
-import com.example.holddetector.ui.canvas.loadCorrectedBitmap
-import com.example.holddetector.ui.screens.HoldDetectorApp
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.model.CapturedOrientation
+import com.ikeansoft.holddetector.ui.canvas.loadCorrectedBitmap
+import com.ikeansoft.holddetector.ui.screens.HoldDetectorApp
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers

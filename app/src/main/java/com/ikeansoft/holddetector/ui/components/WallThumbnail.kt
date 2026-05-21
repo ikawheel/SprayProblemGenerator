@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.components
+package com.ikeansoft.holddetector.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -18,9 +18,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

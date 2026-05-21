@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,17 +29,17 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.DisplayColorSettings
-import com.example.holddetector.ui.DisplayColorTarget
-import com.example.holddetector.ui.EditableRgbColor
-import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.BottomActionBar
-import com.example.holddetector.ui.components.CompactSlider
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.DisplayColorSettings
+import com.ikeansoft.holddetector.ui.DisplayColorTarget
+import com.ikeansoft.holddetector.ui.EditableRgbColor
+import com.ikeansoft.holddetector.ui.components.AppOutlinedButton
+import com.ikeansoft.holddetector.ui.components.BottomActionBar
+import com.ikeansoft.holddetector.ui.components.CompactSlider
 import kotlin.math.roundToInt
 
 @Composable

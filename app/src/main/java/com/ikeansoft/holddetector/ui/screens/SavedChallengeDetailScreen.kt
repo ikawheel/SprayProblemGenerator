@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
@@ -27,15 +27,15 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.drawToBitmap
-import com.example.holddetector.R
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.MainUiState
-import com.example.holddetector.ui.RouteSelectionMode
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.canvas.ChallengeCanvasScreen
-import com.example.holddetector.ui.selectors.deriveChallengeCreatorUiModel
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.ui.RouteSelectionMode
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.canvas.ChallengeCanvasScreen
+import com.ikeansoft.holddetector.ui.selectors.deriveChallengeCreatorUiModel
 import kotlin.math.roundToInt
 
 @Composable

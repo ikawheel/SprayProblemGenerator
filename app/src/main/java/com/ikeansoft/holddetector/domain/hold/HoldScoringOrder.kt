@@ -1,6 +1,6 @@
-package com.example.holddetector.domain.hold
+package com.ikeansoft.holddetector.domain.hold
 
-import com.example.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.Hold
 
 fun buildHoldScoringOrder(holds: List<Hold>): List<Int> {
     return holds.indices.sortedWith(

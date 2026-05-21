@@ -1,12 +1,12 @@
-package com.example.holddetector.ui
+package com.ikeansoft.holddetector.ui
 
-import com.example.holddetector.R
-import com.example.holddetector.domain.challenge.ChallengeRouteGenerator
-import com.example.holddetector.domain.challenge.RouteGenerationTuning
-import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
-import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.ReachCalibrationReference
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.domain.challenge.ChallengeRouteGenerator
+import com.ikeansoft.holddetector.domain.challenge.RouteGenerationTuning
+import com.ikeansoft.holddetector.domain.challenge.normalizeChallengeRouteOrder
+import com.ikeansoft.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.ReachCalibrationReference
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -148,12 +148,12 @@ internal fun buildChallengeDifficultyRangeState(
     endInclusive: Float
 ): MainUiState {
     val minScore = start.roundToInt().coerceIn(
-        com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE,
-        com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
+        com.ikeansoft.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE,
+        com.ikeansoft.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
     )
     val maxScore = endInclusive.roundToInt().coerceIn(
-        com.example.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE,
-        com.example.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
+        com.ikeansoft.holddetector.model.MIN_HOLD_DIFFICULTY_SCORE,
+        com.ikeansoft.holddetector.model.MAX_HOLD_DIFFICULTY_SCORE
     )
     val normalizedMin = minOf(minScore, maxScore)
     val normalizedMax = maxOf(minScore, maxScore)

@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.canvas
+package com.ikeansoft.holddetector.ui.canvas
 
 import android.graphics.Bitmap
 import android.graphics.Paint
@@ -43,17 +43,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import com.example.holddetector.R
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.model.ReachCalibrationReference
-import com.example.holddetector.ui.AppBackgroundColor
-import com.example.holddetector.ui.AppCoreLabelBackgroundColor
-import com.example.holddetector.ui.DisplayColorSettings
-import com.example.holddetector.ui.AppOverlayStrokePreviewColor
-import com.example.holddetector.ui.HoldEditorTool
-import com.example.holddetector.ui.HoldTapAreaSize
-import com.example.holddetector.ui.RouteSelectionMode
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.model.ReachCalibrationReference
+import com.ikeansoft.holddetector.ui.AppBackgroundColor
+import com.ikeansoft.holddetector.ui.AppCoreLabelBackgroundColor
+import com.ikeansoft.holddetector.ui.DisplayColorSettings
+import com.ikeansoft.holddetector.ui.AppOverlayStrokePreviewColor
+import com.ikeansoft.holddetector.ui.HoldEditorTool
+import com.ikeansoft.holddetector.ui.HoldTapAreaSize
+import com.ikeansoft.holddetector.ui.RouteSelectionMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -1287,7 +1287,7 @@ private fun InteractiveCapturedImage(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(com.example.holddetector.ui.AppBusyOverlayColor)
+                    .background(com.ikeansoft.holddetector.ui.AppBusyOverlayColor)
             )
         }
     }

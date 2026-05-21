@@ -1,4 +1,4 @@
-package com.example.holddetector.ui
+package com.ikeansoft.holddetector.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext

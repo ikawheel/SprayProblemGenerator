@@ -1,4 +1,4 @@
-package com.example.holddetector.model
+package com.ikeansoft.holddetector.model
 
 import kotlin.math.abs
 

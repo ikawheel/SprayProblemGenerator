@@ -1,12 +1,12 @@
-package com.example.holddetector.ui.selectors
+package com.ikeansoft.holddetector.ui.selectors
 
 import androidx.annotation.StringRes
-import com.example.holddetector.R
-import com.example.holddetector.domain.challenge.ChallengeDifficultyCalculator
-import com.example.holddetector.domain.challenge.normalizeChallengeRouteOrder
-import com.example.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
-import com.example.holddetector.ui.MainUiState
-import com.example.holddetector.ui.RouteSelectionMode
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.domain.challenge.ChallengeDifficultyCalculator
+import com.ikeansoft.holddetector.domain.challenge.normalizeChallengeRouteOrder
+import com.ikeansoft.holddetector.model.DEFAULT_HOLD_DIFFICULTY_SCORE
+import com.ikeansoft.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.ui.RouteSelectionMode
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -144,7 +144,7 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
 
 private fun buildChallengeDebugSummaryRows(
     state: MainUiState,
-    challengeDifficultyScore: com.example.holddetector.domain.challenge.ChallengeDifficultyResult?
+    challengeDifficultyScore: com.ikeansoft.holddetector.domain.challenge.ChallengeDifficultyResult?
 ): List<ChallengeDebugSummaryRow> {
     val pixelsPerCentimeter = state.reachCalibrationReference?.pixelsPerCentimeterOrNull()
 
@@ -177,7 +177,7 @@ private fun buildChallengeDebugSummaryRows(
     } ?: emptyList()
 }
 
-private fun com.example.holddetector.model.ReachCalibrationReference.pixelsPerCentimeterOrNull(): Double? {
+private fun com.ikeansoft.holddetector.model.ReachCalibrationReference.pixelsPerCentimeterOrNull(): Double? {
     val calibrationDistancePx = hypot(
         (secondPoint.x - firstPoint.x).toDouble(),
         (secondPoint.y - firstPoint.y).toDouble()

@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -31,20 +31,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.model.Hold
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.HoldEditorTool
-import com.example.holddetector.ui.HoldTapAreaSize
-import com.example.holddetector.ui.MainUiState
-import com.example.holddetector.ui.RouteSelectionMode
-import com.example.holddetector.ui.canvas.HoldCanvasScreen
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.ui.components.AppConfirmDialog
-import com.example.holddetector.ui.components.AppOutlinedButton
-import com.example.holddetector.ui.components.WallRegistrationStepScaffold
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.HoldEditorTool
+import com.ikeansoft.holddetector.ui.HoldTapAreaSize
+import com.ikeansoft.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.ui.RouteSelectionMode
+import com.ikeansoft.holddetector.ui.canvas.HoldCanvasScreen
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.ui.components.AppConfirmDialog
+import com.ikeansoft.holddetector.ui.components.AppOutlinedButton
+import com.ikeansoft.holddetector.ui.components.WallRegistrationStepScaffold
 
 private data class HoldEditorSnapshot(
     val holds: List<Hold>,

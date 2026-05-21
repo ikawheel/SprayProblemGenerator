@@ -1,7 +1,7 @@
-package com.example.holddetector.domain.challenge
+package com.ikeansoft.holddetector.domain.challenge
 
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.ReachCalibrationReference
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.ReachCalibrationReference
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt

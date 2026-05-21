@@ -1,11 +1,11 @@
-package com.example.holddetector.ui.canvas
+package com.ikeansoft.holddetector.ui.canvas
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.IntSize
-import com.example.holddetector.model.Hold
-import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.ui.HoldEditorTool
+import com.ikeansoft.holddetector.model.Hold
+import com.ikeansoft.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.ui.HoldEditorTool
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor

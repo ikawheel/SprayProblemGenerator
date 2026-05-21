@@ -1,6 +1,6 @@
-package com.example.holddetector.ui.selectors
+package com.ikeansoft.holddetector.ui.selectors
 
-import com.example.holddetector.model.SavedWallSummary
+import com.ikeansoft.holddetector.model.SavedWallSummary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

@@ -1,4 +1,4 @@
-package com.example.holddetector.model
+package com.ikeansoft.holddetector.model
 
 data class SavedChallengeSummary(
     val id: String,

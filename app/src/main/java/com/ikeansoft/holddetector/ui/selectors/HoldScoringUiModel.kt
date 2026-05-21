@@ -1,7 +1,7 @@
-package com.example.holddetector.ui.selectors
+package com.ikeansoft.holddetector.ui.selectors
 
-import com.example.holddetector.domain.hold.buildHoldScoringOrder
-import com.example.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.domain.hold.buildHoldScoringOrder
+import com.ikeansoft.holddetector.ui.MainUiState
 
 internal data class HoldScoringUiModel(
     val orderedIndices: List<Int>,

@@ -1,9 +1,9 @@
-package com.example.holddetector.ui
+package com.ikeansoft.holddetector.ui
 
 import android.graphics.Bitmap
-import com.example.holddetector.model.CapturedOrientation
-import com.example.holddetector.model.ReachCalibrationReference
-import com.example.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.model.CapturedOrientation
+import com.ikeansoft.holddetector.model.ReachCalibrationReference
+import com.ikeansoft.holddetector.model.HoldPoint
 
 internal data class ReachCalibrationValidationResult(
     val reference: ReachCalibrationReference? = null,

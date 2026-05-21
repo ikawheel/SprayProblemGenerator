@@ -1,4 +1,4 @@
-package com.example.holddetector.ui.screens
+package com.ikeansoft.holddetector.ui.screens
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,18 +14,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.holddetector.R
-import com.example.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
-import com.example.holddetector.ui.AppSecondaryTextColor
-import com.example.holddetector.ui.AppSurfaceColor
-import com.example.holddetector.ui.AppSubtleSurfaceColor
-import com.example.holddetector.ui.AppTextColor
-import com.example.holddetector.ui.MainUiState
-import com.example.holddetector.ui.stringResourceByName
-import com.example.holddetector.ui.canvas.ReachCalibrationCanvasScreen
-import com.example.holddetector.ui.components.AppButton
-import com.example.holddetector.model.HoldPoint
-import com.example.holddetector.ui.components.WallRegistrationStepScaffold
+import com.ikeansoft.holddetector.R
+import com.ikeansoft.holddetector.model.DEFAULT_REACH_REFERENCE_LENGTH_CM
+import com.ikeansoft.holddetector.ui.AppSecondaryTextColor
+import com.ikeansoft.holddetector.ui.AppSurfaceColor
+import com.ikeansoft.holddetector.ui.AppSubtleSurfaceColor
+import com.ikeansoft.holddetector.ui.AppTextColor
+import com.ikeansoft.holddetector.ui.MainUiState
+import com.ikeansoft.holddetector.ui.stringResourceByName
+import com.ikeansoft.holddetector.ui.canvas.ReachCalibrationCanvasScreen
+import com.ikeansoft.holddetector.ui.components.AppButton
+import com.ikeansoft.holddetector.model.HoldPoint
+import com.ikeansoft.holddetector.ui.components.WallRegistrationStepScaffold
 
 @Composable
 fun ReachCalibrationScreen(
