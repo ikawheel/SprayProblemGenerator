@@ -19,11 +19,11 @@ val computedVersionCode = versionMajor * 1_000_000 +
 val computedVersionName = "$versionMajor.$versionMinor.$versionPatch"
 
 android {
-    namespace = "com.ikeansoft.holddetector"
+    namespace = "com.ikeansoft.sprayproblemgenerator"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.ikeansoft.holddetector"
+        applicationId = "com.ikeansoft.sprayproblemgenerator"
         minSdk = 24
         targetSdk = 36
         versionCode = computedVersionCode
