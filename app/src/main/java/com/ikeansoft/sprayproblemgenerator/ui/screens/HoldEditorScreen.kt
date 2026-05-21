@@ -1,0 +1,397 @@
+package com.ikeansoft.sprayproblemgenerator.ui.screens
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.ikeansoft.sprayproblemgenerator.R
+import com.ikeansoft.sprayproblemgenerator.model.Hold
+import com.ikeansoft.sprayproblemgenerator.ui.AppSecondaryTextColor
+import com.ikeansoft.sprayproblemgenerator.ui.AppSubtleSurfaceColor
+import com.ikeansoft.sprayproblemgenerator.ui.AppTextColor
+import com.ikeansoft.sprayproblemgenerator.ui.HoldEditorTool
+import com.ikeansoft.sprayproblemgenerator.ui.HoldTapAreaSize
+import com.ikeansoft.sprayproblemgenerator.ui.MainUiState
+import com.ikeansoft.sprayproblemgenerator.ui.RouteSelectionMode
+import com.ikeansoft.sprayproblemgenerator.ui.canvas.HoldCanvasScreen
+import com.ikeansoft.sprayproblemgenerator.ui.components.AppButton
+import com.ikeansoft.sprayproblemgenerator.ui.components.AppConfirmDialog
+import com.ikeansoft.sprayproblemgenerator.ui.components.AppOutlinedButton
+import com.ikeansoft.sprayproblemgenerator.ui.components.WallRegistrationStepScaffold
+
+private data class HoldEditorSnapshot(
+    val holds: List<Hold>,
+    val selectedIndex: Int?
+)
+
+@Composable
+fun HoldEditorScreen(
+    state: MainUiState,
+    onReturnToList: () -> Unit,
+    onOpenReachCalibration: () -> Unit,
+    onHoldTapAreaSizeChange: (HoldTapAreaSize) -> Unit,
+    onSaveEditedHolds: (List<Hold>, Int?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bitmap = state.capturedBitmap ?: return
+    val imageAspectRatio = if (bitmap.height > 0) {
+        wallImageDisplayAspectRatio(
+            imageWidth = bitmap.width,
+            imageHeight = bitmap.height
+        )
+    } else {
+        null
+    }
+    val isEditingExistingWall = state.currentWallId != null
+    var activeTool by remember { mutableStateOf(HoldEditorTool.ADD) }
+    var draftHolds by remember(state.holds) { mutableStateOf(state.holds) }
+    var selectedIndex by remember(state.holds, state.selectedHoldIndex) {
+        mutableStateOf(state.selectedHoldIndex?.takeIf { it in state.holds.indices })
+    }
+    var undoStack by remember(state.holds, state.selectedHoldIndex) {
+        mutableStateOf<List<HoldEditorSnapshot>>(emptyList())
+    }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    var isAutoMergeEnabled by remember { mutableStateOf(false) }
+    val hasUnsavedDraftChanges = draftHolds != state.holds
+    val isDeleteMode = activeTool == HoldEditorTool.DELETE
+    val compactButtonContentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
+    val compactButtonMinHeight = 32.dp
+    val compactSpacing = 8.dp
+    val compactControlSpacing = 4.dp
+    val compactControlRowHeight = 32.dp
+
+    BackHandler {
+        when {
+            showDiscardDialog -> showDiscardDialog = false
+            isEditingExistingWall && hasUnsavedDraftChanges -> showDiscardDialog = true
+            else -> onReturnToList()
+        }
+    }
+
+    fun updateDraft(updatedHolds: List<Hold>, updatedSelectedIndex: Int?) {
+        if (updatedHolds == draftHolds && updatedSelectedIndex == selectedIndex) return
+        undoStack = undoStack + HoldEditorSnapshot(
+            holds = draftHolds,
+            selectedIndex = selectedIndex
+        )
+        draftHolds = updatedHolds
+        selectedIndex = updatedSelectedIndex?.takeIf { it in updatedHolds.indices }
+    }
+
+    fun saveDraft() {
+        onSaveEditedHolds(draftHolds, selectedIndex)
+    }
+
+    WallRegistrationStepScaffold(
+        modifier = modifier,
+        headerText = stringResource(R.string.registration_step_hold_editor_title),
+        imageAspectRatio = imageAspectRatio,
+        useFullImageViewport = true,
+        bodyCardPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 20.dp),
+        bodyCardContentPadding = PaddingValues(0.dp),
+        imageContent = {
+            HoldCanvasScreen(
+                bitmap = bitmap,
+                holds = draftHolds,
+                selectedIndex = selectedIndex,
+                challengeHoldIndices = emptySet(),
+                startCandidateHoldIndices = draftHolds.withIndex()
+                    .filter { it.value.isStartCandidate }
+                    .mapTo(linkedSetOf()) { it.index },
+                goalCandidateHoldIndices = draftHolds.withIndex()
+                    .filter { it.value.isGoalCandidate }
+                    .mapTo(linkedSetOf()) { it.index },
+                startHoldIndex = null,
+                goalHoldIndex = null,
+                routeSelectionMode = RouteSelectionMode.NONE,
+                reachCalibrationReference = null,
+                pendingReachCalibrationPoint = null,
+                isReachCalibrationSelectionMode = false,
+                displayColorSettings = state.displayColorSettings,
+                holdTapAreaSize = state.holdTapAreaSize,
+                holdEditorTool = activeTool,
+                isAutoMergeEnabled = isAutoMergeEnabled,
+                isSelectionOnly = isDeleteMode,
+                onHoldTapped = { index ->
+                    if (isDeleteMode) {
+                        if (index != null && index in draftHolds.indices) {
+                            val updatedHolds = draftHolds.toMutableList().apply {
+                                removeAt(index)
+                            }
+                            updateDraft(updatedHolds, null)
+                        }
+                    } else {
+                        selectedIndex = index
+                    }
+                },
+                onReachCalibrationPointSelected = {},
+                onManualHoldCreated = { hold ->
+                    val updatedHolds = draftHolds + hold
+                    updateDraft(updatedHolds, updatedHolds.lastIndex)
+                },
+                onEditedHoldApplied = { targetIndex, replacementHolds ->
+                    if (targetIndex in draftHolds.indices) {
+                        val updatedHolds = buildList {
+                            addAll(draftHolds.take(targetIndex))
+                            addAll(replacementHolds)
+                            addAll(draftHolds.drop(targetIndex + 1))
+                        }
+                        updateDraft(
+                            updatedHolds = updatedHolds,
+                            updatedSelectedIndex = when {
+                                replacementHolds.isEmpty() -> null
+                                else -> targetIndex.coerceAtMost(updatedHolds.lastIndex)
+                            }
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        },
+        bodyContent = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(compactSpacing)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 0.dp),
+                    verticalArrangement = Arrangement.spacedBy(compactControlSpacing)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(compactControlRowHeight),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        holdEditorToolButtons().forEach { tool ->
+                            val isSelected = activeTool == tool
+                            val label = stringResource(
+                                when (tool) {
+                                    HoldEditorTool.ADD -> R.string.hold_editor_tool_add
+                                    HoldEditorTool.ERASE -> R.string.hold_editor_tool_erase
+                                    HoldEditorTool.DELETE -> R.string.hold_editor_tool_delete
+                                    HoldEditorTool.EXTEND -> R.string.hold_editor_tool_extend
+                                }
+                            )
+                            HoldEditorModeTab(
+                                label = label,
+                                selected = isSelected,
+                                enabled = tool != HoldEditorTool.DELETE || draftHolds.isNotEmpty(),
+                                onClick = { activeTool = tool },
+                                minHeight = compactControlRowHeight,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    if (activeTool == HoldEditorTool.ADD) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(compactControlRowHeight),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.hold_editor_auto_merge_label),
+                                color = AppTextColor,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = isAutoMergeEnabled,
+                                onCheckedChange = { isAutoMergeEnabled = it },
+                                modifier = Modifier.scale(0.82f)
+                            )
+                        }
+                    }
+
+                    if (!isDeleteMode) {
+                        if (activeTool == HoldEditorTool.ERASE) {
+                            Spacer(modifier = Modifier.height(compactControlSpacing))
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(compactControlRowHeight),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.hold_tap_size_label),
+                                color = AppTextColor,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                HoldTapAreaSize.values().forEach { size ->
+                                    val buttonText = when (size) {
+                                        HoldTapAreaSize.SMALL -> stringResource(R.string.hold_tap_size_small)
+                                        HoldTapAreaSize.MEDIUM -> stringResource(R.string.hold_tap_size_medium)
+                                        HoldTapAreaSize.LARGE -> stringResource(R.string.hold_tap_size_large)
+                                    }
+                                    if (size == state.holdTapAreaSize) {
+                                        AppButton(
+                                            onClick = { onHoldTapAreaSizeChange(size) },
+                                            contentPadding = compactButtonContentPadding,
+                                            minHeight = compactButtonMinHeight,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(buttonText)
+                                        }
+                                    } else {
+                                        AppOutlinedButton(
+                                            onClick = { onHoldTapAreaSizeChange(size) },
+                                            contentPadding = compactButtonContentPadding,
+                                            minHeight = compactButtonMinHeight,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(buttonText)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    AppOutlinedButton(
+                        onClick = {
+                            val previous = undoStack.lastOrNull() ?: return@AppOutlinedButton
+                            undoStack = undoStack.dropLast(1)
+                            draftHolds = previous.holds
+                            selectedIndex = previous.selectedIndex?.takeIf { it in draftHolds.indices }
+                        },
+                        enabled = undoStack.isNotEmpty(),
+                        contentPadding = compactButtonContentPadding,
+                        minHeight = compactButtonMinHeight,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.undo))
+                    }
+                }
+            }
+        },
+        footerContent = {
+            if (isEditingExistingWall) {
+                AppButton(
+                    onClick = { saveDraft() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            } else {
+                AppButton(
+                    onClick = {
+                        if (hasUnsavedDraftChanges) {
+                            saveDraft()
+                        }
+                        onOpenReachCalibration()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.open_reach_calibration))
+                }
+            }
+        }
+    )
+
+    if (showDiscardDialog) {
+        AppConfirmDialog(
+            title = stringResource(R.string.back_to_list),
+            message = stringResource(R.string.discard_dialog_message),
+            confirmText = stringResource(R.string.discard_dialog_confirm),
+            dismissText = stringResource(R.string.cancel),
+            onConfirm = {
+                showDiscardDialog = false
+                onReturnToList()
+            },
+            onDismissRequest = { showDiscardDialog = false }
+        )
+    }
+}
+
+private fun holdEditorToolButtons(): List<HoldEditorTool> {
+    return listOf(
+        HoldEditorTool.ADD,
+        HoldEditorTool.ERASE,
+        HoldEditorTool.DELETE
+    )
+}
+
+@Composable
+private fun HoldEditorModeTab(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    minHeight: Dp,
+    modifier: Modifier = Modifier
+) {
+    val accentColor = MaterialTheme.colorScheme.primary
+    val textColor = when {
+        !enabled -> AppSecondaryTextColor.copy(alpha = 0.45f)
+        selected -> accentColor
+        else -> AppTextColor
+    }
+
+    Column(
+        modifier = modifier
+            .clickable(enabled = enabled, onClick = onClick)
+            .height(minHeight),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            color = textColor,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    if (selected) accentColor else AppSecondaryTextColor.copy(alpha = 0.18f)
+                )
+        )
+    }
+}
