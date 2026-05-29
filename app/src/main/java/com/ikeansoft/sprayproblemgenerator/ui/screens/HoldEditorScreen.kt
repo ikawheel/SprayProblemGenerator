@@ -251,15 +251,8 @@ fun HoldEditorScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = stringResource(R.string.hold_tap_size_label),
-                                color = AppTextColor,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-
                             Row(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 HoldTapAreaSize.values().forEach { size ->
@@ -267,6 +260,7 @@ fun HoldEditorScreen(
                                         HoldTapAreaSize.SMALL -> stringResource(R.string.hold_tap_size_small)
                                         HoldTapAreaSize.MEDIUM -> stringResource(R.string.hold_tap_size_medium)
                                         HoldTapAreaSize.LARGE -> stringResource(R.string.hold_tap_size_large)
+                                        HoldTapAreaSize.EXTRA_LARGE -> stringResource(R.string.hold_tap_size_extra_large)
                                     }
                                     if (size == state.holdTapAreaSize) {
                                         AppButton(

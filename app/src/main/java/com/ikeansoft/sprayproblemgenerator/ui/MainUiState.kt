@@ -41,7 +41,8 @@ enum class RouteSelectionMode {
 enum class HoldTapAreaSize {
     SMALL,
     MEDIUM,
-    LARGE
+    LARGE,
+    EXTRA_LARGE
 }
 
 enum class HoldEditorTool {

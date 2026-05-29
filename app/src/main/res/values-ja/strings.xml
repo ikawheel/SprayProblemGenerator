@@ -117,6 +117,7 @@
     <string name="hold_tap_size_small">小</string>
     <string name="hold_tap_size_medium">中</string>
     <string name="hold_tap_size_large">大</string>
+    <string name="hold_tap_size_extra_large">特大</string>
     <string name="hold_attribute_editor_title">スタート・ゴールの設定（任意）</string>
     <string name="hold_attribute_editor_help">自動課題作成で使うスタート・ゴールを設定できます。\n未設定のままでも次へ進めます。</string>
     <string name="open_hold_attribute_editor">属性設定へ</string>
