@@ -480,7 +480,8 @@ private fun ChallengeResultContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            useAspectRatio = false
+            useAspectRatio = false,
+            autoFitChallengeToViewport = true
         )
 
         AppButton(
@@ -754,7 +755,8 @@ private fun ChallengeCanvasSection(
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
     modifier: Modifier = Modifier,
-    useAspectRatio: Boolean = true
+    useAspectRatio: Boolean = true,
+    autoFitChallengeToViewport: Boolean = false
 ) {
     val bitmap = state.capturedBitmap
 
@@ -791,6 +793,7 @@ private fun ChallengeCanvasSection(
                 coreChallengeHoldIndex = uiModel.coreChallengeHoldIndex,
                 routeSelectionMode = state.routeSelectionMode,
                 isDrawTargetSelectionMode = state.isDrawTargetSelectionMode,
+                autoFitChallengeToViewport = autoFitChallengeToViewport,
                 displayColorSettings = state.displayColorSettings,
                 onHoldTapped = onChallengeHoldTapped,
                 onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,

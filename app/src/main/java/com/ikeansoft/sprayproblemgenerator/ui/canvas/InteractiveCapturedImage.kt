@@ -260,6 +260,7 @@ fun ChallengeCanvasScreen(
     isDrawTargetSelectionMode: Boolean,
     useDefaultChallengeHoldOutlineColor: Boolean = false,
     showChallengeOrderLabels: Boolean = true,
+    autoFitChallengeToViewport: Boolean = false,
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
@@ -283,6 +284,7 @@ fun ChallengeCanvasScreen(
         displayColorSettings = displayColorSettings,
         useDefaultChallengeHoldOutlineColor = useDefaultChallengeHoldOutlineColor,
         showChallengeOrderLabels = showChallengeOrderLabels,
+        autoFitChallengeToViewport = autoFitChallengeToViewport,
         isDrawTargetSelectionMode = isDrawTargetSelectionMode,
         mode = CanvasMode.CHALLENGE,
         onHoldTapped = onHoldTapped,
@@ -348,6 +350,7 @@ private fun InteractiveCapturedImage(
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     useDefaultChallengeHoldOutlineColor: Boolean = false,
     showChallengeOrderLabels: Boolean = true,
+    autoFitChallengeToViewport: Boolean = false,
     wallColorSamplePoints: List<HoldPoint> = emptyList(),
     isWallColorSamplingMode: Boolean = false,
     holdTapAreaSize: HoldTapAreaSize = HoldTapAreaSize.MEDIUM,
@@ -501,6 +504,59 @@ private fun InteractiveCapturedImage(
         val targetPan = Offset(
             x = containerWidth / 2f - baseLayout.left - holdCenter.x * targetZoom,
             y = containerHeight / 2f - baseLayout.top - holdCenter.y * targetZoom
+        )
+
+        zoomScale = targetZoom
+        panOffset = clampPanOffset(
+            candidate = targetPan,
+            containerSize = containerSize,
+            baseLayout = baseLayout,
+            zoomScale = targetZoom
+        )
+    }
+
+    LaunchedEffect(
+        mode,
+        autoFitChallengeToViewport,
+        challengeHoldIndices,
+        startHoldIndex,
+        goalHoldIndex,
+        baseLayout,
+        containerSize,
+        holds
+    ) {
+        if (
+            mode != CanvasMode.CHALLENGE ||
+            !autoFitChallengeToViewport ||
+            !baseLayout.isValid
+        ) {
+            return@LaunchedEffect
+        }
+
+        val targetHolds = (challengeHoldIndices + listOfNotNull(startHoldIndex, goalHoldIndex))
+            .mapNotNull(holds::getOrNull)
+        if (targetHolds.isEmpty()) return@LaunchedEffect
+
+        val polygons = targetHolds.map { hold -> hold.toLocalPolygon(baseLayout) }
+        val minX = polygons.minOf { it.minX }
+        val maxX = polygons.maxOf { it.maxX }
+        val minY = polygons.minOf { it.minY }
+        val maxY = polygons.maxOf { it.maxY }
+        val containerWidth = containerSize.width.toFloat().coerceAtLeast(1f)
+        val containerHeight = containerSize.height.toFloat().coerceAtLeast(1f)
+        val targetWidth = max(maxX - minX, 48f)
+        val targetHeight = max(maxY - minY, 48f)
+        val targetZoom = minOf(
+            containerWidth * 0.8f / targetWidth,
+            containerHeight * 0.8f / targetHeight
+        ).coerceIn(1f, 15f)
+        val targetCenter = Offset(
+            x = (minX + maxX) / 2f,
+            y = (minY + maxY) / 2f
+        )
+        val targetPan = Offset(
+            x = containerWidth / 2f - baseLayout.left - targetCenter.x * targetZoom,
+            y = containerHeight / 2f - baseLayout.top - targetCenter.y * targetZoom
         )
 
         zoomScale = targetZoom
