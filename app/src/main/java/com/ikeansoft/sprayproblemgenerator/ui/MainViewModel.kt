@@ -1867,13 +1867,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         state: MainUiState
     ): MainUiState {
         val previousStep = state.challengeFlowBackStack.lastOrNull() ?: return state
-        return state.copy(
+        val poppedState = state.copy(
             challengeFlowStep = previousStep,
             challengeFlowBackStack = state.challengeFlowBackStack.dropLast(1),
             routeSelectionMode = RouteSelectionMode.NONE,
             isDrawTargetSelectionMode = false,
             message = null
         )
+        return if (previousStep == ChallengeFlowStep.COMMON_SETTINGS) {
+            poppedState.copy(
+                selectedHoldIndex = null,
+                challengeHoldIndices = emptySet(),
+                challengeOrderedHoldIndices = emptyList(),
+                lastGeneratedIntermediateHoldIndices = emptySet(),
+                startHoldIndex = null,
+                goalHoldIndex = null
+            )
+        } else {
+            poppedState
+        }
     }
 
     private fun updateRouteTuning(
