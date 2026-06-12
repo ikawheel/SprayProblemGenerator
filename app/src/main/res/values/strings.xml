@@ -117,6 +117,7 @@
     <string name="hold_tap_size_small">Small</string>
     <string name="hold_tap_size_medium">Medium</string>
     <string name="hold_tap_size_large">Large</string>
+    <string name="hold_tap_size_extra_large">Extra large</string>
     <string name="hold_attribute_editor_title">Set start and goal (optional)</string>
     <string name="hold_attribute_editor_help">You can set the start and goal used for automatic problem creation.\nYou can also continue without setting them.</string>
     <string name="open_hold_attribute_editor">Go to attribute settings</string>

@@ -385,6 +385,7 @@ private fun InteractiveCapturedImage(
         HoldTapAreaSize.SMALL -> Size(2f, 2f)
         HoldTapAreaSize.MEDIUM -> Size(10f, 8f)
         HoldTapAreaSize.LARGE -> Size(20f, 16f)
+        HoldTapAreaSize.EXTRA_LARGE -> Size(32f, 26f)
     }
     val brushRadiusXLocal = holdAreaSize.width / 2f
     val brushRadiusYLocal = holdAreaSize.height / 2f

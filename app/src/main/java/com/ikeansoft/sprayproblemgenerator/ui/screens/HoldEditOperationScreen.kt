@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ikeansoft.sprayproblemgenerator.R
 import com.ikeansoft.sprayproblemgenerator.model.Hold
@@ -200,14 +199,6 @@ fun HoldEditOperationScreen(
                     Column(
                         modifier = Modifier.padding(12.dp)
                     ) {
-                        Text(
-                            text = stringResource(R.string.hold_tap_size_label),
-                            color = AppTextColor,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -217,6 +208,7 @@ fun HoldEditOperationScreen(
                                     HoldTapAreaSize.SMALL -> stringResource(R.string.hold_tap_size_small)
                                     HoldTapAreaSize.MEDIUM -> stringResource(R.string.hold_tap_size_medium)
                                     HoldTapAreaSize.LARGE -> stringResource(R.string.hold_tap_size_large)
+                                    HoldTapAreaSize.EXTRA_LARGE -> stringResource(R.string.hold_tap_size_extra_large)
                                 }
                                 if (size == holdTapAreaSize) {
                                     AppButton(
