@@ -189,7 +189,7 @@
     <string name="challenge_randomness_label">Randomness</string>
     <string name="challenge_randomness_value">%1$d%%</string>
     <string name="challenge_tuning_title">Advanced generation tuning</string>
-    <string name="challenge_tuning_description">Adjust how the route is generated, including detours and waviness.</string>
+    <string name="challenge_tuning_description">The route shape changes automatically each time you generate a problem. You can configure exclusion rules and attempt limits.</string>
     <string name="challenge_difficulty_range_label">Scores to use</string>
     <string name="challenge_difficulty_range_value">%1$d–%2$d points</string>
     <string name="challenge_difficulty_score_label">Estimated difficulty: %1$s</string>

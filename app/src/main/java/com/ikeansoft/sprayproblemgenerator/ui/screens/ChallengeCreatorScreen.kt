@@ -57,7 +57,6 @@ import com.ikeansoft.sprayproblemgenerator.ui.components.AppContentDialog
 import com.ikeansoft.sprayproblemgenerator.ui.components.AppMessageDialog
 import com.ikeansoft.sprayproblemgenerator.ui.components.AppOutlinedButton
 import com.ikeansoft.sprayproblemgenerator.ui.components.CompactRangeSlider
-import com.ikeansoft.sprayproblemgenerator.ui.components.CompactSlider
 import com.ikeansoft.sprayproblemgenerator.ui.selectors.DrawTargetStatus
 import com.ikeansoft.sprayproblemgenerator.ui.selectors.deriveChallengeCreatorUiModel
 import java.util.Locale
@@ -83,10 +82,6 @@ fun ChallengeCreatorScreen(
     onSaveChallenge: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
-    onDetourStrengthChange: (Float) -> Unit,
-    onRouteWavinessChange: (Float) -> Unit,
-    onStepDistanceVarianceChange: (Float) -> Unit,
-    onCorridorWidthChange: (Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     onRandomStartGoalPairLimitChange: (Int) -> Unit,
     onRouteGenerationAttemptLimitChange: (Int) -> Unit,
@@ -191,9 +186,7 @@ fun ChallengeCreatorScreen(
                         onShowTuningDialog = { isTuningDialogOpen = true },
                         onChallengeHoldTapped = onChallengeHoldTapped,
                         onStartDrawTargetSelection = onStartDrawTargetSelection,
-                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
-                        onDrawCountChange = onDrawCountChange,
-                        onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange
+                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted
                     )
                 }
 
@@ -208,10 +201,8 @@ fun ChallengeCreatorScreen(
                 ChallengeFlowStep.TUNING -> {
                     ChallengeTuningContent(
                         state = state,
-                        onDetourStrengthChange = onDetourStrengthChange,
-                        onRouteWavinessChange = onRouteWavinessChange,
-                        onStepDistanceVarianceChange = onStepDistanceVarianceChange,
-                        onCorridorWidthChange = onCorridorWidthChange,
+                        onDrawCountChange = onDrawCountChange,
+                        onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
                         onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
                         onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
                         onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
@@ -229,10 +220,8 @@ fun ChallengeCreatorScreen(
         ) {
             ChallengeTuningControls(
                 state = state,
-                onDetourStrengthChange = onDetourStrengthChange,
-                onRouteWavinessChange = onRouteWavinessChange,
-                onStepDistanceVarianceChange = onStepDistanceVarianceChange,
-                onCorridorWidthChange = onCorridorWidthChange,
+                onDrawCountChange = onDrawCountChange,
+                onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
                 onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
                 onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
                 onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
@@ -298,9 +287,7 @@ private fun ChallengeCommonSettingsContent(
     onShowTuningDialog: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onStartDrawTargetSelection: () -> Unit,
-    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
-    onDrawCountChange: (String) -> Unit,
-    onChallengeDifficultyRangeChange: (Float, Float) -> Unit
+    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit
 ) {
     ChallengeCanvasSection(
         state = state,
@@ -332,32 +319,6 @@ private fun ChallengeCommonSettingsContent(
     ) {
         Text(stringResource(uiModel.drawTargetButtonTextResId))
     }
-
-    HoldDifficultyRangeSlider(
-        label = stringResource(R.string.challenge_difficulty_range_label),
-        startValue = state.challengeDifficultyScoreMin.toFloat(),
-        endValue = state.challengeDifficultyScoreMax.toFloat(),
-        onValueChange = onChallengeDifficultyRangeChange,
-        modifier = Modifier.padding(top = 12.dp)
-    )
-
-    Text(
-        text = stringResource(R.string.draw_count_label),
-        color = AppTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(top = 12.dp, bottom = 6.dp)
-    )
-
-    OutlinedTextField(
-        value = state.drawCountInput,
-        onValueChange = onDrawCountChange,
-        modifier = Modifier
-            .fillMaxWidth(),
-        singleLine = true,
-        placeholder = { Text(stringResource(R.string.draw_count_placeholder_auto)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-    )
 
     AppButton(
         onClick = onShowTuningDialog,
@@ -524,20 +485,16 @@ private fun ChallengeResultContent(
 @Composable
 private fun ChallengeTuningContent(
     state: MainUiState,
-    onDetourStrengthChange: (Float) -> Unit,
-    onRouteWavinessChange: (Float) -> Unit,
-    onStepDistanceVarianceChange: (Float) -> Unit,
-    onCorridorWidthChange: (Float) -> Unit,
+    onDrawCountChange: (String) -> Unit,
+    onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     onRandomStartGoalPairLimitChange: (Int) -> Unit,
     onRouteGenerationAttemptLimitChange: (Int) -> Unit
 ) {
     ChallengeTuningControls(
         state = state,
-        onDetourStrengthChange = onDetourStrengthChange,
-        onRouteWavinessChange = onRouteWavinessChange,
-        onStepDistanceVarianceChange = onStepDistanceVarianceChange,
-        onCorridorWidthChange = onCorridorWidthChange,
+        onDrawCountChange = onDrawCountChange,
+        onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
         onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
         onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
         onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
@@ -547,24 +504,14 @@ private fun ChallengeTuningContent(
 @Composable
 private fun ChallengeTuningControls(
     state: MainUiState,
-    onDetourStrengthChange: (Float) -> Unit,
-    onRouteWavinessChange: (Float) -> Unit,
-    onStepDistanceVarianceChange: (Float) -> Unit,
-    onCorridorWidthChange: (Float) -> Unit,
+    onDrawCountChange: (String) -> Unit,
+    onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     onRandomStartGoalPairLimitChange: (Int) -> Unit,
     onRouteGenerationAttemptLimitChange: (Int) -> Unit
 ) {
     var helpDialogTitle by rememberSaveable { mutableStateOf<String?>(null) }
     var helpDialogBody by rememberSaveable { mutableStateOf<String?>(null) }
-    val detourLabel = stringResource(R.string.challenge_detour_strength_label)
-    val detourHelp = stringResource(R.string.challenge_detour_strength_help)
-    val wavinessLabel = stringResource(R.string.challenge_route_waviness_label)
-    val wavinessHelp = stringResource(R.string.challenge_route_waviness_help)
-    val varianceLabel = stringResource(R.string.challenge_step_distance_variance_label)
-    val varianceHelp = stringResource(R.string.challenge_step_distance_variance_help)
-    val corridorLabel = stringResource(R.string.challenge_corridor_width_label)
-    val corridorHelp = stringResource(R.string.challenge_corridor_width_help)
     val excludeLabel = stringResource(R.string.challenge_exclude_previous_holds_label)
     val excludeHelp = stringResource(R.string.challenge_exclude_previous_holds_help)
     val attemptLimitsLabel = stringResource(R.string.challenge_attempt_limits_label)
@@ -578,47 +525,29 @@ private fun ChallengeTuningControls(
         mutableStateOf(initialAttemptLimit.toString())
     }
 
-    ChallengeTuningSlider(
-        label = detourLabel,
-        value = state.routeTuning.detourStrength,
-        onValueChange = onDetourStrengthChange,
-        onHelpClick = {
-            helpDialogTitle = detourLabel
-            helpDialogBody = detourHelp
-        }
+    HoldDifficultyRangeSlider(
+        label = stringResource(R.string.challenge_difficulty_range_label),
+        startValue = state.challengeDifficultyScoreMin.toFloat(),
+        endValue = state.challengeDifficultyScoreMax.toFloat(),
+        onValueChange = onChallengeDifficultyRangeChange,
+        modifier = Modifier.padding(top = 4.dp)
     )
 
-    ChallengeTuningSlider(
-        label = wavinessLabel,
-        value = state.routeTuning.routeWaviness,
-        onValueChange = onRouteWavinessChange,
-        onHelpClick = {
-            helpDialogTitle = wavinessLabel
-            helpDialogBody = wavinessHelp
-        },
-        modifier = Modifier.padding(top = 8.dp)
+    Text(
+        text = stringResource(R.string.draw_count_label),
+        color = AppTextColor,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 12.dp, bottom = 6.dp)
     )
 
-    ChallengeTuningSlider(
-        label = varianceLabel,
-        value = state.routeTuning.stepDistanceVariance,
-        onValueChange = onStepDistanceVarianceChange,
-        onHelpClick = {
-            helpDialogTitle = varianceLabel
-            helpDialogBody = varianceHelp
-        },
-        modifier = Modifier.padding(top = 8.dp)
-    )
-
-    ChallengeTuningSlider(
-        label = corridorLabel,
-        value = state.routeTuning.corridorWidth,
-        onValueChange = onCorridorWidthChange,
-        onHelpClick = {
-            helpDialogTitle = corridorLabel
-            helpDialogBody = corridorHelp
-        },
-        modifier = Modifier.padding(top = 8.dp)
+    OutlinedTextField(
+        value = state.drawCountInput,
+        onValueChange = onDrawCountChange,
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        placeholder = { Text(stringResource(R.string.draw_count_placeholder_auto)) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
 
     Row(
@@ -954,43 +883,6 @@ private fun HoldDifficultyRangeSlider(
 
 private fun formatChallengeDebugNumber(value: Double): String {
     return String.format(Locale.US, "%.2f", value)
-}
-
-@Composable
-private fun ChallengeTuningSlider(
-    label: String,
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    onHelpClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SettingLabelWithHelp(
-                label = label,
-                onHelpClick = onHelpClick
-            )
-            Text(
-                text = stringResource(
-                    R.string.challenge_randomness_value,
-                    (value * 100f).roundToInt()
-                ),
-                color = AppSecondaryTextColor,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        CompactSlider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = 0f..1f,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
 }
 
 @Composable
