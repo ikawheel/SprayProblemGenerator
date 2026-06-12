@@ -33,6 +33,7 @@
     <string name="edit_menu_hold_editor">Add or remove holds</string>
     <string name="edit_menu_hold_attribute_editor">Hold attribute settings</string>
     <string name="edit_menu_hold_scoring">Assign hold scores</string>
+    <string name="edit_menu_replace_wall_image">Replace wall image</string>
     <string name="challenge_menu_title">Choose a problem creation method</string>
     <string name="challenge_menu_description">Choose a method to continue to the settings screen.</string>
     <string name="open_wall">Open</string>
@@ -54,6 +55,11 @@
     <string name="camera_subtitle">Take a photo with the standard camera or choose an image from your device. After that, crop the area you want to use.</string>
     <string name="camera_take_photo">Take photo with standard camera</string>
     <string name="camera_pick_photo">Choose image from device</string>
+    <string name="wall_image_replace_source_title">Replace wall image</string>
+    <string name="wall_image_replacement_title">Replace Wall Image</string>
+    <string name="wall_image_replacement_description">Use two fingers to zoom and move the image so it lines up with the hold outlines.</string>
+    <string name="wall_image_replacement_reset">Reset position</string>
+    <string name="wall_image_replacement_save">Replace and save</string>
     <string name="image_crop_title">Crop image</string>
     <string name="image_crop_description">Crop the image to the area of the wall you want to use. Drag inside the frame to move it, and drag the corners to resize it.</string>
     <string name="image_crop_apply">Next</string>
@@ -259,6 +265,8 @@
     <string name="message_register_hold_first">Register holds first</string>
     <string name="message_image_missing_to_save">There is no image to save</string>
     <string name="message_saved_wall">Saved</string>
+    <string name="message_wall_image_replaced">Wall image replaced</string>
+    <string name="message_replace_wall_image_failed">Could not replace wall image</string>
     <string name="message_saved_and_open_challenge">Saved and moved to problem creation</string>
     <string name="message_wall_deleted">Deleted</string>
     <string name="message_hold_registration_method_select">Choose how to register holds</string>

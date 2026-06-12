@@ -62,6 +62,8 @@ fun SprayProblemGeneratorApp(
     onSaveSavedChallengeImage: (android.graphics.Bitmap?) -> Unit,
     onDeleteSavedChallenge: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
+    onTakeReplacementPhoto: (String) -> Unit,
+    onPickReplacementPhoto: (String) -> Unit,
     onOpenDisplayColorSettings: () -> Unit,
     onOpenLicenses: () -> Unit,
     onUpdateDisplayColor: (DisplayColorTarget, EditableRgbColor) -> Unit,
@@ -101,6 +103,7 @@ fun SprayProblemGeneratorApp(
     onChallengeHoldTapped: (Int?) -> Unit,
     onApplyEditedHoldsAndReturn: (List<Hold>, Int?) -> Unit,
     onBackFromHoldEditOperation: () -> Unit,
+    onSaveWallImageReplacement: (android.graphics.Bitmap) -> Unit,
     onContinueToHoldEditorFromReachCalibration: () -> Unit,
     onBackFromReachCalibration: () -> Unit,
     onStartReachCalibrationSelection: () -> Unit,
@@ -242,6 +245,8 @@ fun SprayProblemGeneratorApp(
                             onOpenSavedWallForChallenge = onOpenSavedWallForChallenge,
                             onOpenSavedWallChallenges = onOpenSavedWallChallenges,
                             onDeleteSavedWall = onDeleteSavedWall,
+                            onTakeReplacementPhoto = onTakeReplacementPhoto,
+                            onPickReplacementPhoto = onPickReplacementPhoto,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -400,6 +405,17 @@ fun SprayProblemGeneratorApp(
                             onExitWithoutSaving = onBackToList,
                             onSaveAndExit = onSaveWall,
                             onDifficultyScoreSelected = onDifficultyScoreSelected,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    AppScreen.WALL_IMAGE_REPLACEMENT -> {
+                        WallImageReplacementScreen(
+                            originalBitmap = state.capturedBitmap,
+                            replacementBitmap = state.replacementBitmap,
+                            holds = state.holds,
+                            displayColorSettings = state.displayColorSettings,
+                            onSaveReplacementImage = onSaveWallImageReplacement,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

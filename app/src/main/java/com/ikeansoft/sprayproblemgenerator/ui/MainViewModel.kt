@@ -90,6 +90,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             ),
             currentWallId = null,
             capturedBitmap = bitmap,
+            replacementBitmap = null,
             capturedOrientation = capturedOrientation,
             capturedRotationDegrees = capturedRotationDegrees,
             holds = emptyList(),
@@ -507,6 +508,67 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun openWallImageReplacement(
+        wallId: String,
+        replacementBitmap: Bitmap
+    ) {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            _uiState.value = currentState.copy(isBusy = true)
+            val detail = withContext(Dispatchers.IO) { repository.loadWall(wallId) }
+            if (detail == null) {
+                val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
+                _uiState.value = buildListState(
+                    source = currentState,
+                    savedWalls = refreshed,
+                    message = text(R.string.message_open_wall_failed)
+                )
+                return@launch
+            }
+
+            _uiState.value = currentState.copy(
+                currentScreen = AppScreen.WALL_IMAGE_REPLACEMENT,
+                screenBackStack = pushedScreenBackStack(
+                    state = currentState,
+                    targetScreen = AppScreen.WALL_IMAGE_REPLACEMENT
+                ),
+                currentWallId = detail.id,
+                capturedBitmap = detail.bitmap,
+                replacementBitmap = replacementBitmap,
+                capturedOrientation = detail.capturedOrientation,
+                capturedRotationDegrees = detail.capturedRotationDegrees,
+                holds = detail.holds,
+                autoExtractedHolds = emptyList(),
+                reachCalibrationReference = detail.reachCalibrationReference,
+                reachCalibrationLengthInput = detail.reachCalibrationReference
+                    ?.referenceLengthCm
+                    ?.toString()
+                    ?: DEFAULT_REACH_REFERENCE_LENGTH_CM.toString(),
+                pendingReachCalibrationPoint = null,
+                isReachCalibrationSelectionMode = false,
+                reachCalibrationReturnToHoldEditor = false,
+                reachCalibrationReturnToAutoExtraction = false,
+                selectedHoldIndex = null,
+                savedChallenges = emptyList(),
+                challengeHoldIndices = emptySet(),
+                challengeOrderedHoldIndices = emptyList(),
+                lastGeneratedIntermediateHoldIndices = emptySet(),
+                drawTargetHoldIndices = emptySet(),
+                hasDrawTargetSelection = false,
+                startHoldIndex = null,
+                goalHoldIndex = null,
+                routeSelectionMode = RouteSelectionMode.NONE,
+                isDrawTargetSelectionMode = false,
+                isHoldEditorDirty = false,
+                holdScoringPosition = 0,
+                challengeFlowBackStack = emptyList(),
+                showDiscardDialog = false,
+                isBusy = false,
+                message = null
+            )
+        }
+    }
+
     fun openSavedWallForChallenge(wallId: String) {
         openSavedWallForChallenge(wallId, null)
     }
@@ -536,6 +598,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ),
                 currentWallId = wallDetail.id,
                 capturedBitmap = wallDetail.bitmap,
+                replacementBitmap = null,
                 capturedOrientation = wallDetail.capturedOrientation,
                 capturedRotationDegrees = wallDetail.capturedRotationDegrees,
                 holds = wallDetail.holds,
@@ -585,6 +648,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ),
                 currentWallId = wallDetail.id,
                 capturedBitmap = wallDetail.bitmap,
+                replacementBitmap = null,
                 capturedOrientation = wallDetail.capturedOrientation,
                 capturedRotationDegrees = wallDetail.capturedRotationDegrees,
                 holds = wallDetail.holds,
@@ -694,6 +758,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ),
                 currentWallId = detail.id,
                 capturedBitmap = detail.bitmap,
+                replacementBitmap = null,
                 capturedOrientation = detail.capturedOrientation,
                 capturedRotationDegrees = detail.capturedRotationDegrees,
                 holds = detail.holds,
@@ -1145,6 +1210,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ),
                 savedWalls = refreshed,
                 message = text(R.string.message_saved_wall)
+            )
+        }
+    }
+
+    fun saveWallImageReplacement(replacementBitmap: Bitmap) {
+        val state = _uiState.value
+        val wallId = state.currentWallId ?: run {
+            _uiState.value = state.copy(message = text(R.string.message_replace_wall_image_failed))
+            return
+        }
+        if (state.currentScreen != AppScreen.WALL_IMAGE_REPLACEMENT) return
+
+        viewModelScope.launch {
+            val normalizedReference = state.reachCalibrationReference.withCurrentLength(state)
+            _uiState.value = state.copy(
+                isBusy = true,
+                reachCalibrationReference = normalizedReference
+            )
+            val savedSummary = withContext(Dispatchers.IO) {
+                repository.saveWall(
+                    wallId = wallId,
+                    bitmap = replacementBitmap,
+                    holds = state.holds,
+                    reachCalibrationReference = normalizedReference,
+                    capturedOrientation = state.capturedOrientation,
+                    capturedRotationDegrees = state.capturedRotationDegrees
+                )
+            }
+            val refreshed = withContext(Dispatchers.IO) { repository.loadAllSummaries() }
+            _uiState.value = buildListState(
+                source = state.copy(
+                    currentWallId = savedSummary.id,
+                    capturedBitmap = replacementBitmap,
+                    replacementBitmap = null,
+                    reachCalibrationReference = normalizedReference,
+                    isHoldEditorDirty = false,
+                    showDiscardDialog = false,
+                    isBusy = false
+                ),
+                savedWalls = refreshed,
+                message = text(R.string.message_wall_image_replaced)
             )
         }
     }
@@ -1790,6 +1896,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             ),
             currentWallId = null,
             capturedBitmap = bitmap,
+            replacementBitmap = null,
             capturedOrientation = capturedOrientation,
             capturedRotationDegrees = capturedRotationDegrees,
             holds = emptyList(),
@@ -1845,6 +1952,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ),
                 currentWallId = detail.id,
                 capturedBitmap = detail.bitmap,
+                replacementBitmap = null,
                 capturedOrientation = detail.capturedOrientation,
                 capturedRotationDegrees = detail.capturedRotationDegrees,
                 holds = detail.holds,
