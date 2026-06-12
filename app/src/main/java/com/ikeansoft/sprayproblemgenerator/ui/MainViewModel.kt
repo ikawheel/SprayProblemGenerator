@@ -1666,6 +1666,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun setDrawTargetSelectionProcessing(isProcessing: Boolean) {
+        _uiState.value = _uiState.value.copy(isBusy = isProcessing)
+    }
+
     fun startChallengeStartGoalSelection() {
         val result = buildChallengeStartGoalSelectionResult(
             state = _uiState.value,
