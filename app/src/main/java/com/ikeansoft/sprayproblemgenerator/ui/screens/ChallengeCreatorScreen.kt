@@ -93,7 +93,8 @@ fun ChallengeCreatorScreen(
     var isTuningDialogOpen by rememberSaveable { mutableStateOf(false) }
     var isGenerationMethodDialogOpen by rememberSaveable { mutableStateOf(false) }
     val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val isFullHeightChallengeStep = state.challengeFlowStep == ChallengeFlowStep.GENERATION ||
+    val isFullHeightChallengeStep = state.challengeFlowStep == ChallengeFlowStep.COMMON_SETTINGS ||
+        state.challengeFlowStep == ChallengeFlowStep.GENERATION ||
         state.challengeFlowStep == ChallengeFlowStep.RESULT
 
     if (isFullHeightChallengeStep) {
@@ -109,6 +110,19 @@ fun ChallengeCreatorScreen(
                 )
         ) {
             when {
+                state.challengeFlowStep == ChallengeFlowStep.COMMON_SETTINGS -> {
+                    ChallengeCommonSettingsContent(
+                        state = state,
+                        uiModel = uiModel,
+                        onOpenChallengeGeneration = { isGenerationMethodDialogOpen = true },
+                        onShowTuningDialog = { isTuningDialogOpen = true },
+                        onChallengeHoldTapped = onChallengeHoldTapped,
+                        onStartDrawTargetSelection = onStartDrawTargetSelection,
+                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        navigationBarBottomPadding = navigationBarBottomPadding
+                    )
+                }
+
                 state.challengeFlowStep == ChallengeFlowStep.RESULT ||
                     uiModel.orderedChallengeIndices.isNotEmpty() -> {
                     ChallengeResultContent(
@@ -186,7 +200,8 @@ fun ChallengeCreatorScreen(
                         onShowTuningDialog = { isTuningDialogOpen = true },
                         onChallengeHoldTapped = onChallengeHoldTapped,
                         onStartDrawTargetSelection = onStartDrawTargetSelection,
-                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted
+                        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        navigationBarBottomPadding = navigationBarBottomPadding
                     )
                 }
 
@@ -287,55 +302,62 @@ private fun ChallengeCommonSettingsContent(
     onShowTuningDialog: () -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onStartDrawTargetSelection: () -> Unit,
-    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit
+    onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    navigationBarBottomPadding: androidx.compose.ui.unit.Dp
 ) {
-    ChallengeCanvasSection(
-        state = state,
-        uiModel = uiModel,
-        onChallengeHoldTapped = onChallengeHoldTapped,
-        onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted
-    )
+    Column(modifier = Modifier.fillMaxSize()) {
+        ChallengeCanvasSection(
+            state = state,
+            uiModel = uiModel,
+            onChallengeHoldTapped = onChallengeHoldTapped,
+            onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            useAspectRatio = false
+        )
 
-    Text(
-        text = when (val drawTargetStatus = uiModel.drawTargetStatus) {
-            DrawTargetStatus.Selecting -> stringResource(R.string.draw_target_status_selecting)
-            DrawTargetStatus.All -> stringResource(R.string.draw_target_status_all)
-            is DrawTargetStatus.Count -> stringResource(
-                R.string.draw_target_status_count,
-                drawTargetStatus.count
-            )
-        },
-        color = AppTextColor,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 12.dp)
-    )
+        Text(
+            text = when (val drawTargetStatus = uiModel.drawTargetStatus) {
+                DrawTargetStatus.Selecting -> stringResource(R.string.draw_target_status_selecting)
+                DrawTargetStatus.All -> stringResource(R.string.draw_target_status_all)
+                is DrawTargetStatus.Count -> stringResource(
+                    R.string.draw_target_status_count,
+                    drawTargetStatus.count
+                )
+            },
+            color = AppTextColor,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 12.dp)
+        )
 
-    AppButton(
-        onClick = onStartDrawTargetSelection,
-        enabled = !state.isDrawTargetSelectionMode,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp)
-    ) {
-        Text(stringResource(uiModel.drawTargetButtonTextResId))
-    }
+        AppButton(
+            onClick = onStartDrawTargetSelection,
+            enabled = !state.isDrawTargetSelectionMode,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        ) {
+            Text(stringResource(uiModel.drawTargetButtonTextResId))
+        }
 
-    AppButton(
-        onClick = onShowTuningDialog,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp)
-    ) {
-        Text(stringResource(R.string.challenge_open_tuning))
-    }
+        AppButton(
+            onClick = onShowTuningDialog,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        ) {
+            Text(stringResource(R.string.challenge_open_tuning))
+        }
 
-    AppButton(
-        onClick = onOpenChallengeGeneration,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp)
-    ) {
-        Text(text = stringResource(R.string.challenge_method_select_heading))
+        AppButton(
+            onClick = onOpenChallengeGeneration,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp, bottom = navigationBarBottomPadding)
+        ) {
+            Text(text = stringResource(R.string.challenge_method_select_heading))
+        }
     }
 }
 
