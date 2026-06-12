@@ -50,12 +50,17 @@ val AppOverlayStrokePreviewColor = Color(0x44222222)
 val AppBusyOverlayColor = Color(0x66FFFFFF)
 
 class MainActivity : ComponentActivity() {
+    private sealed class ImageImportTarget {
+        object NewWall : ImageImportTarget()
+        data class ReplaceWallImage(val wallId: String) : ImageImportTarget()
+    }
 
     // 外部カメラや画像選択の読込中だけ全画面インジケータを出します。
     private val isCaptureProcessing = mutableStateOf(false)
 
     // 標準カメラへ渡した一時保存先 Uri を保持します。
     private var pendingCaptureUri: Uri? = null
+    private var pendingImageImportTarget: ImageImportTarget = ImageImportTarget.NewWall
 
     // 画面状態を管理する ViewModel です。
     private val viewModel: MainViewModel by viewModels()
@@ -66,6 +71,7 @@ class MainActivity : ComponentActivity() {
             val captureUri = pendingCaptureUri
             pendingCaptureUri = null
             if (!success || captureUri == null) {
+                pendingImageImportTarget = ImageImportTarget.NewWall
                 isCaptureProcessing.value = false
                 return@registerForActivityResult
             }
@@ -76,6 +82,7 @@ class MainActivity : ComponentActivity() {
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
             if (uri == null) {
+                pendingImageImportTarget = ImageImportTarget.NewWall
                 return@registerForActivityResult
             }
             isCaptureProcessing.value = true
@@ -118,8 +125,12 @@ class MainActivity : ComponentActivity() {
                         uiState.currentScreen == AppScreen.CHALLENGE_CREATOR && uiState.isBusy
                     val isAutoHoldExtractionBusy =
                         uiState.currentScreen == AppScreen.AUTO_HOLD_EXTRACTION && uiState.isBusy
+                    val isWallImageReplacementBusy =
+                        uiState.currentScreen == AppScreen.WALL_IMAGE_REPLACEMENT && uiState.isBusy
                     val isBusyBackBlocked =
-                        isChallengeGenerationBusy || isAutoHoldExtractionBusy
+                        isChallengeGenerationBusy ||
+                            isAutoHoldExtractionBusy ||
+                            isWallImageReplacementBusy
 
                     // 課題生成中はシステムバックを無効化します。
                     BackHandler(enabled = isBusyBackBlocked) {
@@ -146,6 +157,8 @@ class MainActivity : ComponentActivity() {
                         onSaveSavedChallengeImage = ::saveSavedChallengeImageToGallery,
                         onDeleteSavedChallenge = viewModel::deleteSavedChallenge,
                         onDeleteSavedWall = viewModel::deleteSavedWall,
+                        onTakeReplacementPhoto = ::launchSystemCameraForWallImageReplacement,
+                        onPickReplacementPhoto = ::launchPhotoPickerForWallImageReplacement,
                         onOpenDisplayColorSettings = viewModel::openDisplayColorSettings,
                         onOpenLicenses = viewModel::openLicenses,
                         onUpdateDisplayColor = viewModel::updateDisplayColor,
@@ -185,6 +198,7 @@ class MainActivity : ComponentActivity() {
                         onChallengeHoldTapped = viewModel::onChallengeHoldTapped,
                         onApplyEditedHoldsAndReturn = viewModel::applyEditedHoldsAndReturnToHoldEditor,
                         onBackFromHoldEditOperation = viewModel::onBackPressed,
+                        onSaveWallImageReplacement = viewModel::saveWallImageReplacement,
                         onContinueToHoldEditorFromReachCalibration = viewModel::continueToHoldEditorFromReachCalibration,
                         onBackFromReachCalibration = viewModel::backFromReachCalibration,
                         onStartReachCalibrationSelection = viewModel::startReachCalibrationSelection,
@@ -223,14 +237,35 @@ class MainActivity : ComponentActivity() {
 
     // 標準カメラアプリを起動します。
     private fun launchSystemCamera() {
-        val captureUri = createTemporaryCaptureUri() ?: return
+        launchSystemCameraForTarget(ImageImportTarget.NewWall)
+    }
+
+    private fun launchSystemCameraForWallImageReplacement(wallId: String) {
+        launchSystemCameraForTarget(ImageImportTarget.ReplaceWallImage(wallId))
+    }
+
+    private fun launchSystemCameraForTarget(target: ImageImportTarget) {
+        val captureUri = createTemporaryCaptureUri() ?: run {
+            pendingImageImportTarget = ImageImportTarget.NewWall
+            return
+        }
         pendingCaptureUri = captureUri
+        pendingImageImportTarget = target
         isCaptureProcessing.value = true
         takePictureLauncher.launch(captureUri)
     }
 
     // 端末内の画像選択 UI を開きます。
     private fun launchPhotoPicker() {
+        launchPhotoPickerForTarget(ImageImportTarget.NewWall)
+    }
+
+    private fun launchPhotoPickerForWallImageReplacement(wallId: String) {
+        launchPhotoPickerForTarget(ImageImportTarget.ReplaceWallImage(wallId))
+    }
+
+    private fun launchPhotoPickerForTarget(target: ImageImportTarget) {
+        pendingImageImportTarget = target
         pickImageLauncher.launch(
             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
         )
@@ -242,6 +277,8 @@ class MainActivity : ComponentActivity() {
             val bitmap = withContext(Dispatchers.IO) {
                 loadCorrectedBitmap(contentResolver = contentResolver, uri = uri)
             }
+            val importTarget = pendingImageImportTarget
+            pendingImageImportTarget = ImageImportTarget.NewWall
 
             if (bitmap == null) {
                 isCaptureProcessing.value = false
@@ -255,11 +292,22 @@ class MainActivity : ComponentActivity() {
             }
 
             isCaptureProcessing.value = false
-            viewModel.onPhotoCaptured(
-                bitmap = bitmap,
-                capturedOrientation = capturedOrientation,
-                capturedRotationDegrees = 0
-            )
+            when (importTarget) {
+                ImageImportTarget.NewWall -> {
+                    viewModel.onPhotoCaptured(
+                        bitmap = bitmap,
+                        capturedOrientation = capturedOrientation,
+                        capturedRotationDegrees = 0
+                    )
+                }
+
+                is ImageImportTarget.ReplaceWallImage -> {
+                    viewModel.openWallImageReplacement(
+                        wallId = importTarget.wallId,
+                        replacementBitmap = bitmap
+                    )
+                }
+            }
         }
     }
 

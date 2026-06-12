@@ -67,11 +67,14 @@ fun WallListScreen(
     onOpenSavedWallForChallenge: (String) -> Unit,
     onOpenSavedWallChallenges: (String) -> Unit,
     onDeleteSavedWall: (String) -> Unit,
+    onTakeReplacementPhoto: (String) -> Unit,
+    onPickReplacementPhoto: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var deletingWallId by remember { mutableStateOf<String?>(null) }
     var optionWallId by remember { mutableStateOf<String?>(null) }
     var isImageSourceDialogOpen by remember { mutableStateOf(false) }
+    var replacingImageWallId by remember { mutableStateOf<String?>(null) }
     val footerOverlayPadding = 136.dp
 
     Box(
@@ -188,6 +191,15 @@ fun WallListScreen(
             ) {
                 Text(stringResource(R.string.edit_menu_hold_scoring))
             }
+            AppButton(
+                onClick = {
+                    optionWallId = null
+                    replacingImageWallId = wallId
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.edit_menu_replace_wall_image))
+            }
             AppOutlinedButton(
                 onClick = {
                     optionWallId = null
@@ -196,6 +208,33 @@ fun WallListScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.delete))
+            }
+        }
+    }
+
+    replacingImageWallId?.let { wallId ->
+        AppContentDialog(
+            title = stringResource(R.string.wall_image_replace_source_title),
+            onDismissRequest = { replacingImageWallId = null },
+            dismissText = stringResource(R.string.cancel)
+        ) {
+            AppButton(
+                onClick = {
+                    replacingImageWallId = null
+                    onTakeReplacementPhoto(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.camera_take_photo))
+            }
+            AppButton(
+                onClick = {
+                    replacingImageWallId = null
+                    onPickReplacementPhoto(wallId)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.camera_pick_photo))
             }
         }
     }

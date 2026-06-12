@@ -29,6 +29,7 @@ enum class AppScreen {
     HOLD_EDIT_OPERATION,
     HOLD_ATTRIBUTE_EDITOR,
     HOLD_SCORING,
+    WALL_IMAGE_REPLACEMENT,
     CHALLENGE_CREATOR
 }
 
@@ -73,6 +74,7 @@ data class MainUiState(
     val isBusy: Boolean = false,
     val currentWallId: String? = null,
     val capturedBitmap: Bitmap? = null,
+    val replacementBitmap: Bitmap? = null,
     val capturedOrientation: CapturedOrientation = CapturedOrientation.PORTRAIT,
     val capturedRotationDegrees: Int = 0,
     val holds: List<Hold> = emptyList(),

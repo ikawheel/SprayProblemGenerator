@@ -33,6 +33,7 @@
     <string name="edit_menu_hold_editor">ホールドの追加・削除</string>
     <string name="edit_menu_hold_attribute_editor">ホールド属性設定</string>
     <string name="edit_menu_hold_scoring">ホールドの点数付け</string>
+    <string name="edit_menu_replace_wall_image">壁画像を差し替え</string>
     <string name="challenge_menu_title">課題作成方法を選択</string>
     <string name="challenge_menu_description">作成方法を選ぶと、設定画面へ進みます。</string>
     <string name="open_wall">開く</string>
@@ -54,6 +55,11 @@
     <string name="camera_subtitle">標準カメラで撮影するか、端末内の画像を選んでください。取得後、必要な範囲を切り抜きます。</string>
     <string name="camera_take_photo">カメラで撮影</string>
     <string name="camera_pick_photo">端末の画像を選択</string>
+    <string name="wall_image_replace_source_title">壁画像を差し替え</string>
+    <string name="wall_image_replacement_title">壁画像の差し替え</string>
+    <string name="wall_image_replacement_description">ホールド枠線に合うように、画像を2本指で拡大・移動してください。</string>
+    <string name="wall_image_replacement_reset">位置をリセット</string>
+    <string name="wall_image_replacement_save">差し替えて保存</string>
     <string name="image_crop_title">画像を切り抜く</string>
     <string name="image_crop_description">使う壁の範囲に合わせて画像を切り抜きます。枠の内側をドラッグすると移動でき、四隅をドラッグすると大きさを調整できます。</string>
     <string name="image_crop_apply">次へ</string>
@@ -259,6 +265,8 @@
     <string name="message_register_hold_first">先にホールドを登録してください</string>
     <string name="message_image_missing_to_save">保存する画像がありません</string>
     <string name="message_saved_wall">保存しました</string>
+    <string name="message_wall_image_replaced">壁画像を差し替えました</string>
+    <string name="message_replace_wall_image_failed">壁画像の差し替えに失敗しました</string>
     <string name="message_saved_and_open_challenge">保存して課題作成へ進みました</string>
     <string name="message_wall_deleted">削除しました</string>
     <string name="message_hold_registration_method_select">ホールドの登録方法を選んでください</string>
