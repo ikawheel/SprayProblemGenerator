@@ -77,6 +77,7 @@ fun ChallengeCreatorScreen(
     onDrawWithRandomStartGoal: () -> Unit,
     onStartDrawTargetSelection: () -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit,
     onDrawClick: () -> Unit,
     onRerunCurrentChallengeGeneration: () -> Unit,
     onSaveChallenge: () -> Unit,
@@ -119,6 +120,7 @@ fun ChallengeCreatorScreen(
                         onChallengeHoldTapped = onChallengeHoldTapped,
                         onStartDrawTargetSelection = onStartDrawTargetSelection,
                         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
                         navigationBarBottomPadding = navigationBarBottomPadding
                     )
                 }
@@ -132,6 +134,7 @@ fun ChallengeCreatorScreen(
                         onDebugSummaryExpandedChange = { isDebugSummaryExpanded = it },
                         onChallengeHoldTapped = onChallengeHoldTapped,
                         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
                         onRerunCurrentChallengeGeneration = onRerunCurrentChallengeGeneration,
                         onSaveChallenge = onSaveChallenge,
                         navigationBarBottomPadding = navigationBarBottomPadding
@@ -145,6 +148,7 @@ fun ChallengeCreatorScreen(
                             uiModel = uiModel,
                             onChallengeHoldTapped = onChallengeHoldTapped,
                             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                            onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
                             onStartGoalSelection = onStartGoalSelection,
                             onDrawClick = onDrawClick,
                             navigationBarBottomPadding = navigationBarBottomPadding
@@ -157,6 +161,7 @@ fun ChallengeCreatorScreen(
                             uiModel = uiModel,
                             onChallengeHoldTapped = onChallengeHoldTapped,
                             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                            onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
                             onDrawWithRandomStartGoal = onDrawWithRandomStartGoal,
                             navigationBarBottomPadding = navigationBarBottomPadding
                         )
@@ -201,6 +206,7 @@ fun ChallengeCreatorScreen(
                         onChallengeHoldTapped = onChallengeHoldTapped,
                         onStartDrawTargetSelection = onStartDrawTargetSelection,
                         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                        onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
                         navigationBarBottomPadding = navigationBarBottomPadding
                     )
                 }
@@ -303,6 +309,7 @@ private fun ChallengeCommonSettingsContent(
     onChallengeHoldTapped: (Int?) -> Unit,
     onStartDrawTargetSelection: () -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit,
     navigationBarBottomPadding: androidx.compose.ui.unit.Dp
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -311,6 +318,7 @@ private fun ChallengeCommonSettingsContent(
             uiModel = uiModel,
             onChallengeHoldTapped = onChallengeHoldTapped,
             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+            onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -367,6 +375,7 @@ private fun ChallengeManualGenerationContent(
     uiModel: com.ikeansoft.sprayproblemgenerator.ui.selectors.ChallengeCreatorUiModel,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit,
     onStartGoalSelection: () -> Unit,
     onDrawClick: () -> Unit,
     navigationBarBottomPadding: androidx.compose.ui.unit.Dp
@@ -377,6 +386,7 @@ private fun ChallengeManualGenerationContent(
             uiModel = uiModel,
             onChallengeHoldTapped = onChallengeHoldTapped,
             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+            onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -415,6 +425,7 @@ private fun ChallengeRandomGenerationContent(
     uiModel: com.ikeansoft.sprayproblemgenerator.ui.selectors.ChallengeCreatorUiModel,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit,
     onDrawWithRandomStartGoal: () -> Unit,
     navigationBarBottomPadding: androidx.compose.ui.unit.Dp
 ) {
@@ -424,6 +435,7 @@ private fun ChallengeRandomGenerationContent(
             uiModel = uiModel,
             onChallengeHoldTapped = onChallengeHoldTapped,
             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+            onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -450,6 +462,7 @@ private fun ChallengeResultContent(
     onDebugSummaryExpandedChange: (Boolean) -> Unit,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit,
     onRerunCurrentChallengeGeneration: () -> Unit,
     onSaveChallenge: () -> Unit,
     navigationBarBottomPadding: androidx.compose.ui.unit.Dp
@@ -460,6 +473,7 @@ private fun ChallengeResultContent(
             uiModel = uiModel,
             onChallengeHoldTapped = onChallengeHoldTapped,
             onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+            onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -705,6 +719,7 @@ private fun ChallengeCanvasSection(
     uiModel: com.ikeansoft.sprayproblemgenerator.ui.selectors.ChallengeCreatorUiModel,
     onChallengeHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     useAspectRatio: Boolean = true,
     autoFitChallengeToViewport: Boolean = false
@@ -748,6 +763,7 @@ private fun ChallengeCanvasSection(
                 displayColorSettings = state.displayColorSettings,
                 onHoldTapped = onChallengeHoldTapped,
                 onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+                onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
                 modifier = Modifier.fillMaxSize()
             )
         }

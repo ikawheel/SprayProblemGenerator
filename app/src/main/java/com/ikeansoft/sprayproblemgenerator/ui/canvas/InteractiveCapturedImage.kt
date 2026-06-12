@@ -2,6 +2,7 @@ package com.ikeansoft.sprayproblemgenerator.ui.canvas
 
 import android.graphics.Bitmap
 import android.graphics.Paint
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -264,6 +265,7 @@ fun ChallengeCanvasScreen(
     displayColorSettings: DisplayColorSettings = DisplayColorSettings(),
     onHoldTapped: (Int?) -> Unit,
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     InteractiveCapturedImage(
@@ -290,6 +292,7 @@ fun ChallengeCanvasScreen(
         onHoldTapped = onHoldTapped,
         onReachCalibrationPointSelected = {},
         onDrawTargetSelectionCompleted = onDrawTargetSelectionCompleted,
+        onDrawTargetSelectionProcessingChange = onDrawTargetSelectionProcessingChange,
         onManualHoldCreated = {},
         modifier = modifier
     )
@@ -364,6 +367,7 @@ private fun InteractiveCapturedImage(
     onReachCalibrationPointSelected: (HoldPoint) -> Unit,
     onWallColorSamplePointSelected: (HoldPoint) -> Unit = {},
     onDrawTargetSelectionCompleted: (Set<Int>) -> Unit,
+    onDrawTargetSelectionProcessingChange: (Boolean) -> Unit = {},
     onManualHoldCreated: (Hold) -> Unit,
     onEditedHoldApplied: (Int, List<Hold>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
@@ -572,6 +576,7 @@ private fun InteractiveCapturedImage(
     LaunchedEffect(pendingDrawTargetSelectionRequest) {
         val request = pendingDrawTargetSelectionRequest ?: return@LaunchedEffect
         isSelectionProcessing = true
+        onDrawTargetSelectionProcessingChange(true)
         try {
             val selectedIndices = withContext(Dispatchers.Default) {
                 val selectionPolygon = if (request.movedEnough) {
@@ -603,7 +608,12 @@ private fun InteractiveCapturedImage(
         } finally {
             pendingDrawTargetSelectionRequest = null
             isSelectionProcessing = false
+            onDrawTargetSelectionProcessingChange(false)
         }
+    }
+
+    BackHandler(enabled = isSelectionProcessing) {
+        Unit
     }
 
     Box(

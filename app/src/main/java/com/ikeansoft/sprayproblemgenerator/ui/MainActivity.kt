@@ -214,6 +214,7 @@ class MainActivity : ComponentActivity() {
                         onDrawWithRandomStartGoal = viewModel::drawRandomChallengeWithRandomStartGoal,
                         onStartDrawTargetSelection = viewModel::startDrawTargetSelection,
                         onDrawTargetSelectionCompleted = viewModel::applyDrawTargetSelection,
+                        onDrawTargetSelectionProcessingChange = viewModel::setDrawTargetSelectionProcessing,
                         onDrawClick = viewModel::drawRandomChallengeHolds,
                         onRerunCurrentChallengeGeneration = viewModel::rerunCurrentChallengeGeneration,
                         onSaveCurrentChallenge = viewModel::saveCurrentChallenge,
