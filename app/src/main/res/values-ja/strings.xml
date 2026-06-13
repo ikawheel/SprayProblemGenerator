@@ -189,7 +189,9 @@
     <string name="challenge_randomness_label">ランダム度</string>
     <string name="challenge_randomness_value">%1$d%%</string>
     <string name="challenge_tuning_title">生成の詳細調整</string>
-    <string name="challenge_tuning_description">ルートの出方は生成ごとに自動で変わります。除外条件と試行回数を設定できます。</string>
+    <string name="challenge_tuning_description">ルートのばらつき、除外条件、試行回数を設定できます。</string>
+    <string name="challenge_route_variation_label">ルートのばらつき</string>
+    <string name="challenge_route_variation_help">値が高いほど、迂回、うねり、途中ホールドのばらつき、ルート帯の太さが大きくなります。</string>
     <string name="challenge_difficulty_range_label">使う点数</string>
     <string name="challenge_difficulty_range_value">%1$d〜%2$d点</string>
     <string name="challenge_difficulty_score_label">推定難度: %1$s</string>

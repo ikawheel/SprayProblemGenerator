@@ -1409,6 +1409,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun onRouteVariationChanged(value: Float) {
+        updateRouteTuning {
+            val normalizedValue = value.coerceIn(0f, 1f)
+            copy(
+                detourStrength = normalizedValue,
+                routeWaviness = normalizedValue,
+                stepDistanceVariance = normalizedValue,
+                corridorWidth = normalizedValue
+            )
+        }
+    }
+
     fun onExcludePreviouslyGeneratedHoldsChanged(value: Boolean) {
         updateRouteTuning { copy(excludePreviouslyGeneratedHolds = value) }
     }
@@ -1520,13 +1532,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val randomizedRouteTuning = state.routeTuning.randomizedRouteShape()
-
         viewModelScope.launch {
-            _uiState.value = state.copy(
-                isBusy = true,
-                routeTuning = randomizedRouteTuning
-            )
+            _uiState.value = state.copy(isBusy = true)
 
             val selectedOrderedIndices = withContext(Dispatchers.Default) {
                 generateChallengeRouteWithRetries(
@@ -1535,7 +1542,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     startIndex = startIndex,
                     goalIndex = goalIndex,
                     targetCount = requestedCount,
-                    tuning = randomizedRouteTuning,
+                    tuning = state.routeTuning,
                     reachCalibrationReference = state.reachCalibrationReference
                 )
             }
@@ -1543,7 +1550,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (selectedOrderedIndices == null) {
                 _uiState.value = state.copy(
                     isBusy = false,
-                    routeTuning = randomizedRouteTuning,
                     message = if (state.reachCalibrationReference != null) {
                         text(R.string.message_unable_generate_with_reach)
                     } else {
@@ -1556,7 +1562,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val selectedIndices = selectedOrderedIndices.toSet()
             _uiState.value = state.copy(
                 isBusy = false,
-                routeTuning = randomizedRouteTuning,
                 challengeHoldIndices = selectedIndices,
                 challengeOrderedHoldIndices = selectedOrderedIndices,
                 lastGeneratedIntermediateHoldIndices = selectedIndices
@@ -1596,13 +1601,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val randomizedRouteTuning = state.routeTuning.randomizedRouteShape()
-
         viewModelScope.launch {
-            _uiState.value = state.copy(
-                isBusy = true,
-                routeTuning = randomizedRouteTuning
-            )
+            _uiState.value = state.copy(isBusy = true)
 
             val generatedRoute = withContext(Dispatchers.Default) {
                 generateChallengeRouteWithRandomStartGoal(
@@ -1610,7 +1610,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     selectionCandidateIndices = selectionCandidateIndices,
                     lastGeneratedIntermediateHoldIndices = state.lastGeneratedIntermediateHoldIndices,
                     targetCount = requestedCount,
-                    tuning = randomizedRouteTuning,
+                    tuning = state.routeTuning,
                     reachCalibrationReference = state.reachCalibrationReference
                 )
             }
@@ -1618,7 +1618,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (generatedRoute == null) {
                 _uiState.value = state.copy(
                     isBusy = false,
-                    routeTuning = randomizedRouteTuning,
                     message = if (state.reachCalibrationReference != null) {
                         text(R.string.message_unable_generate_with_reach)
                     } else {
@@ -1631,7 +1630,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val selectedIndices = generatedRoute.orderedIndices.toSet()
             _uiState.value = state.copy(
                 isBusy = false,
-                routeTuning = randomizedRouteTuning,
                 selectedHoldIndex = null,
                 startHoldIndex = generatedRoute.startIndex,
                 goalHoldIndex = generatedRoute.goalIndex,

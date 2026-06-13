@@ -57,6 +57,7 @@ import com.ikeansoft.sprayproblemgenerator.ui.components.AppContentDialog
 import com.ikeansoft.sprayproblemgenerator.ui.components.AppMessageDialog
 import com.ikeansoft.sprayproblemgenerator.ui.components.AppOutlinedButton
 import com.ikeansoft.sprayproblemgenerator.ui.components.CompactRangeSlider
+import com.ikeansoft.sprayproblemgenerator.ui.components.CompactSlider
 import com.ikeansoft.sprayproblemgenerator.ui.selectors.DrawTargetStatus
 import com.ikeansoft.sprayproblemgenerator.ui.selectors.deriveChallengeCreatorUiModel
 import java.util.Locale
@@ -83,6 +84,7 @@ fun ChallengeCreatorScreen(
     onSaveChallenge: () -> Unit,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
+    onRouteVariationChange: (Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     onRandomStartGoalPairLimitChange: (Int) -> Unit,
     onRouteGenerationAttemptLimitChange: (Int) -> Unit,
@@ -224,6 +226,7 @@ fun ChallengeCreatorScreen(
                         state = state,
                         onDrawCountChange = onDrawCountChange,
                         onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
+                        onRouteVariationChange = onRouteVariationChange,
                         onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
                         onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
                         onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
@@ -243,6 +246,7 @@ fun ChallengeCreatorScreen(
                 state = state,
                 onDrawCountChange = onDrawCountChange,
                 onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
+                onRouteVariationChange = onRouteVariationChange,
                 onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
                 onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
                 onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
@@ -523,6 +527,7 @@ private fun ChallengeTuningContent(
     state: MainUiState,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
+    onRouteVariationChange: (Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     onRandomStartGoalPairLimitChange: (Int) -> Unit,
     onRouteGenerationAttemptLimitChange: (Int) -> Unit
@@ -531,6 +536,7 @@ private fun ChallengeTuningContent(
         state = state,
         onDrawCountChange = onDrawCountChange,
         onChallengeDifficultyRangeChange = onChallengeDifficultyRangeChange,
+        onRouteVariationChange = onRouteVariationChange,
         onExcludePreviouslyGeneratedHoldsChange = onExcludePreviouslyGeneratedHoldsChange,
         onRandomStartGoalPairLimitChange = onRandomStartGoalPairLimitChange,
         onRouteGenerationAttemptLimitChange = onRouteGenerationAttemptLimitChange
@@ -542,6 +548,7 @@ private fun ChallengeTuningControls(
     state: MainUiState,
     onDrawCountChange: (String) -> Unit,
     onChallengeDifficultyRangeChange: (Float, Float) -> Unit,
+    onRouteVariationChange: (Float) -> Unit,
     onExcludePreviouslyGeneratedHoldsChange: (Boolean) -> Unit,
     onRandomStartGoalPairLimitChange: (Int) -> Unit,
     onRouteGenerationAttemptLimitChange: (Int) -> Unit
@@ -552,6 +559,11 @@ private fun ChallengeTuningControls(
     val excludeHelp = stringResource(R.string.challenge_exclude_previous_holds_help)
     val attemptLimitsLabel = stringResource(R.string.challenge_attempt_limits_label)
     val attemptLimitsHelp = stringResource(R.string.challenge_attempt_limits_help)
+    val routeVariationLabel = stringResource(R.string.challenge_route_variation_label)
+    val routeVariationHelp = stringResource(R.string.challenge_route_variation_help)
+    val routeVariationValue = with(state.routeTuning) {
+        ((detourStrength + routeWaviness + stepDistanceVariance + corridorWidth) / 4f).coerceIn(0f, 1f)
+    }
     val initialPairLimit = state.routeTuning.randomStartGoalPairLimit.takeIf { it > 0 } ?: 10
     val initialAttemptLimit = state.routeTuning.routeGenerationAttemptLimit.takeIf { it > 0 } ?: 100
     var pairLimitInput by rememberSaveable(initialPairLimit) {
@@ -560,6 +572,17 @@ private fun ChallengeTuningControls(
     var attemptLimitInput by rememberSaveable(initialAttemptLimit) {
         mutableStateOf(initialAttemptLimit.toString())
     }
+
+    ChallengeRouteVariationSlider(
+        label = routeVariationLabel,
+        value = routeVariationValue,
+        onValueChange = onRouteVariationChange,
+        onHelpClick = {
+            helpDialogTitle = routeVariationLabel
+            helpDialogBody = routeVariationHelp
+        },
+        modifier = Modifier.padding(top = 4.dp)
+    )
 
     HoldDifficultyRangeSlider(
         label = stringResource(R.string.challenge_difficulty_range_label),
@@ -921,6 +944,43 @@ private fun HoldDifficultyRangeSlider(
 
 private fun formatChallengeDebugNumber(value: Double): String {
     return String.format(Locale.US, "%.2f", value)
+}
+
+@Composable
+private fun ChallengeRouteVariationSlider(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    onHelpClick: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SettingLabelWithHelp(
+                label = label,
+                onHelpClick = onHelpClick
+            )
+            Text(
+                text = stringResource(
+                    R.string.challenge_randomness_value,
+                    (value * 100f).roundToInt()
+                ),
+                color = AppSecondaryTextColor,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        CompactSlider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = 0f..1f,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
 }
 
 @Composable
