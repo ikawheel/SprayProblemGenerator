@@ -21,15 +21,6 @@ internal data class RandomStartGoalGenerationResult(
     val orderedIndices: List<Int>
 )
 
-internal fun RouteGenerationTuning.randomizedRouteShape(): RouteGenerationTuning {
-    return copy(
-        detourStrength = Random.Default.nextFloat(),
-        routeWaviness = Random.Default.nextFloat(),
-        stepDistanceVariance = Random.Default.nextFloat(),
-        corridorWidth = Random.Default.nextFloat()
-    )
-}
-
 internal fun challengeSelectionCandidateIndices(state: MainUiState): Set<Int> {
     val baseIndices = if (state.hasDrawTargetSelection) {
         state.drawTargetHoldIndices

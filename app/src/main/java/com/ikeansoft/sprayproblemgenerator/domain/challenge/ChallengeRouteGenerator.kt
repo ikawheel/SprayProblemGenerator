@@ -809,12 +809,12 @@ private fun scoreGeneratedRoute(
     }
     val averageDistance = distances.average()
     val spacingPenalty = distances.sumOf { distance ->
-        abs(distance - expectedStepDistance) * blendDouble(0.34, 0.08, stepDistanceVariance)
+        abs(distance - expectedStepDistance) * blendDouble(0.012, 0.002, stepDistanceVariance)
     }
     val adherencePenalty = adherenceDistances.sumOf { distance ->
-        distance * blendDouble(0.38, 0.06, corridorWidth)
+        distance * blendDouble(0.012, 0.002, corridorWidth)
     }
-    val densityBonus = min(availableCandidateCount, 10) * blendDouble(1.80, 0.25, corridorWidth)
+    val densityBonus = min(availableCandidateCount, 10) * blendDouble(0.03, 0.004, corridorWidth)
     val spacingVarietyBonus = distances.sumOf { distance ->
         abs(distance - averageDistance) * blendDouble(0.04, 0.85, stepDistanceVariance)
     }

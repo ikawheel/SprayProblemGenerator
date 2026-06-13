@@ -220,6 +220,7 @@ class MainActivity : ComponentActivity() {
                         onSaveCurrentChallenge = viewModel::saveCurrentChallenge,
                         onDrawCountChange = viewModel::onDrawCountChanged,
                         onChallengeDifficultyRangeChange = viewModel::onChallengeDifficultyRangeChanged,
+                        onRouteVariationChange = viewModel::onRouteVariationChanged,
                         onExcludePreviouslyGeneratedHoldsChange = viewModel::onExcludePreviouslyGeneratedHoldsChanged,
                         onRandomStartGoalPairLimitChange = viewModel::onRandomStartGoalPairLimitChanged,
                         onRouteGenerationAttemptLimitChange = viewModel::onRouteGenerationAttemptLimitChanged,
