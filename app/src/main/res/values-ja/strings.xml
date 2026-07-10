@@ -155,9 +155,8 @@
     <string name="challenge_settings_heading">共通設定</string>
     <string name="challenge_settings_description">抽選範囲、使う点数、ホールド数上限を設定してから生成へ進みます。</string>
     <string name="challenge_route_help_none">抽選範囲を決めたあと、スタートとゴールを選ぶか、おまかせで自動生成できます。</string>
-    <string name="challenge_route_help_select_start">抽選対象のホールドからスタートを選択してください。</string>
-    <string name="challenge_route_help_select_goal">抽選対象のホールドからゴールを選択してください。</string>
-    <string name="challenge_route_help_ready_generate">スタートとゴールが設定されました。ホールド数上限を指定して課題を生成できます。</string>
+    <string name="challenge_route_help_select_start">スタートのホールドを選択してください</string>
+    <string name="challenge_route_help_select_goal">ゴールのホールドを選択してください</string>
     <string name="challenge_selection_summary">選択ホールド数: %1$d / スタート: %2$s / ゴール: %3$s</string>
     <string name="status_set">設定済み</string>
     <string name="status_unset">未設定</string>
@@ -178,6 +177,7 @@
     <string name="save_challenge">課題を保存</string>
     <string name="challenge_back_to_settings">共通設定へ戻る</string>
     <string name="start_goal_select">スタート/ゴール選択</string>
+    <string name="challenge_reselect_start_goal">再選択</string>
     <string name="selecting_start">スタート選択中</string>
     <string name="selecting_goal">ゴール選択中</string>
     <string name="clear_challenge">課題をクリア</string>
