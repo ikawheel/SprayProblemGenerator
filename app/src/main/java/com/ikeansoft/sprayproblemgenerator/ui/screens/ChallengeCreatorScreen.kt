@@ -41,7 +41,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ikeansoft.sprayproblemgenerator.R
 import com.ikeansoft.sprayproblemgenerator.ui.AppCoreHighlightBackgroundColor
@@ -51,6 +50,7 @@ import com.ikeansoft.sprayproblemgenerator.ui.AppTextColor
 import com.ikeansoft.sprayproblemgenerator.ui.ChallengeFlowStep
 import com.ikeansoft.sprayproblemgenerator.ui.ChallengeGenerationMethod
 import com.ikeansoft.sprayproblemgenerator.ui.MainUiState
+import com.ikeansoft.sprayproblemgenerator.ui.RouteSelectionMode
 import com.ikeansoft.sprayproblemgenerator.ui.canvas.ChallengeCanvasScreen
 import com.ikeansoft.sprayproblemgenerator.ui.components.AppButton
 import com.ikeansoft.sprayproblemgenerator.ui.components.AppContentDialog
@@ -384,6 +384,11 @@ private fun ChallengeManualGenerationContent(
     onDrawClick: () -> Unit,
     navigationBarBottomPadding: androidx.compose.ui.unit.Dp
 ) {
+    val isStartGoalSelectionComplete = state.startHoldIndex != null &&
+        state.goalHoldIndex != null &&
+        state.routeSelectionMode == RouteSelectionMode.NONE
+    val canRestartStartGoalSelection = state.routeSelectionMode == RouteSelectionMode.NONE
+
     Column(modifier = Modifier.fillMaxSize()) {
         ChallengeCanvasSection(
             state = state,
@@ -397,28 +402,47 @@ private fun ChallengeManualGenerationContent(
             useAspectRatio = false
         )
 
-        AppButton(
-            onClick = onDrawClick,
-            enabled = uiModel.isReadyToGenerate,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp)
-        ) {
-            Text(stringResource(R.string.draw))
+        if (!isStartGoalSelectionComplete) {
+            Text(
+                text = stringResource(uiModel.helpTextResId),
+                color = AppTextColor,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        top = 12.dp,
+                        bottom = if (canRestartStartGoalSelection) {
+                            0.dp
+                        } else {
+                            navigationBarBottomPadding
+                        }
+                    )
+            )
         }
 
-        AppButton(
-            onClick = onStartGoalSelection,
-            enabled = uiModel.canStartGoalSelection,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp, bottom = navigationBarBottomPadding)
-        ) {
-            Text(
-                text = stringResource(uiModel.startGoalButtonTextResId),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+        if (isStartGoalSelectionComplete) {
+            AppButton(
+                onClick = onDrawClick,
+                enabled = uiModel.isReadyToGenerate,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+            ) {
+                Text(stringResource(R.string.draw))
+            }
+        }
+
+        if (canRestartStartGoalSelection) {
+            AppButton(
+                onClick = onStartGoalSelection,
+                enabled = uiModel.canStartGoalSelection,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, bottom = navigationBarBottomPadding)
+            ) {
+                Text(stringResource(R.string.challenge_reselect_start_goal))
+            }
         }
     }
 }

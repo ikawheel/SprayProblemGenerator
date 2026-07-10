@@ -28,7 +28,6 @@ internal data class ChallengeCreatorUiModel(
     val canStartGoalSelection: Boolean,
     @StringRes val helpTextResId: Int,
     @StringRes val drawTargetButtonTextResId: Int,
-    @StringRes val startGoalButtonTextResId: Int,
     @StringRes val startStatusResId: Int,
     @StringRes val goalStatusResId: Int,
     val drawTargetStatus: DrawTargetStatus,
@@ -91,8 +90,6 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
             R.string.challenge_route_help_select_start
         state.routeSelectionMode == RouteSelectionMode.SELECTING_GOAL ->
             R.string.challenge_route_help_select_goal
-        state.startHoldIndex != null && state.goalHoldIndex != null ->
-            R.string.challenge_route_help_ready_generate
         else -> R.string.challenge_route_help_none
     }
 
@@ -100,12 +97,6 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         state.isDrawTargetSelectionMode -> DrawTargetStatus.Selecting
         !state.hasDrawTargetSelection -> DrawTargetStatus.All
         else -> DrawTargetStatus.Count(selectionCandidateIndices.size)
-    }
-
-    val startGoalButtonTextResId = when (state.routeSelectionMode) {
-        RouteSelectionMode.NONE -> R.string.start_goal_select
-        RouteSelectionMode.SELECTING_START -> R.string.selecting_start
-        RouteSelectionMode.SELECTING_GOAL -> R.string.selecting_goal
     }
 
     return ChallengeCreatorUiModel(
@@ -120,7 +111,6 @@ internal fun deriveChallengeCreatorUiModel(state: MainUiState): ChallengeCreator
         } else {
             R.string.draw_target_reselect
         },
-        startGoalButtonTextResId = startGoalButtonTextResId,
         startStatusResId = if (state.startHoldIndex != null) {
             R.string.status_set
         } else {

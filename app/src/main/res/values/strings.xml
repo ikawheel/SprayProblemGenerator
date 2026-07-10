@@ -155,9 +155,8 @@
     <string name="challenge_settings_heading">Common settings</string>
     <string name="challenge_settings_description">Set the drawing range, score range, and hold count limit before moving on to generation.</string>
     <string name="challenge_route_help_none">After deciding the drawing range, you can either choose the start and goal yourself or generate them automatically.</string>
-    <string name="challenge_route_help_select_start">Select the start from the target holds.</string>
-    <string name="challenge_route_help_select_goal">Select the goal from the target holds.</string>
-    <string name="challenge_route_help_ready_generate">The start and goal are set. You can now generate a problem after specifying the hold count limit.</string>
+    <string name="challenge_route_help_select_start">Select the start hold.</string>
+    <string name="challenge_route_help_select_goal">Select the goal hold.</string>
     <string name="challenge_selection_summary">Selected holds: %1$d / Start: %2$s / Goal: %3$s</string>
     <string name="status_set">Set</string>
     <string name="status_unset">Unset</string>
@@ -178,6 +177,7 @@
     <string name="save_challenge">Save problem</string>
     <string name="challenge_back_to_settings">Back to common settings</string>
     <string name="start_goal_select">Select start/goal</string>
+    <string name="challenge_reselect_start_goal">Reselect</string>
     <string name="selecting_start">Selecting start</string>
     <string name="selecting_goal">Selecting goal</string>
     <string name="clear_challenge">Clear problem</string>

@@ -1434,7 +1434,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectManualStartGoalChallengeMethod() {
+        val shouldStartSelection =
+            _uiState.value.challengeFlowStep == ChallengeFlowStep.COMMON_SETTINGS
         selectChallengeGenerationMethod(ChallengeGenerationMethod.MANUAL_START_GOAL)
+        if (shouldStartSelection) {
+            startChallengeStartGoalSelection()
+        }
     }
 
     fun selectRandomStartGoalChallengeMethod() {
@@ -1723,10 +1728,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 state.routeSelectionMode != RouteSelectionMode.NONE -> {
-                    _uiState.value = state.copy(
-                        routeSelectionMode = RouteSelectionMode.NONE,
-                        message = null
-                    )
+                    _uiState.value = popChallengeFlowState(state)
                 }
 
                 state.challengeFlowBackStack.isNotEmpty() -> {
