@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity() {
                             isAutoHoldExtractionBusy ||
                             isWallImageReplacementBusy
 
-                    // 課題生成中はシステムバックを無効化します。
+                    // 課題作成中はシステムバックを無効化します。
                     BackHandler(enabled = isBusyBackBlocked) {
                         Unit
                     }
